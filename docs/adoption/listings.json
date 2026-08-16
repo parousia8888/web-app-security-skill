@@ -1,6 +1,18 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-08-16T12:47:09Z",
+  "reviewedAt": "2026-08-16T16:29:17Z",
+  "assessmentMethod": {
+    "starsAloneSufficient": false,
+    "signals": [
+      "audience_fit",
+      "current_submission_policy",
+      "latest_external_merge",
+      "open_pull_request_backlog",
+      "default_branch_push",
+      "source_governance_cost"
+    ],
+    "note": "A large historical star count does not establish that maintainers still review external submissions. Submission status and listing acceptance are not adoption evidence."
+  },
   "projectFacts": {
     "repository": "https://github.com/parousia8888/web-app-security-skill",
     "firstDefaultBranchCommit": "b52288fd52af9f23195e75d6bb845f6ac2d3e8b9",
@@ -19,7 +31,16 @@
       "status": "ineligible",
       "unmetRules": ["at_least_14_days_old_or_100_stars"],
       "earliestAgeRecheckAt": "2026-08-26T15:53:35Z",
-      "notes": "The project has continued development after its first day and provides a Claude repository plugin, but currently meets neither the 14-day nor 100-star branch of the rule. Do not use gh CLI or a pull request for this recommendation."
+      "activity": {
+        "observedAt": "2026-08-16T16:29:17Z",
+        "stars": 52412,
+        "openPullRequests": 0,
+        "defaultBranchPushedAt": "2026-08-16T15:05:27Z",
+        "latestObservedExternalMergeAt": "2026-08-13T07:13:40Z",
+        "assessment": "active_selective"
+      },
+      "priority": "highest_after_age_gate",
+      "notes": "The project has continued development after its first day and provides a Claude repository plugin, but currently meets neither the 14-day nor 100-star branch of the rule. Do not use gh CLI or a pull request for this recommendation. Positioning must be Claude Code-specific rather than generic CLI promotion."
     },
     {
       "id": "awesome-agent-skills",
@@ -30,6 +51,15 @@
       "status": "ineligible",
       "unmetRules": ["real_community_usage_not_yet_evidenced", "brand_new_skill"],
       "earliestAgeRecheckAt": null,
+      "activity": {
+        "observedAt": "2026-08-16T16:29:17Z",
+        "stars": 30388,
+        "openPullRequests": 35,
+        "defaultBranchPushedAt": "2026-08-16T11:52:26Z",
+        "latestObservedExternalMergeAt": "2026-08-16T11:52:26Z",
+        "assessment": "active_with_moderate_backlog"
+      },
+      "priority": "defer_until_independent_usage",
       "notes": "The policy gives no numeric maturity threshold. Repository-authored fixtures, CI traffic and release activity do not establish real community usage. Recheck only after independent usage evidence exists."
     },
     {
@@ -41,7 +71,16 @@
       "status": "submitted_pending_review",
       "unmetRules": [],
       "earliestAgeRecheckAt": null,
-      "notes": "The policy commit remains current and accepts free or open-source DevSecOps capabilities. CONTRIBUTING.md is empty; recent merged additions change one README list item. PR 172 adds one Testing entry and makes no accuracy, adoption or endorsement claim.",
+      "activity": {
+        "observedAt": "2026-08-16T16:29:17Z",
+        "stars": 5455,
+        "openPullRequests": 62,
+        "defaultBranchPushedAt": "2024-05-11T17:48:07Z",
+        "latestObservedExternalMergeAt": "2021-10-20T14:20:58Z",
+        "assessment": "historically_popular_currently_dormant"
+      },
+      "priority": "do_not_count_as_effective_channel",
+      "notes": "PR 172 is technically valid and remains open, but the upstream has not merged an external pull request since 2021-10-20 and has a large open backlog. The zero-star parousia8888 fork is only the standard PR source fork; upstream has historical reach but currently weak review throughput. Keep the PR factual and open if desired, but do not count it as adoption, an effective promotion result or a likely near-term listing.",
       "submission": {
         "url": "https://github.com/devsecops/awesome-devsecops/pull/172",
         "state": "open",
@@ -62,7 +101,156 @@
       "status": "ineligible",
       "unmetRules": ["more_than_one_contributor", "more_than_20_stars", "at_least_three_months_old"],
       "earliestAgeRecheckAt": "2026-11-12T15:53:35Z",
+      "activity": {
+        "observedAt": "2026-08-16T16:29:17Z",
+        "stars": 14737,
+        "openPullRequests": 24,
+        "defaultBranchPushedAt": "2026-06-10T13:06:01Z",
+        "latestObservedExternalMergeAt": "2026-05-15T20:11:23Z",
+        "assessment": "active_selective"
+      },
+      "priority": "long_term_after_numeric_and_positioning_gates",
       "notes": "The project currently has one contributor and four stars and is under three months old. Its built-in checks are bounded first-pass analysis, so positioning fit must also be rechecked after the numeric rules are met."
+    },
+    {
+      "id": "hahwul-devsecops",
+      "repository": "https://github.com/hahwul/DevSecOps",
+      "policyCommit": "f4fe511ab48029dbc481bf8234e6765af9dfb783",
+      "policyPaths": ["CONTRIBUTING.md", "tools/README.md"],
+      "submissionMethod": "pull_request",
+      "status": "eligible_on_documented_scope",
+      "unmetRules": [],
+      "earliestAgeRecheckAt": null,
+      "activity": {
+        "observedAt": "2026-08-16T16:29:17Z",
+        "stars": 2155,
+        "openPullRequests": 1,
+        "defaultBranchPushedAt": "2026-08-01T05:23:26Z",
+        "latestObservedExternalMergeAt": "2026-08-01T05:22:34Z",
+        "assessment": "active_low_backlog"
+      },
+      "priority": "high_after_v0_5_4_release",
+      "notes": "The maintained tools table accepts external security tools and recently merged an external addition within one day. Operate and Monitor / SECURITY-AUDIT is the closest honest category; submission still requires separate owner approval."
+    },
+    {
+      "id": "behisec-awesome-claude-skills",
+      "repository": "https://github.com/BehiSecc/awesome-claude-skills",
+      "policyCommit": "e3d2916d0c4f26ab450006ff2ee759d9770eed1c",
+      "policyPaths": ["README.md"],
+      "submissionMethod": "pull_request",
+      "status": "eligible_on_documented_scope",
+      "unmetRules": [],
+      "earliestAgeRecheckAt": null,
+      "activity": {
+        "observedAt": "2026-08-16T16:29:17Z",
+        "stars": 9968,
+        "openPullRequests": 54,
+        "defaultBranchPushedAt": "2026-08-02T11:06:52Z",
+        "latestObservedExternalMergeAt": "2026-06-03T13:04:16Z",
+        "assessment": "active_with_backlog"
+      },
+      "priority": "supplemental",
+      "notes": "Security and Web Testing is a direct category fit and no maturity threshold is documented. The list already contains adjacent security skills and has a moderate backlog, so acceptance would provide discovery but limited independent validation."
+    },
+    {
+      "id": "awesome-codex-skills",
+      "repository": "https://github.com/composio-community/awesome-codex-skills",
+      "policyCommit": "0930e1373789d2eda449039f7ac154b33031de89",
+      "policyPaths": ["README.md"],
+      "submissionMethod": "pull_request",
+      "status": "eligible_on_documented_scope",
+      "unmetRules": [],
+      "earliestAgeRecheckAt": null,
+      "activity": {
+        "observedAt": "2026-08-16T16:29:17Z",
+        "stars": 15865,
+        "openPullRequests": 164,
+        "defaultBranchPushedAt": "2026-07-26T01:14:54Z",
+        "latestObservedExternalMergeAt": "2026-07-26T01:14:55Z",
+        "assessment": "active_high_backlog"
+      },
+      "priority": "supplemental",
+      "notes": "The verified installer provides a real Codex skill path and the list accepts external repositories. The list has no dedicated security category and a high pull-request backlog, so expected review speed and audience precision are lower."
+    },
+    {
+      "id": "awesome-web-security",
+      "repository": "https://github.com/qazbnm456/awesome-web-security",
+      "policyCommit": "34d1ca64f4cb82d2f5cac28af27f0bf52b684e3c",
+      "policyPaths": ["CONTRIBUTING.md", "RUBRIC.md", ".github/ISSUE_TEMPLATE/propose-resource.yml"],
+      "submissionMethod": "issue_form_or_pull_request",
+      "status": "deferred",
+      "unmetRules": ["independent_tool_track_record_not_yet_evidenced"],
+      "earliestAgeRecheckAt": null,
+      "activity": {
+        "observedAt": "2026-08-16T16:29:17Z",
+        "stars": 13689,
+        "openPullRequests": 12,
+        "defaultBranchPushedAt": "2026-08-04T04:50:06Z",
+        "latestObservedExternalMergeAt": "2026-07-26T08:30:06Z",
+        "assessment": "active_selective_low_backlog"
+      },
+      "priority": "high_after_independent_usage",
+      "notes": "Audience and multilingual distribution fit are strong, and the repository actively reviews submissions. Maintainer precedent closed a new zero-star tool for lack of independent track record while accepting a separate substantive article; wait for independent usage rather than treating repository-authored evidence as adoption."
+    },
+    {
+      "id": "agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "policyCommit": "286166a20de1bc66b78696f98e753e0e0b168e4e",
+      "policyPaths": ["CONTRIBUTING.md", "docs/contributors/quality-bar.md", "docs/contributors/security-guardrails.md"],
+      "submissionMethod": "pull_request_with_imported_skill_source",
+      "status": "deferred",
+      "unmetRules": ["second_source_copy_and_private_metadata_governance"],
+      "earliestAgeRecheckAt": null,
+      "activity": {
+        "observedAt": "2026-08-16T16:29:17Z",
+        "stars": 45014,
+        "openPullRequests": 3,
+        "defaultBranchPushedAt": "2026-08-16T10:15:25Z",
+        "latestObservedExternalMergeAt": "2026-08-16T09:39:58Z",
+        "assessment": "highly_active"
+      },
+      "priority": "defer_until_source_governance_is_chosen",
+      "notes": "The repository is active and has strong defensive-skill guardrails, but contribution imports a second SKILL.md copy and requires repository-specific risk/source metadata. Do not create a divergent security instruction source without an explicit synchronization and disclosure policy."
+    },
+    {
+      "id": "composio-awesome-claude-skills",
+      "repository": "https://github.com/ComposioHQ/awesome-claude-skills",
+      "policyCommit": "be2a406907dbc61b73e6827ded415c96139d13a2",
+      "policyPaths": ["CONTRIBUTING.md"],
+      "submissionMethod": "pull_request_with_imported_skill_source",
+      "status": "deferred",
+      "unmetRules": ["second_source_copy", "severe_pull_request_backlog"],
+      "earliestAgeRecheckAt": null,
+      "activity": {
+        "observedAt": "2026-08-16T16:29:17Z",
+        "stars": 72603,
+        "openPullRequests": 1131,
+        "defaultBranchPushedAt": "2026-08-10T21:45:44Z",
+        "latestObservedExternalMergeAt": "2026-05-22T03:17:50Z",
+        "assessment": "large_historical_reach_severe_backlog"
+      },
+      "priority": "low",
+      "notes": "The headline audience is large, but submission requires copying the skill into the list repository and the open backlog is extreme. The maintenance and review cost outweighs current discovery value."
+    },
+    {
+      "id": "awesome-vibe-coding",
+      "repository": "https://github.com/filipecalegario/awesome-vibe-coding",
+      "policyCommit": "59d50281e40651d574ea0ead592a08019d74730d",
+      "policyPaths": ["contributing.md"],
+      "submissionMethod": "pull_request",
+      "status": "deferred",
+      "unmetRules": ["high_pull_request_backlog", "low_recent_merge_throughput", "positioning_mismatch"],
+      "earliestAgeRecheckAt": null,
+      "activity": {
+        "observedAt": "2026-08-16T16:29:17Z",
+        "stars": 5118,
+        "openPullRequests": 139,
+        "defaultBranchPushedAt": "2026-04-16T01:34:11Z",
+        "latestObservedExternalMergeAt": "2026-04-11T01:29:28Z",
+        "assessment": "high_backlog_low_recent_throughput"
+      },
+      "priority": "low",
+      "notes": "The reader profile overlaps the intended user, but the backlog and recent merge rate are weak. A listing would also foreground a label the project does not use in its primary positioning."
     },
     {
       "id": "mcp-registry",

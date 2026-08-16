@@ -93,11 +93,22 @@ for (const field of [
 }
 
 const listingIds = listings.candidates.map((item) => item.id);
-for (const id of ['awesome-claude-code', 'awesome-agent-skills', 'awesome-devsecops', 'static-analysis', 'mcp-registry']) {
+for (const id of [
+  'awesome-claude-code', 'awesome-agent-skills', 'awesome-devsecops', 'static-analysis',
+  'hahwul-devsecops', 'behisec-awesome-claude-skills', 'awesome-codex-skills',
+  'awesome-web-security', 'agentic-awesome-skills', 'composio-awesome-claude-skills',
+  'awesome-vibe-coding', 'mcp-registry',
+]) {
   if (!listingIds.includes(id)) {
     console.error(`adoption contract: listing register is missing ${id}`);
     failed = true;
   }
+}
+if (listings.assessmentMethod?.starsAloneSufficient !== false
+    || !listings.assessmentMethod.signals?.includes('latest_external_merge')
+    || !listings.assessmentMethod.signals?.includes('open_pull_request_backlog')) {
+  console.error('adoption contract: directory review must not treat stars as maintenance evidence');
+  failed = true;
 }
 const mcpListing = listings.candidates.find((item) => item.id === 'mcp-registry');
 if (listings.projectFacts.hasMcpServer !== false || mcpListing?.status !== 'out_of_scope'
@@ -117,10 +128,27 @@ if (awesomeDevsecops?.status !== 'submitted_pending_review'
   failed = true;
 }
 for (const item of listings.candidates.filter((candidate) => candidate.repository)) {
-  if (!/^[a-f0-9]{40}$/.test(item.policyCommit || '') || !item.policyPaths.length) {
+  if (!/^[a-f0-9]{40}$/.test(item.policyCommit || '') || !item.policyPaths.length
+      || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(item.activity?.observedAt || '')
+      || !Number.isInteger(item.activity?.stars)
+      || !Number.isInteger(item.activity?.openPullRequests)
+      || !item.activity?.assessment) {
     console.error(`adoption contract: ${item.id} policy review is not commit-pinned`);
     failed = true;
   }
+}
+if (awesomeDevsecops?.activity?.assessment !== 'historically_popular_currently_dormant'
+    || awesomeDevsecops?.priority !== 'do_not_count_as_effective_channel') {
+  console.error('adoption contract: awesome-devsecops dormancy correction is missing');
+  failed = true;
+}
+const hahwulDevsecops = listings.candidates.find((item) => item.id === 'hahwul-devsecops');
+const awesomeWebSecurity = listings.candidates.find((item) => item.id === 'awesome-web-security');
+if (hahwulDevsecops?.status !== 'eligible_on_documented_scope'
+    || hahwulDevsecops?.activity?.assessment !== 'active_low_backlog'
+    || awesomeWebSecurity?.priority !== 'high_after_independent_usage') {
+  console.error('adoption contract: active directory priorities are incomplete');
+  failed = true;
 }
 if (publicationSchedule.ownerApprovalRequiredPerAction !== true
     || publicationSchedule.automatedPostingAllowed !== false

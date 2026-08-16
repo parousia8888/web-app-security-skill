@@ -691,6 +691,13 @@ timing, author network, topic demand, or unrelated GitHub discovery.
   `31944915130` passed the Ubuntu/macOS Node 22/24 matrix and CodeQL run `31944914966` passed.
 - Remaining risks: external moderation, timing, audience fit and recommendation remain outside
   repository control.
+- Post-completion correction (2026-08-17): a second-pass activity audit found that the submitted
+  `devsecops/awesome-devsecops` directory had not merged an external PR since 2021-10-20 despite its
+  historical star count. `docs/adoption/listings.json` now records maintainer throughput, backlog,
+  audience fit and source-governance cost for the original and seven additional candidates. The
+  dormant submission remains open but is excluded from effective-channel and adoption claims;
+  Awesome Claude Code after its age gate and `hahwul/DevSecOps` after v0.5.4 are the strongest
+  near-term candidates. No additional submission was authorized or performed.
 
 ## External handoff register
 

@@ -12,6 +12,33 @@ actions:
 - `observation.schema.json` defines the pre-publication, 24-hour, 72-hour and 7-day records.
   `observations/pre-publication.json` is the actual baseline captured before any channel post.
 
+## Directory review rule
+
+Do not use star count as a proxy for current maintainer attention. For every directory, record the
+latest external merge, open pull-request backlog, default-branch activity, live submission policy,
+audience fit and any cost of maintaining a second copy of the Skill. A submitted or merged listing is
+discovery evidence only; it is not product adoption, maintainer endorsement or security validation.
+
+The 2026-08-17 review produced this order:
+
+| Directory | Current decision | Reason |
+|---|---|---|
+| Awesome Claude Code | Submit after the 14-day gate on 2026-08-26 | Strong audience and active review; human web issue form only |
+| hahwul/DevSecOps | High priority after v0.5.4 release | Smaller reach, active maintainer, one open PR and direct security-audit fit |
+| Awesome Agent Skills | Wait for independent usage | Active list explicitly rejects brand-new skills without community use |
+| Awesome Web Security | Wait for independent usage | Active, selective and low-backlog; maintainer precedent requires a new tool track record |
+| BehiSecc Claude Skills | Supplemental | Direct security category, moderate backlog and lower editorial signal |
+| Awesome Codex Skills | Supplemental | Real Codex fit, but high backlog and no dedicated security category |
+| Agentic Awesome Skills | Defer | Requires a second source copy plus repository-specific security metadata |
+| Composio Claude Skills | Low priority | Requires a second source copy and has a severe PR backlog |
+| Awesome Vibe Coding | Low priority | High backlog, weak recent merge throughput and positioning mismatch |
+| Static Analysis | Long-term only | Numeric maturity gates remain unmet and detector positioning needs recheck |
+
+The existing `devsecops/awesome-devsecops` PR remains open, but upstream had not merged an external
+PR since 2021-10-20 at review time. Its 5,455 historical stars do not make it an effective current
+channel. The zero-star `parousia8888/awesome-devsecops` repository is the normal source fork used to
+open that upstream PR.
+
 Use `null` with a concrete `missingData` entry when a metric is unavailable. Do not convert missing
 downloads, Marketplace installs or independent references to zero. GitHub traffic is a rolling 14-day
 counter and can include CI, release verification, the author, crawlers and other automation.
