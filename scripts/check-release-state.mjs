@@ -75,6 +75,11 @@ if (!/^[a-f0-9]{40}$/.test(npmPackage.shasum || '')) fail('npm package shasum is
 if (!/^sha512-[A-Za-z0-9+/]+={0,2}$/.test(npmPackage.integrity || '')) {
   fail('npm package integrity is invalid');
 }
+if (npmPackage.provenance?.predicateType !== 'https://slsa.dev/provenance/v1'
+    || npmPackage.provenance?.url
+      !== `https://registry.npmjs.org/-/npm/v1/attestations/${npmPackage.name}@${npmPackage.version}`) {
+  fail('npm package provenance is missing or disagrees with its identity');
+}
 
 const installer = state.verifiedInstaller || {};
 if (!semver.test(installer.defaultVersion || '')) fail('verified installer default version is invalid');

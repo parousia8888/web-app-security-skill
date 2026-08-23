@@ -26,7 +26,7 @@ The v0.5.0 built-in review classifies all **43 findings** from **5 fixed-commit 
 
 ## Install and distribution
 
-Release [v0.5.3](https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.5.3) provides a signed tag, reproducible source archive, SPDX SBOM, checksums, release manifest and provenance. The supported one-command installer pins and verifies its bootstrap before execution, then verifies the selected release assets and metadata.
+Release [v0.5.4](https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.5.4) provides a signed tag, reproducible source archive, SPDX SBOM, checksums, release manifest and provenance. The supported one-command installer pins and verifies its bootstrap before execution, then verifies the selected release assets and metadata.
 
 - [Verified installation](https://github.com/parousia8888/web-app-security-skill/blob/main/docs/verified-installation.md)
 - [GitHub Marketplace Action](https://github.com/marketplace/actions/web-app-security-skill)

@@ -3,7 +3,7 @@
 本教程覆盖从干净环境安装，到范围记录、源码检查、补丁审查、复测、升级和卸载的完整流程。产品承诺是：
 **把 Web 项目交给 AI coding agent，完成范围确认、风险检查、最小加固、复测和证据交付。**
 
-这里的确定性路径只读取本地源码，不访问部署实例。已发布的 v0.5.3 会运行 20 条 built-in risk 与
+这里的确定性路径只读取本地源码，不访问部署实例。已发布的 v0.5.4 会运行 25 条 built-in risk 与
 2 条证据完整性规则，并加深 JavaScript/TypeScript 和 Python 覆盖。它仍然是范围明确的首次检查，
 不是通用 SAST，也不证明项目已经安全。
 
@@ -20,20 +20,20 @@
 
 ### 稳定 release
 
-下载 v0.5.3 的全部产物，验证 checksum，解包并从已验证的 payload 安装：
+下载 v0.5.4 的全部产物，验证 checksum，解包并从已验证的 payload 安装：
 
 ```bash
 mkdir web-app-security-release && cd web-app-security-release
-gh release download v0.5.3 --repo parousia8888/web-app-security-skill
+gh release download v0.5.4 --repo parousia8888/web-app-security-skill
 sha256sum -c SHA256SUMS
-tar -xzf web-app-security-skill-0.5.3.tar.gz
-node web-app-security-skill-0.5.3/scripts/webapp-security.mjs install
+tar -xzf web-app-security-skill-0.5.4.tar.gz
+node web-app-security-skill-0.5.4/scripts/webapp-security.mjs install
 webapp-security version
 ```
 
 macOS 没有 GNU `sha256sum` 时，使用 `shasum -a 256 -c SHA256SUMS`。Release 还提供 SPDX SBOM、
 源码 manifest、build provenance attestation 和签名 tag：
-[v0.5.3 release](https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.5.3)。
+[v0.5.4 release](https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.5.4)。
 
 ### 当前 checkout
 

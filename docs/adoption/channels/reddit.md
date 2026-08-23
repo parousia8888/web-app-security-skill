@@ -11,7 +11,7 @@ I built a local Web-security first pass that explains findings before proposing 
 I am working on [Web App Security Skill](https://github.com/parousia8888/web-app-security-skill) for people who build Web products with AI coding tools but do not have a dedicated AppSec workflow. The first run is:
 
 ```bash
-npx --yes web-app-security-skill@0.5.3 audit . --fail-on never
+npx --yes web-app-security-skill@0.5.4 audit . --fail-on never
 ```
 
 For each lead, the report gives the technical term, a plain explanation, a realistic consequence, the missing evidence, a reviewable proposal, alternatives, likely side effects, rollback, and separate security/product retests. Static matches stay suspected unless stronger evidence exists.

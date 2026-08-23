@@ -106,8 +106,9 @@ corpus](docs/stable-rule-corpus.json), [rule-contract conformance](docs/conforma
 [historical real-world regressions](docs/regressions/v0.5.4-real-world-regressions.md) and
 [ordinary-project review](docs/case-studies/journeys/v0.5.0-review.md). MCP and future stable-rule
 expansion remain behind the [documented architecture gates](docs/architecture/mcp-and-rule-expansion.md).
-The signed v0.5.3 GitHub assets and provenance, verified installer, public npm package and signed
-`v1` Action alias have passed their public checks. The installer below defaults to v0.5.3.
+The signed v0.5.4 GitHub assets and provenance, verified installer, public npm package with SLSA
+provenance, and signed `v1` Action alias have passed their public checks. The installer below
+defaults to v0.5.4.
 
 ## Install
 
@@ -349,7 +350,7 @@ requires deployment authorization acknowledgement:
 
 ```yaml
 - name: Audit public crawl boundary
-  uses: parousia8888/web-app-security-skill@621e0bc2ad044f9390fa9d567bf4b9fca138a959
+  uses: parousia8888/web-app-security-skill@d9ee538089ac813dcd454d10b45f14b958c1ec19
   with:
     site: https://example.com
     acknowledge-authorization: true
@@ -357,21 +358,21 @@ requires deployment authorization acknowledgement:
     fail-on: high
 ```
 
-For repeatable CI, use the immutable v0.5.3 commit above. The signed stable major-version alias now
-resolves to the same v0.5.3 source after its public passive and authorization consumer passed:
+For repeatable CI, use the immutable v0.5.4 commit above. The signed stable major-version alias now
+resolves to the same v0.5.4 source after its public passive and authorization consumer passed:
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
 ```
 
-Source mode defaults to the bundled adapter. The immutable v0.5.3 Action runs the v3 source
-contract, the stable v0.5.0 rule corpus, the v0.5.1/v0.5.2 correctness fixes and the v0.5.3
-distribution, diff-scope and benchmark surfaces. External binaries must be
+Source mode defaults to the bundled adapter. The immutable v0.5.4 Action runs the v3 source
+contract, the earlier correctness and distribution gates, 25 built-in risk rules, 2 evidence-
+integrity rules, and the opt-in `--profile deep` adapter selection. External binaries must be
 installed and pinned by the caller; the Action never downloads them:
 
 ```yaml
 - name: Audit source
-  uses: parousia8888/web-app-security-skill@621e0bc2ad044f9390fa9d567bf4b9fca138a959
+  uses: parousia8888/web-app-security-skill@d9ee538089ac813dcd454d10b45f14b958c1ec19
   with:
     mode: source
     project: .
@@ -402,7 +403,7 @@ Verify downloaded release assets:
 sha256sum -c SHA256SUMS
 gh attestation verify web-app-security-skill-*.tar.gz \
   --repo parousia8888/web-app-security-skill
-git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.5.3
+git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.5.4
 ```
 
 ## 5 ordinary project journeys

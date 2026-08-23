@@ -98,9 +98,9 @@ v0.5.0 的解释合同继续保留：每个 v3 源码 finding 同时给出行业
 [规则合同一致性结果](docs/conformance/v0.5.4-rule-contract-conformance.md)、
 [历史真实回归语料](docs/regressions/v0.5.4-real-world-regressions.md)和
 [普通项目复核](docs/case-studies/journeys/v0.5.0-review.md)。MCP 与后续 stable 规则扩张需要先满足
-[架构决策中的门槛](docs/architecture/mcp-and-rule-expansion.md)。v0.5.3 的签名 GitHub 资产与
-provenance、可信安装器、公开 npm 包和签名 `v1` Action 别名都已通过各自的公网检查；下面的
-可信安装器默认安装 v0.5.3。
+[架构决策中的门槛](docs/architecture/mcp-and-rule-expansion.md)。v0.5.4 的签名 GitHub 资产与
+provenance、可信安装器、带 SLSA provenance 的公开 npm 包和签名 `v1` Action 别名都已通过各自的
+公网检查；下面的可信安装器默认安装 v0.5.4。
 
 ## 安装
 
@@ -320,7 +320,7 @@ Composite Action 保持 v0.3 crawl 输入与输出兼容。Crawl mode 默认被�
 
 ```yaml
 - name: Audit public crawl boundary
-  uses: parousia8888/web-app-security-skill@621e0bc2ad044f9390fa9d567bf4b9fca138a959
+  uses: parousia8888/web-app-security-skill@d9ee538089ac813dcd454d10b45f14b958c1ec19
   with:
     site: https://example.com
     acknowledge-authorization: true
@@ -328,20 +328,20 @@ Composite Action 保持 v0.3 crawl 输入与输出兼容。Crawl mode 默认被�
     fail-on: high
 ```
 
-需要可重复 CI 时使用上面的 v0.5.3 不可变 commit。签名的稳定大版本别名现已指向同一份
-v0.5.3 源码，并通过公开 consumer 的被动边界与授权拒绝验证：
+需要可重复 CI 时使用上面的 v0.5.4 不可变 commit。签名的稳定大版本别名现已指向同一份
+v0.5.4 源码，并通过公开 consumer 的被动边界与授权拒绝验证：
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
 ```
 
-Source mode 默认只用内置 adapter。v0.5.3 不可变 Action 运行 v3 源码合同、stable v0.5.0
-规则语料、v0.5.1/v0.5.2 正确性修复，以及 v0.5.3 的分发、diff scope 和 benchmark 能力。
+Source mode 默认只用内置 adapter。v0.5.4 不可变 Action 运行 v3 源码合同、此前的正确性与分发
+门禁、25 条 built-in risk、2 条证据完整性规则，以及 opt-in `--profile deep` adapter 选择。
 外部二进制必须由调用方固定版本并安装，Action 不会下载：
 
 ```yaml
 - name: Audit source
-  uses: parousia8888/web-app-security-skill@621e0bc2ad044f9390fa9d567bf4b9fca138a959
+  uses: parousia8888/web-app-security-skill@d9ee538089ac813dcd454d10b45f14b958c1ec19
   with:
     mode: source
     project: .
@@ -368,7 +368,7 @@ Source mode 默认只用内置 adapter。v0.5.3 不可变 Action 运行 v3 源�
 sha256sum -c SHA256SUMS
 gh attestation verify web-app-security-skill-*.tar.gz \
   --repo parousia8888/web-app-security-skill
-git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.5.3
+git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.5.4
 ```
 
 ## 5 个普通项目旅程

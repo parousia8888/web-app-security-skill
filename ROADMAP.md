@@ -87,6 +87,21 @@ permission boundaries and evidence requirements are recorded in the
 [MCP and rule-expansion decision](docs/architecture/mcp-and-rule-expansion.md). Exact implementation
 and release progress lives in the [v0.5.3 engineering plan](docs/V0.5.3_ENGINEERING_PLAN.md).
 
+## Shipped in v0.5.4
+
+v0.5.4 expands the bounded automatic first pass with five built-in checks, eight same-file
+Opengrep flow rules across JavaScript/TypeScript and Python, and `--profile deep` for explicitly
+selecting the built-in detector plus four caller-installed external adapters. Missing adapter
+prerequisites remain `unknown`; source and flow matches remain `suspected` until reproduced.
+
+The release records 25 built-in risk rules, 2 evidence-integrity rules and 16 opt-in external
+adapter rules: 43 stable rules total. The self-authored planted suite is a rule-contract
+conformance gate, while a separate five-case corpus preserves named real-world regressions. Neither
+is presented as production precision or recall. The signed GitHub Release, npm package with SLSA
+provenance, verified installer, and owner-approved public `v1` promotion are complete. Exact facts
+are in the [v0.5.4 release evidence](docs/releases/v0.5.4.md) and
+[engineering plan](docs/V0.5.4_ENGINEERING_PLAN.md).
+
 ## Correctness backlog
 
 Included in the published v0.4.0 release:

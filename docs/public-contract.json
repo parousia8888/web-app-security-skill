@@ -20,7 +20,7 @@
   ],
   "currentSourceRelease": {
     "version": "0.5.4",
-    "status": "candidate",
+    "status": "published",
     "stableRuleCorpus": "docs/stable-rule-corpus.json",
     "ordinaryProjectReview": "docs/case-studies/journeys/v0.5.0-evidence.json",
     "limitations": [

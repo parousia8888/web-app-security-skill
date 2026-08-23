@@ -24,9 +24,9 @@ installation. SHA-256 and manifest verification always run and cannot be disable
 After downloading and verifying the bootstrap using the README command, retain it at a known path:
 
 ```bash
-sh ./bootstrap-install.sh --version 0.5.3 --target codex
-sh ./bootstrap-install.sh --version 0.5.3 --target claude
-sh ./bootstrap-install.sh --version 0.5.3 --target cli
+sh ./bootstrap-install.sh --version 0.5.4 --target codex
+sh ./bootstrap-install.sh --version 0.5.4 --target claude
+sh ./bootstrap-install.sh --version 0.5.4 --target cli
 ```
 
 The verifier rejects a version absent from its built-in trust map. It never resolves `latest`, a
@@ -38,9 +38,9 @@ Download these files on a connected machine and transfer them without renaming:
 
 ```text
 SHA256SUMS
-web-app-security-skill-0.5.3.release.json
-web-app-security-skill-0.5.3.spdx.json
-web-app-security-skill-0.5.3.tar.gz
+web-app-security-skill-0.5.4.release.json
+web-app-security-skill-0.5.4.spdx.json
+web-app-security-skill-0.5.4.tar.gz
 ```
 
 Also download `scripts/install-verified.mjs` from commit
@@ -48,7 +48,7 @@ Also download `scripts/install-verified.mjs` from commit
 offline machine, run:
 
 ```bash
-node ./install-verified.mjs --version 0.5.3 --from-dir ./release-assets --attestation skip
+node ./install-verified.mjs --version 0.5.4 --from-dir ./release-assets --attestation skip
 ```
 
 The offline path performs no HTTP request. `--attestation skip` records that the optional GitHub
@@ -58,8 +58,8 @@ verification.
 ## Upgrade, force and uninstall
 
 ```bash
-sh ./bootstrap-install.sh --version 0.5.3 --mode upgrade
-sh ./bootstrap-install.sh --version 0.5.3 --force
+sh ./bootstrap-install.sh --version 0.5.4 --mode upgrade
+sh ./bootstrap-install.sh --version 0.5.4 --force
 webapp-security uninstall
 ```
 

@@ -12,8 +12,9 @@ const workflows = [
   '.github/workflows/codeql.yml',
   '.github/workflows/release.yml',
   '.github/workflows/action-v1-consumer.yml',
+  '.github/workflows/npm-publish.yml',
 ];
-const RELEASE_ACTION_COMMIT = '621e0bc2ad044f9390fa9d567bf4b9fca138a959';
+const RELEASE_ACTION_COMMIT = 'd9ee538089ac813dcd454d10b45f14b958c1ec19';
 const BOOTSTRAP_COMMIT = 'cf6bca040dc1d78587f04ded2ace10a08312f0c5';
 const BOOTSTRAP_SHA256 = '0f203b986f75f1359fee0c0c5251ba0dbeec08a857b67415702d5f05f73f2faf';
 const VERIFIER_COMMIT = '7edde5b9a3882198911e212035025be8c369c944';
@@ -58,6 +59,12 @@ for (const [path, markers] of [
     'parousia8888/web-app-security-skill@v1',
     'acknowledge-authorization: "true"',
     'acknowledge-authorization: "false"',
+  ]],
+  ['.github/workflows/npm-publish.yml', [
+    'workflow_dispatch:',
+    'id-token: "write"',
+    'npm@11.19.0',
+    'npm publish --provenance --access public',
   ]],
   ['README.md', [
     `parousia8888/web-app-security-skill@${RELEASE_ACTION_COMMIT}`,

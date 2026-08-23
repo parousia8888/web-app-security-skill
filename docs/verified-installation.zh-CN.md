@@ -22,9 +22,9 @@ SBOM 和归档验证始终执行，不能关闭。
 使用 README 命令下载并验证 bootstrap 后，可把它保留在已知路径：
 
 ```bash
-sh ./bootstrap-install.sh --version 0.5.3 --target codex
-sh ./bootstrap-install.sh --version 0.5.3 --target claude
-sh ./bootstrap-install.sh --version 0.5.3 --target cli
+sh ./bootstrap-install.sh --version 0.5.4 --target codex
+sh ./bootstrap-install.sh --version 0.5.4 --target claude
+sh ./bootstrap-install.sh --version 0.5.4 --target cli
 ```
 
 内置信任表中不存在的版本会被拒绝。安装器不会解析 `latest`、移动分支或移动 major tag。
@@ -35,16 +35,16 @@ sh ./bootstrap-install.sh --version 0.5.3 --target cli
 
 ```text
 SHA256SUMS
-web-app-security-skill-0.5.3.release.json
-web-app-security-skill-0.5.3.spdx.json
-web-app-security-skill-0.5.3.tar.gz
+web-app-security-skill-0.5.4.release.json
+web-app-security-skill-0.5.4.spdx.json
+web-app-security-skill-0.5.4.tar.gz
 ```
 
 另从提交 `7edde5b9a3882198911e212035025be8c369c944` 下载
 `scripts/install-verified.mjs`，用上方固定值验证其 SHA-256。然后在离线机器运行：
 
 ```bash
-node ./install-verified.mjs --version 0.5.3 --from-dir ./release-assets --attestation skip
+node ./install-verified.mjs --version 0.5.4 --from-dir ./release-assets --attestation skip
 ```
 
 离线路径不会发出 HTTP 请求。`--attestation skip` 只记录有意跳过可选 GitHub attestation，
@@ -53,8 +53,8 @@ node ./install-verified.mjs --version 0.5.3 --from-dir ./release-assets --attest
 ## 升级、强制替换和卸载
 
 ```bash
-sh ./bootstrap-install.sh --version 0.5.3 --mode upgrade
-sh ./bootstrap-install.sh --version 0.5.3 --force
+sh ./bootstrap-install.sh --version 0.5.4 --mode upgrade
+sh ./bootstrap-install.sh --version 0.5.4 --force
 webapp-security uninstall
 ```
 
