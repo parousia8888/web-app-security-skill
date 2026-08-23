@@ -38,10 +38,10 @@ jobs:
           RELEASE_VERSION: "${{ inputs.version }}"
         run: |
           version="$(tr -d '\n' < VERSION)"
-          package_version="$(node -p \"require('./package.json').version\")"
+          package_version="$(node -p "require('./package.json').version")"
           test "$version" = "$RELEASE_VERSION"
           test "$package_version" = "$RELEASE_VERSION"
-          test "$(git rev-parse HEAD)" = "$(git rev-parse \"v$version^{}\")"
+          test "$(git rev-parse HEAD)" = "$(git rev-parse "v$version^{}")"
           git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag "v$version"
       - name: "Publish with npm trusted publishing"
         run: "npm publish --provenance --access public"
