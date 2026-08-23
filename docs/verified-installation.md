@@ -4,8 +4,8 @@ The recommended README command has three independently reviewable stages. It doe
 merely because they came from the same TLS origin as a checksum file.
 
 1. The README fixes `bootstrap-install.sh` to commit
-   `bd2fb4e751990acb29bbca675041a51e710ed1c5` and verifies SHA-256
-   `ec506be013c683b931760c877b54dfb1d6c00a59696c1848b69c3acdd33cbe03` before `sh` runs it.
+   `3fa12244dfb70e0588ccf0e645bf5c75b6148b01` and verifies SHA-256
+   `22df4c865d01f51b64066c8e53beaa9bb3cb3c29ef431c6b8a3aa56074dab65c` before `sh` runs it.
 2. The bootstrap fixes `install-verified.mjs` to commit
    `a9afb943298d70f1d5a2d8005a4d0a928acb3de8` and verifies SHA-256
    `1bcc929e7b939c6f5b300d91b928467be4ad809856611bfb53c96e1c39f60e5c` before Node runs it.
@@ -24,9 +24,9 @@ installation. SHA-256 and manifest verification always run and cannot be disable
 After downloading and verifying the bootstrap using the README command, retain it at a known path:
 
 ```bash
-sh ./bootstrap-install.sh --version 0.5.4 --target codex
-sh ./bootstrap-install.sh --version 0.5.4 --target claude
-sh ./bootstrap-install.sh --version 0.5.4 --target cli
+sh ./bootstrap-install.sh --version 0.6.0 --target codex
+sh ./bootstrap-install.sh --version 0.6.0 --target claude
+sh ./bootstrap-install.sh --version 0.6.0 --target cli
 ```
 
 The verifier rejects a version absent from its built-in trust map. It never resolves `latest`, a
@@ -38,9 +38,9 @@ Download these files on a connected machine and transfer them without renaming:
 
 ```text
 SHA256SUMS
-web-app-security-skill-0.5.4.release.json
-web-app-security-skill-0.5.4.spdx.json
-web-app-security-skill-0.5.4.tar.gz
+web-app-security-skill-0.6.0.release.json
+web-app-security-skill-0.6.0.spdx.json
+web-app-security-skill-0.6.0.tar.gz
 ```
 
 Also download `scripts/install-verified.mjs` from commit
@@ -48,7 +48,7 @@ Also download `scripts/install-verified.mjs` from commit
 offline machine, run:
 
 ```bash
-node ./install-verified.mjs --version 0.5.4 --from-dir ./release-assets --attestation skip
+node ./install-verified.mjs --version 0.6.0 --from-dir ./release-assets --attestation skip
 ```
 
 The offline path performs no HTTP request. `--attestation skip` records that the optional GitHub
@@ -58,8 +58,8 @@ verification.
 ## Upgrade, force and uninstall
 
 ```bash
-sh ./bootstrap-install.sh --version 0.5.4 --mode upgrade
-sh ./bootstrap-install.sh --version 0.5.4 --force
+sh ./bootstrap-install.sh --version 0.6.0 --mode upgrade
+sh ./bootstrap-install.sh --version 0.6.0 --force
 webapp-security uninstall
 ```
 

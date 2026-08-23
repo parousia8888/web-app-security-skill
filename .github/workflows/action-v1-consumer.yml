@@ -4,6 +4,56 @@ on:
 permissions:
   contents: "read"
 jobs:
+  immutable-route-consumer:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803" # v6
+      - uses: "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38" # v6
+        with:
+          node-version: "22"
+      - name: "Create owned Next.js route fixture"
+        shell: "bash"
+        run: |
+          mkdir -p "$RUNNER_TEMP/v060-route-fixture/app/api/orders/[id]"
+          printf '%s\n' '{"private":true}' > "$RUNNER_TEMP/v060-route-fixture/package.json"
+          printf '%s\n' '{"lockfileVersion":3}' > "$RUNNER_TEMP/v060-route-fixture/package-lock.json"
+          cat > "$RUNNER_TEMP/v060-route-fixture/app/api/orders/[id]/route.ts" <<'ROUTE'
+          export async function GET() {
+            return Response.json({ ok: true });
+          }
+          ROUTE
+      - name: "Consume immutable v0.6.0 Action"
+        uses: "parousia8888/web-app-security-skill@7521e0699eefe26d23a7972fbee6fb37b46fdfe2"
+        with:
+          mode: "source"
+          project: "${{ runner.temp }}/v060-route-fixture"
+          adapters: "builtin"
+          fail-on: "never"
+          output-dir: "${{ runner.temp }}/v060-route-report"
+      - name: "Verify bounded route semantics"
+        shell: "bash"
+        env:
+          ROUTE_REPORT: "${{ runner.temp }}/v060-route-report"
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const root = process.env.ROUTE_REPORT;
+          const routes = JSON.parse(fs.readFileSync(path.join(root, 'route-security.json'), 'utf8'));
+          const report = JSON.parse(fs.readFileSync(path.join(root, 'report.json'), 'utf8'));
+          if (routes.routes.length !== 1) throw new Error(`expected one route, got ${routes.routes.length}`);
+          const route = routes.routes[0];
+          if (route.framework !== 'next-app' || route.method !== 'GET' || route.path !== '/api/orders/[id]') {
+            throw new Error(`unexpected route identity: ${route.framework} ${route.method} ${route.path}`);
+          }
+          if (route.authentication.state !== 'not_observed' || route.authorization.state !== 'not_observed') {
+            throw new Error('missing visible controls must remain not_observed');
+          }
+          if (route.priority.level !== 'review_next') throw new Error(`unexpected priority: ${route.priority.level}`);
+          if (report.findings.some((finding) => finding.state === 'confirmed')) {
+            throw new Error('route review created a confirmed vulnerability');
+          }
+          NODE
   consumer:
     runs-on: "ubuntu-latest"
     steps:

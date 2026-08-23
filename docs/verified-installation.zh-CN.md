@@ -4,8 +4,8 @@ README 推荐命令包含三个可独立审查的阶段，不会因为代码和 
 执行代码。
 
 1. README 把 `bootstrap-install.sh` 固定到提交
-   `bd2fb4e751990acb29bbca675041a51e710ed1c5`，并在交给 `sh` 前验证 SHA-256
-   `ec506be013c683b931760c877b54dfb1d6c00a59696c1848b69c3acdd33cbe03`。
+   `3fa12244dfb70e0588ccf0e645bf5c75b6148b01`，并在交给 `sh` 前验证 SHA-256
+   `22df4c865d01f51b64066c8e53beaa9bb3cb3c29ef431c6b8a3aa56074dab65c`。
 2. bootstrap 把 `install-verified.mjs` 固定到提交
    `a9afb943298d70f1d5a2d8005a4d0a928acb3de8`，并在交给 Node 前验证 SHA-256
    `1bcc929e7b939c6f5b300d91b928467be4ad809856611bfb53c96e1c39f60e5c`。
@@ -22,9 +22,9 @@ SBOM 和归档验证始终执行，不能关闭。
 使用 README 命令下载并验证 bootstrap 后，可把它保留在已知路径：
 
 ```bash
-sh ./bootstrap-install.sh --version 0.5.4 --target codex
-sh ./bootstrap-install.sh --version 0.5.4 --target claude
-sh ./bootstrap-install.sh --version 0.5.4 --target cli
+sh ./bootstrap-install.sh --version 0.6.0 --target codex
+sh ./bootstrap-install.sh --version 0.6.0 --target claude
+sh ./bootstrap-install.sh --version 0.6.0 --target cli
 ```
 
 内置信任表中不存在的版本会被拒绝。安装器不会解析 `latest`、移动分支或移动 major tag。
@@ -35,16 +35,16 @@ sh ./bootstrap-install.sh --version 0.5.4 --target cli
 
 ```text
 SHA256SUMS
-web-app-security-skill-0.5.4.release.json
-web-app-security-skill-0.5.4.spdx.json
-web-app-security-skill-0.5.4.tar.gz
+web-app-security-skill-0.6.0.release.json
+web-app-security-skill-0.6.0.spdx.json
+web-app-security-skill-0.6.0.tar.gz
 ```
 
 另从提交 `a9afb943298d70f1d5a2d8005a4d0a928acb3de8` 下载
 `scripts/install-verified.mjs`，用上方固定值验证其 SHA-256。然后在离线机器运行：
 
 ```bash
-node ./install-verified.mjs --version 0.5.4 --from-dir ./release-assets --attestation skip
+node ./install-verified.mjs --version 0.6.0 --from-dir ./release-assets --attestation skip
 ```
 
 离线路径不会发出 HTTP 请求。`--attestation skip` 只记录有意跳过可选 GitHub attestation，
@@ -53,8 +53,8 @@ node ./install-verified.mjs --version 0.5.4 --from-dir ./release-assets --attest
 ## 升级、强制替换和卸载
 
 ```bash
-sh ./bootstrap-install.sh --version 0.5.4 --mode upgrade
-sh ./bootstrap-install.sh --version 0.5.4 --force
+sh ./bootstrap-install.sh --version 0.6.0 --mode upgrade
+sh ./bootstrap-install.sh --version 0.6.0 --force
 webapp-security uninstall
 ```
 

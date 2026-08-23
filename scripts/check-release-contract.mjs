@@ -14,9 +14,9 @@ const workflows = [
   '.github/workflows/action-v1-consumer.yml',
   '.github/workflows/npm-publish.yml',
 ];
-const RELEASE_ACTION_COMMIT = 'd9ee538089ac813dcd454d10b45f14b958c1ec19';
-const BOOTSTRAP_COMMIT = 'bd2fb4e751990acb29bbca675041a51e710ed1c5';
-const BOOTSTRAP_SHA256 = 'ec506be013c683b931760c877b54dfb1d6c00a59696c1848b69c3acdd33cbe03';
+const RELEASE_ACTION_COMMIT = '7521e0699eefe26d23a7972fbee6fb37b46fdfe2';
+const BOOTSTRAP_COMMIT = '3fa12244dfb70e0588ccf0e645bf5c75b6148b01';
+const BOOTSTRAP_SHA256 = '22df4c865d01f51b64066c8e53beaa9bb3cb3c29ef431c6b8a3aa56074dab65c';
 const VERIFIER_COMMIT = 'a9afb943298d70f1d5a2d8005a4d0a928acb3de8';
 const VERIFIER_SHA256 = '1bcc929e7b939c6f5b300d91b928467be4ad809856611bfb53c96e1c39f60e5c';
 let failed = false;
@@ -57,6 +57,8 @@ for (const [path, markers] of [
   ['.github/workflows/action-v1-consumer.yml', [
     'workflow_dispatch:',
     'parousia8888/web-app-security-skill@v1',
+    `parousia8888/web-app-security-skill@${RELEASE_ACTION_COMMIT}`,
+    'route-security.json',
     'acknowledge-authorization: "true"',
     'acknowledge-authorization: "false"',
   ]],

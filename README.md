@@ -160,7 +160,7 @@ before execution, then verifies the selected release manifest, checksums, SBOM, 
 archive before installation.
 
 ```bash
-( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/bd2fb4e751990acb29bbca675041a51e710ed1c5/scripts/bootstrap-install.sh?immutable=bd2fb4e751990acb29bbca675041a51e710ed1c5'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" 'ec506be013c683b931760c877b54dfb1d6c00a59696c1848b69c3acdd33cbe03'; sh "$p" )
+( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/3fa12244dfb70e0588ccf0e645bf5c75b6148b01/scripts/bootstrap-install.sh?immutable=3fa12244dfb70e0588ccf0e645bf5c75b6148b01'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" '22df4c865d01f51b64066c8e53beaa9bb3cb3c29ef431c6b8a3aa56074dab65c'; sh "$p" )
 ```
 
 Select a surface when needed:
@@ -365,7 +365,7 @@ requires deployment authorization acknowledgement:
 
 ```yaml
 - name: Audit public crawl boundary
-  uses: parousia8888/web-app-security-skill@d9ee538089ac813dcd454d10b45f14b958c1ec19
+  uses: parousia8888/web-app-security-skill@7521e0699eefe26d23a7972fbee6fb37b46fdfe2
   with:
     site: https://example.com
     acknowledge-authorization: true
@@ -373,21 +373,21 @@ requires deployment authorization acknowledgement:
     fail-on: high
 ```
 
-For repeatable CI, use the immutable v0.5.4 commit above. The signed stable major-version alias now
-resolves to the same v0.5.4 source after its public passive and authorization consumer passed:
+For repeatable CI, use the immutable v0.6.0 commit above. Until the v0.6.0 immutable consumer and
+promotion gate pass, the signed stable major-version alias remains on the previous stable source:
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
 ```
 
-Source mode defaults to the bundled adapter. The immutable v0.5.4 Action runs the v3 source
-contract, the earlier correctness and distribution gates, 25 built-in risk rules, 3 evidence-
-integrity rules, and the opt-in `--profile deep` adapter selection. External binaries must be
+Source mode defaults to the bundled adapter. The immutable v0.6.0 Action runs the v3 source
+contract, 25 built-in risk rules, 3 evidence-integrity rules, the bounded Express/NestJS/Next.js
+route-security review, and the opt-in `--profile deep` adapter selection. External binaries must be
 installed and pinned by the caller; the Action never downloads them:
 
 ```yaml
 - name: Audit source
-  uses: parousia8888/web-app-security-skill@d9ee538089ac813dcd454d10b45f14b958c1ec19
+  uses: parousia8888/web-app-security-skill@7521e0699eefe26d23a7972fbee6fb37b46fdfe2
   with:
     mode: source
     project: .
@@ -418,7 +418,7 @@ Verify downloaded release assets:
 sha256sum -c SHA256SUMS
 gh attestation verify web-app-security-skill-*.tar.gz \
   --repo parousia8888/web-app-security-skill
-git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.5.4
+git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.6.0
 ```
 
 ## 5 ordinary project journeys

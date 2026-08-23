@@ -151,7 +151,7 @@ bootstrap 并在执行前验证 SHA-256，然后验证选定 release 的 manifes
 归档，再进入安装。
 
 ```bash
-( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/bd2fb4e751990acb29bbca675041a51e710ed1c5/scripts/bootstrap-install.sh?immutable=bd2fb4e751990acb29bbca675041a51e710ed1c5'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" 'ec506be013c683b931760c877b54dfb1d6c00a59696c1848b69c3acdd33cbe03'; sh "$p" )
+( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/3fa12244dfb70e0588ccf0e645bf5c75b6148b01/scripts/bootstrap-install.sh?immutable=3fa12244dfb70e0588ccf0e645bf5c75b6148b01'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" '22df4c865d01f51b64066c8e53beaa9bb3cb3c29ef431c6b8a3aa56074dab65c'; sh "$p" )
 ```
 
 也可以只装单一入口：
@@ -335,7 +335,7 @@ Composite Action 保持 v0.3 crawl 输入与输出兼容。Crawl mode 默认被�
 
 ```yaml
 - name: Audit public crawl boundary
-  uses: parousia8888/web-app-security-skill@d9ee538089ac813dcd454d10b45f14b958c1ec19
+  uses: parousia8888/web-app-security-skill@7521e0699eefe26d23a7972fbee6fb37b46fdfe2
   with:
     site: https://example.com
     acknowledge-authorization: true
@@ -343,20 +343,20 @@ Composite Action 保持 v0.3 crawl 输入与输出兼容。Crawl mode 默认被�
     fail-on: high
 ```
 
-需要可重复 CI 时使用上面的 v0.5.4 不可变 commit。签名的稳定大版本别名现已指向同一份
-v0.5.4 源码，并通过公开 consumer 的被动边界与授权拒绝验证：
+需要可重复 CI 时使用上面的 v0.6.0 不可变 commit。在 v0.6.0 不可变 consumer 与提升门禁通过前，
+签名的稳定大版本别名仍指向上一稳定源码：
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
 ```
 
-Source mode 默认只用内置 adapter。v0.5.4 不可变 Action 运行 v3 源码合同、此前的正确性与分发
-门禁、25 条 built-in risk、3 条证据完整性规则，以及 opt-in `--profile deep` adapter 选择。
+Source mode 默认只用内置 adapter。v0.6.0 不可变 Action 运行 v3 源码合同、25 条 built-in risk、
+3 条证据完整性规则、范围明确的 Express/NestJS/Next.js 路由安全审查，以及 opt-in `--profile deep` adapter 选择。
 外部二进制必须由调用方固定版本并安装，Action 不会下载：
 
 ```yaml
 - name: Audit source
-  uses: parousia8888/web-app-security-skill@d9ee538089ac813dcd454d10b45f14b958c1ec19
+  uses: parousia8888/web-app-security-skill@7521e0699eefe26d23a7972fbee6fb37b46fdfe2
   with:
     mode: source
     project: .
@@ -383,7 +383,7 @@ Source mode 默认只用内置 adapter。v0.5.4 不可变 Action 运行 v3 源�
 sha256sum -c SHA256SUMS
 gh attestation verify web-app-security-skill-*.tar.gz \
   --repo parousia8888/web-app-security-skill
-git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.5.4
+git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.6.0
 ```
 
 ## 5 个普通项目旅程
