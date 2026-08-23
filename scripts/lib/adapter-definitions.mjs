@@ -36,7 +36,7 @@ export const OPENGREP_RULE_ID_MAP = new Map(opengrepRegistry.map((rule) => [
 ]));
 export const OPENGREP_RULESET = {
   relativePath: 'rules/opengrep-source.yml',
-  sha256: '6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d',
+  sha256: '62e9fb0fb382e0f12443adb28ed73bebec5aa390dec7a1ca5692ea6882d138d8',
 };
 
 export const OSV_ADAPTER = {

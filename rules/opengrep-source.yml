@@ -12,9 +12,11 @@ rules:
           - pattern: $REQ.query.$KEY
           - pattern: $REQ.query[$KEY]
     pattern-sinks:
-      - pattern-either:
-          - pattern: $CP.exec($CMD, ...)
-          - pattern: $EXEC($CMD, ...)
+      - patterns:
+          - pattern-either:
+              - pattern: $CP.exec($CMD, ...)
+              - pattern: $EXEC($CMD, ...)
+          - focus-metavariable: $CMD
 
   - id: webapp-security.python.request-to-command
     mode: taint
@@ -29,9 +31,11 @@ rules:
           - pattern: request.args.get(...)
           - pattern: request.args[$KEY]
     pattern-sinks:
-      - pattern-either:
-          - pattern: subprocess.run($CMD, ..., shell=True, ...)
-          - pattern: subprocess.call($CMD, ..., shell=True, ...)
+      - patterns:
+          - pattern-either:
+              - pattern: subprocess.run($CMD, ..., shell=True, ...)
+              - pattern: subprocess.call($CMD, ..., shell=True, ...)
+          - focus-metavariable: $CMD
 
   - id: webapp-security.javascript.request-to-sql
     mode: taint
@@ -48,9 +52,11 @@ rules:
           - pattern: $REQ.params.$KEY
           - pattern: $REQ.body.$KEY
     pattern-sinks:
-      - pattern-either:
-          - pattern: $DB.query($QUERY, ...)
-          - pattern: $DB.execute($QUERY, ...)
+      - patterns:
+          - pattern-either:
+              - pattern: $DB.query($QUERY, ...)
+              - pattern: $DB.execute($QUERY, ...)
+          - focus-metavariable: $QUERY
 
   - id: webapp-security.python.request-to-sql
     mode: taint
@@ -67,9 +73,11 @@ rules:
           - pattern: request.form.get(...)
           - pattern: request.form[$KEY]
     pattern-sinks:
-      - pattern-either:
-          - pattern: $CURSOR.execute($QUERY, ...)
-          - pattern: $CURSOR.executemany($QUERY, ...)
+      - patterns:
+          - pattern-either:
+              - pattern: $CURSOR.execute($QUERY, ...)
+              - pattern: $CURSOR.executemany($QUERY, ...)
+          - focus-metavariable: $QUERY
 
   - id: webapp-security.javascript.request-to-url
     mode: taint
@@ -86,10 +94,12 @@ rules:
           - pattern: $REQ.params.$KEY
           - pattern: $REQ.body.$KEY
     pattern-sinks:
-      - pattern-either:
-          - pattern: fetch($URL, ...)
-          - pattern: $HTTP.get($URL, ...)
-          - pattern: $HTTP.request($URL, ...)
+      - patterns:
+          - pattern-either:
+              - pattern: fetch($URL, ...)
+              - pattern: $HTTP.get($URL, ...)
+              - pattern: $HTTP.request($URL, ...)
+          - focus-metavariable: $URL
 
   - id: webapp-security.python.request-to-url
     mode: taint
@@ -106,11 +116,13 @@ rules:
           - pattern: request.form.get(...)
           - pattern: request.form[$KEY]
     pattern-sinks:
-      - pattern-either:
-          - pattern: requests.get($URL, ...)
-          - pattern: requests.request(..., $URL, ...)
-          - pattern: httpx.get($URL, ...)
-          - pattern: urllib.request.urlopen($URL, ...)
+      - patterns:
+          - pattern-either:
+              - pattern: requests.get($URL, ...)
+              - pattern: requests.request(..., $URL, ...)
+              - pattern: httpx.get($URL, ...)
+              - pattern: urllib.request.urlopen($URL, ...)
+          - focus-metavariable: $URL
 
   - id: webapp-security.javascript.request-to-file-path
     mode: taint
@@ -127,11 +139,13 @@ rules:
           - pattern: $REQ.params.$KEY
           - pattern: $REQ.body.$KEY
     pattern-sinks:
-      - pattern-either:
-          - pattern: $FS.readFile($PATH, ...)
-          - pattern: $FS.readFileSync($PATH, ...)
-          - pattern: $FS.createReadStream($PATH, ...)
-          - pattern: $FS.writeFile($PATH, ...)
+      - patterns:
+          - pattern-either:
+              - pattern: $FS.readFile($PATH, ...)
+              - pattern: $FS.readFileSync($PATH, ...)
+              - pattern: $FS.createReadStream($PATH, ...)
+              - pattern: $FS.writeFile($PATH, ...)
+          - focus-metavariable: $PATH
 
   - id: webapp-security.python.request-to-file-path
     mode: taint
@@ -148,10 +162,12 @@ rules:
           - pattern: request.form.get(...)
           - pattern: request.form[$KEY]
     pattern-sinks:
-      - pattern-either:
-          - pattern: open($PATH, ...)
-          - pattern: send_file($PATH, ...)
-          - pattern: send_from_directory(..., $PATH, ...)
+      - patterns:
+          - pattern-either:
+              - pattern: open($PATH, ...)
+              - pattern: send_file($PATH, ...)
+              - pattern: send_from_directory(..., $PATH, ...)
+          - focus-metavariable: $PATH
 
   - id: webapp-security.javascript.request-to-redirect
     mode: taint
@@ -168,9 +184,11 @@ rules:
           - pattern: $REQ.params.$KEY
           - pattern: $REQ.body.$KEY
     pattern-sinks:
-      - pattern-either:
-          - pattern: $RES.redirect($URL, ...)
-          - pattern: redirect($URL, ...)
+      - patterns:
+          - pattern-either:
+              - pattern: $RES.redirect($URL, ...)
+              - pattern: redirect($URL, ...)
+          - focus-metavariable: $URL
 
   - id: webapp-security.python.request-to-redirect
     mode: taint
@@ -187,6 +205,8 @@ rules:
           - pattern: request.form.get(...)
           - pattern: request.form[$KEY]
     pattern-sinks:
-      - pattern-either:
-          - pattern: redirect($URL, ...)
-          - pattern: $HTTP.redirect($URL, ...)
+      - patterns:
+          - pattern-either:
+              - pattern: redirect($URL, ...)
+              - pattern: $HTTP.redirect($URL, ...)
+          - focus-metavariable: $URL

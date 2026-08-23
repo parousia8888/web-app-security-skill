@@ -30,7 +30,7 @@ const checkov = { id: 'checkov', version: '3.3.9', maturity: 'stable', type: 'ex
 const gitleaks = { id: 'gitleaks', version: '8.30.1', maturity: 'stable', type: 'external' };
 const opengrep = { id: 'opengrep', version: '1.27.0', maturity: 'stable', type: 'external' };
 const osv = { id: 'osv', version: '2.5.0', maturity: 'stable', type: 'external' };
-const OPENGREP_RULESET_SHA = '6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d';
+const OPENGREP_RULESET_SHA = '62e9fb0fb382e0f12443adb28ed73bebec5aa390dec7a1ca5692ea6882d138d8';
 
 const OPENGREP_FLOW_RISKS = {
   sql: {

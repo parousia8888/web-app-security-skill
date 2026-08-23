@@ -16,7 +16,7 @@ engine-quality or performance ranking.
 Executable and rules licenses are separate. This project does not copy, modify, download at runtime
 or redistribute either public rules repository. The current adapter uses only the ten project-owned
 MIT-licensed rules in `rules/opengrep-source.yml`, whose v0.5.4 SHA-256 is
-`6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d`.
+`62e9fb0fb382e0f12443adb28ed73bebec5aa390dec7a1ca5692ea6882d138d8`.
 
 Immutable source references used in the review:
 

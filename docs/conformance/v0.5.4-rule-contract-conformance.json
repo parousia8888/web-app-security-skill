@@ -3,7 +3,7 @@
   "release": "v0.5.4",
   "evidenceType": "synthetic_rule_contract_conformance",
   "limitation": "Author-maintained synthetic rule-contract conformance suite; it verifies declared planted examples. It does not measure production-vulnerability precision, recall, reachability, exploitability or security coverage.",
-  "rulesetSemanticDigest": "1caf2d86f0db08aa88e19731bca00013730a23c40e4bda56d8ecd11e86748c43",
+  "rulesetSemanticDigest": "b7b26a20c5441a70c9d6d0ff6104b3822a17548cb716004b4dec61c5cf7e831e",
   "summary": {
     "risk": {
       "contracts": 25,

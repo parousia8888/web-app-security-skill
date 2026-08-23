@@ -52,7 +52,7 @@ Opengrep is intentionally limited to ten same-file data-flow rules: request data
 SQL, outbound-URL, file-path or redirect sinks in JavaScript/TypeScript and Python. It is not a
 general Opengrep rules catalogue and is not advertised as whole-program analysis. The bundled
 `rules/opengrep-source.yml` file has SHA-256
-`6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d`; a missing or changed file
+`62e9fb0fb382e0f12443adb28ed73bebec5aa390dec7a1ca5692ea6882d138d8`; a missing or changed file
 makes coverage unavailable. The caller installs the exact engine and may set
 `WEBAPP_SECURITY_OPENGREP_BIN`; the runtime does not download an executable or remote rules.
 
