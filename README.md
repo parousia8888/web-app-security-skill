@@ -145,7 +145,7 @@ before execution, then verifies the selected release manifest, checksums, SBOM, 
 archive before installation.
 
 ```bash
-( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/cf6bca040dc1d78587f04ded2ace10a08312f0c5/scripts/bootstrap-install.sh?immutable=cf6bca040dc1d78587f04ded2ace10a08312f0c5'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" '0f203b986f75f1359fee0c0c5251ba0dbeec08a857b67415702d5f05f73f2faf'; sh "$p" )
+( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/bd2fb4e751990acb29bbca675041a51e710ed1c5/scripts/bootstrap-install.sh?immutable=bd2fb4e751990acb29bbca675041a51e710ed1c5'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" 'ec506be013c683b931760c877b54dfb1d6c00a59696c1848b69c3acdd33cbe03'; sh "$p" )
 ```
 
 Select a surface when needed:
