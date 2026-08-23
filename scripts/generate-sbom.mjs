@@ -25,6 +25,8 @@ const digest = createHash('sha256').update(`${version}:parousia8888/web-app-secu
 const created = process.env.SOURCE_DATE_EPOCH
   ? new Date(Number(process.env.SOURCE_DATE_EPOCH) * 1000).toISOString()
   : new Date().toISOString();
+const parserManifest = JSON.parse(readFileSync(new URL(
+  './vendor/js-ts-parser.manifest.json', import.meta.url), 'utf8'));
 
 const document = {
   spdxVersion: 'SPDX-2.3',
@@ -37,26 +39,52 @@ const document = {
     creators: ['Tool: web-app-security-skill/generate-sbom'],
     licenseListVersion: '3.26',
   },
-  packages: [{
-    name: 'web-app-security-skill',
-    SPDXID: 'SPDXRef-Package-web-app-security-skill',
-    versionInfo: version,
-    downloadLocation: `https://github.com/parousia8888/web-app-security-skill/archive/refs/tags/v${version}.tar.gz`,
-    filesAnalyzed: false,
-    licenseConcluded: 'MIT',
-    licenseDeclared: 'MIT',
-    copyrightText: 'NOASSERTION',
-    externalRefs: [{
-      referenceCategory: 'PACKAGE-MANAGER',
-      referenceType: 'purl',
-      referenceLocator: `pkg:github/parousia8888/web-app-security-skill@v${version}`,
-    }],
-  }],
-  relationships: [{
-    spdxElementId: 'SPDXRef-DOCUMENT',
-    relationshipType: 'DESCRIBES',
-    relatedSpdxElement: 'SPDXRef-Package-web-app-security-skill',
-  }],
+  packages: [
+    {
+      name: 'web-app-security-skill',
+      SPDXID: 'SPDXRef-Package-web-app-security-skill',
+      versionInfo: version,
+      downloadLocation: `https://github.com/parousia8888/web-app-security-skill/archive/refs/tags/v${version}.tar.gz`,
+      filesAnalyzed: false,
+      licenseConcluded: 'MIT',
+      licenseDeclared: 'MIT',
+      copyrightText: 'NOASSERTION',
+      externalRefs: [{
+        referenceCategory: 'PACKAGE-MANAGER',
+        referenceType: 'purl',
+        referenceLocator: `pkg:github/parousia8888/web-app-security-skill@v${version}`,
+      }],
+    },
+    {
+      name: parserManifest.component,
+      SPDXID: 'SPDXRef-Package-babel-parser',
+      versionInfo: parserManifest.version,
+      downloadLocation: `https://registry.npmjs.org/@babel/parser/-/parser-${parserManifest.version}.tgz`,
+      filesAnalyzed: false,
+      licenseConcluded: parserManifest.license,
+      licenseDeclared: parserManifest.license,
+      copyrightText: 'Copyright (c) 2014-present Sebastian McKenzie and other contributors',
+      checksums: [{ algorithm: 'SHA256', checksumValue: parserManifest.sha256 }],
+      externalRefs: [{
+        referenceCategory: 'PACKAGE-MANAGER',
+        referenceType: 'purl',
+        referenceLocator: `pkg:npm/%40babel/parser@${parserManifest.version}`,
+      }],
+      comment: `Bundled runtime output ${parserManifest.output}; npm integrity ${parserManifest.npmIntegrity}`,
+    },
+  ],
+  relationships: [
+    {
+      spdxElementId: 'SPDXRef-DOCUMENT',
+      relationshipType: 'DESCRIBES',
+      relatedSpdxElement: 'SPDXRef-Package-web-app-security-skill',
+    },
+    {
+      spdxElementId: 'SPDXRef-Package-web-app-security-skill',
+      relationshipType: 'CONTAINS',
+      relatedSpdxElement: 'SPDXRef-Package-babel-parser',
+    },
+  ],
 };
 
 mkdirSync(dirname(output), { recursive: true });

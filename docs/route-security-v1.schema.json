@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/route-security-v1.schema.json",
+  "title": "Web App Security Skill route security artifact v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "tool", "generatedAt", "mode", "subject", "analyzer", "summary", "coverage", "routes", "limitations", "baseline"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "tool": {
+      "type": "object", "additionalProperties": false, "required": ["name", "version"],
+      "properties": { "name": { "const": "Web App Security Skill" }, "version": { "type": "string", "minLength": 1, "maxLength": 64 } }
+    },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "mode": { "enum": ["audit", "retest", "demo-before", "demo-after"] },
+    "subject": {
+      "type": "object", "additionalProperties": false, "required": ["id", "scopeDigest"],
+      "properties": { "id": { "$ref": "#/$defs/id" }, "scopeDigest": { "$ref": "#/$defs/sha256" } }
+    },
+    "analyzer": {
+      "type": "object", "additionalProperties": false, "required": ["id", "revision", "parser"],
+      "properties": {
+        "id": { "const": "builtin-route" }, "revision": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "parser": {
+          "type": "object", "additionalProperties": false, "required": ["component", "version", "sha256"],
+          "properties": { "component": { "const": "@babel/parser" }, "version": { "type": "string" }, "sha256": { "$ref": "#/$defs/sha256" } }
+        }
+      }
+    },
+    "summary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["total", "stateChanging", "objectAddressed", "byFramework", "byPriority", "byAuthentication", "byAuthorization"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 }, "stateChanging": { "type": "integer", "minimum": 0 },
+        "objectAddressed": { "type": "integer", "minimum": 0 },
+        "byFramework": { "$ref": "#/$defs/countMap" }, "byPriority": { "$ref": "#/$defs/priorityCounts" },
+        "byAuthentication": { "$ref": "#/$defs/controlCounts" }, "byAuthorization": { "$ref": "#/$defs/controlCounts" }
+      }
+    },
+    "coverage": {
+      "type": "array", "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["framework", "status", "counts", "reasons"],
+        "properties": {
+          "framework": { "$ref": "#/$defs/framework" }, "status": { "enum": ["completed", "partial", "not_applicable"] },
+          "counts": {
+            "type": "object", "additionalProperties": false, "required": ["discovered", "eligible", "parsed", "incomplete"],
+            "properties": { "discovered": { "type": "integer", "minimum": 0 }, "eligible": { "type": "integer", "minimum": 0 }, "parsed": { "type": "integer", "minimum": 0 }, "incomplete": { "type": "integer", "minimum": 0 } }
+          },
+          "reasons": { "type": "array", "items": { "$ref": "#/$defs/reason" } }
+        }
+      }
+    },
+    "routes": { "type": "array", "items": { "$ref": "#/$defs/route" } },
+    "limitations": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+    "baseline": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["sourceDigest", "compatibility", "reasonCode"],
+          "properties": { "sourceDigest": { "$ref": "#/$defs/sha256" }, "compatibility": { "enum": ["compatible", "not_comparable"] }, "reasonCode": { "type": ["string", "null"] } }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "text": { "type": "string", "minLength": 1, "maxLength": 2048, "pattern": "^[^\\u0000-\\u001f\\u007f]+$" },
+    "framework": { "enum": ["express", "nestjs", "next-app"] },
+    "controlState": { "enum": ["local_observed", "inherited_observed", "candidate_observed", "not_observed", "incomplete", "not_applicable"] },
+    "priority": { "enum": ["review_first", "review_next", "review_later", "no_automatic_priority"] },
+    "countMap": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+    "controlCounts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["local_observed", "inherited_observed", "candidate_observed", "not_observed", "incomplete", "not_applicable"],
+      "properties": { "local_observed": { "type": "integer", "minimum": 0 }, "inherited_observed": { "type": "integer", "minimum": 0 }, "candidate_observed": { "type": "integer", "minimum": 0 }, "not_observed": { "type": "integer", "minimum": 0 }, "incomplete": { "type": "integer", "minimum": 0 }, "not_applicable": { "type": "integer", "minimum": 0 } }
+    },
+    "priorityCounts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["review_first", "review_next", "review_later", "no_automatic_priority"],
+      "properties": { "review_first": { "type": "integer", "minimum": 0 }, "review_next": { "type": "integer", "minimum": 0 }, "review_later": { "type": "integer", "minimum": 0 }, "no_automatic_priority": { "type": "integer", "minimum": 0 } }
+    },
+    "signal": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "origin", "location"],
+      "properties": { "kind": { "$ref": "#/$defs/id" }, "origin": { "$ref": "#/$defs/text" }, "location": { "$ref": "#/$defs/location" } }
+    },
+    "control": {
+      "type": "object", "additionalProperties": false, "required": ["state", "signals", "boundary"],
+      "properties": { "state": { "$ref": "#/$defs/controlState" }, "signals": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/signal" } }, "boundary": { "$ref": "#/$defs/text" } }
+    },
+    "location": {
+      "type": "object", "additionalProperties": false, "required": ["path", "line"],
+      "properties": { "path": { "type": "string", "minLength": 1, "maxLength": 240, "pattern": "^(?!/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000-\\u001f\\u007f]+$" }, "line": { "type": ["integer", "null"], "minimum": 1 } }
+    },
+    "reason": {
+      "type": "object", "additionalProperties": false, "required": ["code", "count", "samplePaths"],
+      "properties": { "code": { "$ref": "#/$defs/id" }, "count": { "type": "integer", "minimum": 1 }, "samplePaths": { "type": "array", "maxItems": 10, "items": { "type": "string", "minLength": 1, "maxLength": 240 } } }
+    },
+    "route": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "fingerprint", "framework", "method", "path", "pathKind", "location", "handler", "stateChanging", "objectAddressed", "authentication", "authorization", "operations", "priority", "limitations", "baseline"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "fingerprint": { "$ref": "#/$defs/sha256" }, "framework": { "$ref": "#/$defs/framework" },
+        "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "ALL", "UNKNOWN"] },
+        "path": { "type": ["string", "null"], "maxLength": 512 }, "pathKind": { "enum": ["static", "parameterized", "dynamic", "unknown"] },
+        "location": { "$ref": "#/$defs/location" }, "handler": { "type": ["string", "null"], "maxLength": 160 },
+        "stateChanging": { "type": "boolean" }, "objectAddressed": { "type": "boolean" },
+        "authentication": { "$ref": "#/$defs/control" }, "authorization": { "$ref": "#/$defs/control" },
+        "operations": { "type": "array", "maxItems": 30, "items": { "$ref": "#/$defs/id" } },
+        "priority": { "type": "object", "additionalProperties": false, "required": ["level", "reasons"], "properties": { "level": { "$ref": "#/$defs/priority" }, "reasons": { "type": "array", "maxItems": 12, "items": { "$ref": "#/$defs/id" } } } },
+        "limitations": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/id" } },
+        "baseline": { "type": "object", "additionalProperties": false, "required": ["state", "priorFingerprint", "reasonCode"], "properties": { "state": { "enum": ["new", "unchanged", "changed", "added", "removed", "unretested", "not_comparable", null] }, "priorFingerprint": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] }, "reasonCode": { "type": ["string", "null"] } } }
+      }
+    }
+  }
+}

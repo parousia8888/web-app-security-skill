@@ -19,7 +19,13 @@ import {
 } from './lib/project-identity.mjs';
 import { sourceCoverage, sourceRuleForAdapter, sourceRuleset } from './lib/source-rules.mjs';
 import { sourceRuleExplanation } from './lib/source-rule-registry.mjs';
-import { createGitDiffScope, selectDiffFindings } from './lib/git-diff-scope.mjs';
+import { createGitDiffScope, selectDiffFindings, selectDiffRoutes } from './lib/git-diff-scope.mjs';
+import { assertRouteSecurityDocument } from './lib/route-security-contract.mjs';
+import {
+  compareRouteSecurityDocuments, readRouteSecurityBaseline, routeSecurityDigest, routeSecurityJson,
+} from './lib/route-security-baseline.mjs';
+import { createRouteSecurityDocument } from './lib/route-security-model.mjs';
+import { renderRouteSecurityMarkdown } from './lib/route-security-renderer.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const args = process.argv.slice(2);
@@ -103,10 +109,11 @@ function timestamp() {
   return now;
 }
 
-function evidenceConflicts(output, reportName) {
+function evidenceConflicts(output, reportName, includeRoute) {
   return [
     `${reportName}.json`, `${reportName}.md`, `${reportName}.html`, `${reportName}.sarif`,
     `${reportName}.junit.xml`, `${reportName}.sha256`, 'proposed.patch',
+    ...(includeRoute ? ['route-security.json', 'route-security.md', 'route-security.sha256'] : []),
   ].filter((file) => existsSync(join(output, file)));
 }
 
@@ -193,7 +200,8 @@ try {
   if (selectedAdapters.some((adapter) => adapter !== 'builtin') && externalGateEnabled && !acknowledgeAlertPolicy) {
     throw new Error('external adapter gating requires --acknowledge-alert-policy; use --fail-on never for evidence-only execution');
   }
-  const conflicts = evidenceConflicts(output, name);
+  const routeEnabled = selectedAdapters.includes('builtin');
+  const conflicts = evidenceConflicts(output, name, routeEnabled);
   if (conflicts.length) throw new Error(`refusing to overwrite existing evidence: ${conflicts.join(', ')}`);
 
   const ruleset = sourceRuleset(selectedAdapters);
@@ -280,11 +288,59 @@ try {
     ],
   });
 
+  let routeDocument = null;
+  if (routeEnabled) {
+    const routeAnalysis = audit.routeAnalysis;
+    const selectedRoutes = diffScope
+      ? selectDiffRoutes(routeAnalysis.routes, diffScope) : routeAnalysis.routes;
+    const routeLimitations = [
+      ...routeAnalysis.limitations,
+      ...(diffScope ? [
+        `This ${diffScope.selection.mode} artifact filters route records to changed declarations or control evidence after whole-project context analysis.`,
+        diffScope.selection.mode === 'since'
+          ? `Untracked files were outside the Git diff (${diffScope.selection.untrackedFilesExcluded} observed).`
+          : 'The route analysis used the isolated Git index snapshot; unstaged content was excluded.',
+      ] : []),
+    ];
+    routeDocument = createRouteSecurityDocument({
+      version: report.tool.version, generatedAt: now.toISOString(), mode, subject,
+      routes: selectedRoutes, coverage: routeAnalysis.coverage, limitations: routeLimitations,
+    });
+    if (baselinePath) {
+      const routeBaseline = readRouteSecurityBaseline(resolve(baselinePath));
+      if (routeBaseline) {
+        routeDocument = compareRouteSecurityDocuments(
+          routeDocument, routeBaseline.document, routeBaseline.sourceDigest,
+        );
+      } else {
+        routeDocument = createRouteSecurityDocument({
+          version: routeDocument.tool.version, generatedAt: routeDocument.generatedAt,
+          mode: routeDocument.mode, subject: routeDocument.subject, routes: routeDocument.routes,
+          coverage: routeDocument.coverage,
+          limitations: [...routeDocument.limitations,
+            'The report baseline has no route-security companion artifact, so route baseline comparison was not attempted.'],
+        });
+      }
+    }
+  }
+
+  const routeJson = routeDocument ? routeSecurityJson(routeDocument) : null;
   const files = writeReportBundleV3(report, output, name, { additionalFiles: [
     ...(persistScope ? [{ name: 'security-scope.yml', json: localScope, sanitize: false }] : []),
     { name: 'proposed.patch', content: renderPatch(rawFindings) },
+    ...(routeDocument ? [
+      { key: 'routeJson', name: 'route-security.json', content: routeJson, sanitize: false,
+        validate: (bytes) => assertRouteSecurityDocument(JSON.parse(bytes.toString('utf8'))) },
+      { key: 'routeMarkdown', name: 'route-security.md',
+        content: renderRouteSecurityMarkdown(routeDocument), sanitize: false },
+      { key: 'routeDigest', name: 'route-security.sha256',
+        content: `${routeSecurityDigest(routeJson)}  route-security.json\n`, sanitize: false },
+    ] : []),
   ] });
   console.log(`report:    ${files.json}`);
+  if (routeDocument) {
+    console.log(`routes:    ${files.routeMarkdown} (${routeDocument.summary.total} records)`);
+  }
   console.log(`findings:  ${report.summary.total}`);
   console.log(`subject:   ${report.subject.id} (${report.subject.binding})`);
   console.log(`states:    confirmed=${report.summary.byState.confirmed}, suspected=${report.summary.byState.suspected}, unknown=${report.summary.byState.unknown}`);

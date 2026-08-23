@@ -65,6 +65,8 @@ try {
   for (const required of [
     'VERSION', 'SKILL.md', 'action.yml', 'scripts/webapp-security.mjs',
     'scripts/install-verified.mjs', 'scripts/bootstrap-install.sh',
+    'THIRD_PARTY_NOTICES.md', 'scripts/vendor/js-ts-parser.bundle.mjs',
+    'scripts/vendor/js-ts-parser.manifest.json',
     'docs/assets/demo.gif', 'docs/assets/demo.json',
     `docs/releases/v${manifest.version}.md`,
   ]) assert.ok(entries.includes(`${root}${required}`), `archive is missing ${required}`);
@@ -77,6 +79,7 @@ try {
   const sbom = JSON.parse(readFileSync(join(directory, sbomName), 'utf8'));
   assert.equal(sbom.spdxVersion, 'SPDX-2.3');
   assert.equal(sbom.packages[0].versionInfo, manifest.version);
+  assert.equal(sbom.packages.find((item) => item.name === '@babel/parser')?.licenseDeclared, 'MIT');
   assert.equal(sbom.creationInfo.created, new Date(manifest.sourceDateEpoch * 1000).toISOString());
   console.log(`release artifacts verified: ${basename(manifestPath)} (${entries.length} archive entries)`);
 } catch (error) {

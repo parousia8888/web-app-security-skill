@@ -193,3 +193,15 @@ export function selectDiffFindings(audit, diffScope) {
     return lineAdded(change, finding.location?.line);
   });
 }
+
+export function selectDiffRoutes(routes, diffScope) {
+  const changedPaths = new Set(diffScope.changes.filter((change) =>
+    !change.status.startsWith('D') && change.contentChanged).map((change) => change.path));
+  return routes.filter((route) => {
+    if (changedPaths.has(route.location?.path)) return true;
+    for (const control of [route.authentication, route.authorization]) {
+      if ((control?.signals || []).some((signal) => changedPaths.has(signal.location?.path))) return true;
+    }
+    return false;
+  });
+}

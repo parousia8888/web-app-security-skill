@@ -21,7 +21,7 @@ function usage(code = 0) {
 
 Commands:
   start <project> [options]    Discover stack and create a versioned, network-free scope
-  audit <project|run>          Run deterministic source checks and render evidence
+  audit <project|run>          Run source checks plus supported route/control review evidence
   explain <id> --report <json> Explain one finding from a structured report
   repair-plan <id> [options]   Create a review-only repair workflow record
   repair-validate <json>       Validate approval, application, retest and rollback state
@@ -44,6 +44,9 @@ Lifecycle options:
                                Default: all; both means Claude Code + Codex
 Install only:
   --force                      Replace existing paths after making backups
+
+Built-in JS/TS audits may also write route-security.json and route-security.md. Route priority is
+review order, not severity; a control not observed in source is not a confirmed vulnerability.
 `);
   process.exit(code);
 }
@@ -138,7 +141,8 @@ function launcherTargetsInstall(launcher, destinations) {
 }
 
 const include = [
-  'SKILL.md', 'VERSION', 'LICENSE', 'agents', 'assets', 'examples', 'references', 'scripts',
+  'SKILL.md', 'VERSION', 'LICENSE', 'KNOWN_LIMITATIONS.md', 'THIRD_PARTY_NOTICES.md',
+  'agents', 'assets', 'examples', 'references', 'scripts',
   'docs/capabilities.json', 'docs/capabilities.md', 'docs/security-scope.schema.json',
   'docs/finding.schema.json', 'docs/report.schema.json', 'docs/finding-v2.schema.json',
   'docs/report-v2.schema.json', 'docs/report-v2-migration.md', 'docs/finding-v3.schema.json',
@@ -146,10 +150,15 @@ const include = [
   'docs/repair-record.schema.json',
   'docs/adapter-protocol.md', 'docs/alert-policy.md', 'docs/rule-taxonomy.md',
   'docs/stable-source-rules.json', 'docs/stable-rule-corpus.json',
-  'docs/conformance/v0.5.4-rule-contract-conformance.json',
-  'docs/conformance/v0.5.4-rule-contract-conformance.md',
+  'docs/conformance/v0.6.0-rule-contract-conformance.json',
+  'docs/conformance/v0.6.0-rule-contract-conformance.md',
   'docs/regressions/v0.5.4-real-world-regressions.json',
   'docs/regressions/v0.5.4-real-world-regressions.md',
+  'docs/regressions/v0.6.0-route-real-world-regressions.json',
+  'docs/regressions/v0.6.0-route-real-world-regressions.md',
+  'docs/reviews/v0.6.0-route-review.json',
+  'docs/reviews/v0.6.0-route-review.md',
+  'docs/route-security-v1.schema.json',
 ];
 
 function stagePayload(spec) {

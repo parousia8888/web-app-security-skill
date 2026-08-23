@@ -178,6 +178,9 @@ try {
     const installed = join(fakeHome, client, 'skills', 'web-app-security');
     assert.ok(existsSync(join(installed, 'SKILL.md')));
     assert.equal(existsSync(join(installed, 'README.md')), false, 'installer must copy only the skill payload');
+    assert.ok(existsSync(join(installed, 'KNOWN_LIMITATIONS.md')));
+    assert.match(readFileSync(join(installed, 'THIRD_PARTY_NOTICES.md'), 'utf8'),
+      /@babel\/parser 7\.28\.4/);
     assert.ok(existsSync(join(installed, 'docs', 'capabilities.md')));
     assert.ok(existsSync(join(installed, 'docs', 'security-scope.schema.json')));
     assert.ok(existsSync(join(installed, 'docs', 'finding.schema.json')));
@@ -219,6 +222,8 @@ try {
   result = await run(launcher, ['--help'], { env: { ...process.env, HOME: allHome } });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /webapp-security <command>/);
+  assert.match(result.stdout, /route-security\.json/);
+  assert.match(result.stdout, /review order, not severity/);
   result = await run(launcher, ['version'], { env: { ...process.env, HOME: allHome } });
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout.trim(), `Web App Security Skill ${readFileSync(join(ROOT, 'VERSION'), 'utf8').trim()}`);
@@ -323,6 +328,11 @@ try {
   assert.equal(sbom.creationInfo.created, '1970-01-01T00:00:00.000Z');
   assert.equal(sbom.packages[0].versionInfo, readFileSync(join(ROOT, 'VERSION'), 'utf8').trim());
   assert.equal(sbom.packages[0].name, 'web-app-security-skill');
+  const parserPackage = sbom.packages.find((item) => item.name === '@babel/parser');
+  assert.equal(parserPackage.versionInfo, '7.28.4');
+  assert.equal(parserPackage.licenseDeclared, 'MIT');
+  assert.ok(sbom.relationships.some((item) => item.relationshipType === 'CONTAINS'
+    && item.relatedSpdxElement === parserPackage.SPDXID));
   assert.match(sbom.documentNamespace, /^https:\/\/github\.com\/parousia8888\/web-app-security-skill\/sbom\//);
   assert.match(sbom.packages[0].downloadLocation, /parousia8888\/web-app-security-skill\/archive\/refs\/tags/);
   assert.match(sbom.packages[0].externalRefs[0].referenceLocator, /^pkg:github\/parousia8888\/web-app-security-skill@v/);

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "component": "@babel/parser",
+  "version": "7.28.4",
+  "license": "MIT",
+  "npmIntegrity": "sha512-yZbBqeM6TkpP9du/I2pUZnJsRMGGvOuIrhjzC1AwHwW+6he4mni6Bp/m8ijn0iOuZuPI2BfkCoSRunpyjnrQKg==",
+  "generator": "esbuild@0.28.2",
+  "target": "node22",
+  "output": "scripts/vendor/js-ts-parser.bundle.mjs",
+  "sha256": "f8d700c78a6d0a50513a672b419074a87597093733d2d69ecee92675d8139698"
+}

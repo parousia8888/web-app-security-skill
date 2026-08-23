@@ -365,7 +365,8 @@ export function writeReportBundleV3(report, directory, name = 'report', { additi
         ? (file.sanitize === false ? file.content : sanitizeEvidence(file.content))
         : (file.sanitize === false ? `${JSON.stringify(file.json, null, 2)}\n` : sanitizedJson(file.json));
       return { key: file.key || file.name, name: file.name, content,
-        ...(file.json === undefined ? {} : { validate: (bytes) => JSON.parse(bytes.toString('utf8')) }) };
+        ...(file.validate ? { validate: file.validate }
+          : file.json === undefined ? {} : { validate: (bytes) => JSON.parse(bytes.toString('utf8')) }) };
     }),
   ];
   return writeAtomicEvidenceBundle(directory, entries, hooks);

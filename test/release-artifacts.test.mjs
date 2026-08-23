@@ -74,6 +74,8 @@ try {
   assert.equal(syntheticManifest.version, '9.8.7');
   assert.equal(syntheticManifest.sourceCommit, syntheticRef);
   assert.equal(syntheticSbom.packages[0].versionInfo, '9.8.7');
+  assert.equal(syntheticSbom.packages.find((item) => item.name === '@babel/parser').versionInfo,
+    '7.28.4');
   console.log(`release artifacts ok: reproducible ${version}, v0.4.0 upgrade lifecycle, ref-derived metadata`);
 } finally {
   rmSync(temp, { recursive: true, force: true });

@@ -10,6 +10,7 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const BUILD = join(ROOT, 'scripts', 'build-release-artifacts.mjs');
 const PREPARE = join(ROOT, 'scripts', 'prepare-release-promotion.mjs');
 const temp = mkdtempSync(join(tmpdir(), 'web-app-security-release-promotion-'));
+const releaseRef = process.env.RELEASE_TEST_REF || 'HEAD';
 
 function run(program, commandArgs, options = {}) {
   const result = spawnSync(program, commandArgs, { cwd: ROOT, encoding: 'utf8', ...options });
@@ -18,7 +19,7 @@ function run(program, commandArgs, options = {}) {
 }
 
 try {
-  const version = readFileSync(join(ROOT, 'VERSION'), 'utf8').trim();
+  const version = run('git', ['show', `${releaseRef}:VERSION`]).trim();
   const missingAssets = spawnSync(process.execPath, [PREPARE, '--version', version], {
     cwd: ROOT,
     encoding: 'utf8',
@@ -26,7 +27,7 @@ try {
   assert.equal(missingAssets.status, 2);
   assert.match(missingAssets.stderr, /--assets must be an existing directory/);
   const dist = join(temp, 'dist');
-  run(process.execPath, [BUILD, '--ref', 'HEAD', '--out', dist]);
+  run(process.execPath, [BUILD, '--ref', releaseRef, '--out', dist]);
   const output = run(process.execPath, [PREPARE, '--version', version, '--assets', dist]);
   const record = JSON.parse(output);
   const expectedNames = [

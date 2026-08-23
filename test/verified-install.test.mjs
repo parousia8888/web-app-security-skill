@@ -16,7 +16,12 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const INSTALL = join(ROOT, 'scripts', 'install-verified.mjs');
 const BUILD = join(ROOT, 'scripts', 'build-release-artifacts.mjs');
 const temp = mkdtempSync(join(tmpdir(), 'web-app-security-verified-test-'));
-const version = readFileSync(join(ROOT, 'VERSION'), 'utf8').trim();
+const releaseRef = process.env.RELEASE_TEST_REF || 'HEAD';
+const versionResult = spawnSync('git', ['show', `${releaseRef}:VERSION`], {
+  cwd: ROOT, encoding: 'utf8',
+});
+assert.equal(versionResult.status, 0, versionResult.stderr);
+const version = versionResult.stdout.trim();
 const prefix = `web-app-security-skill-${version}`;
 const names = {
   archive: `${prefix}.tar.gz`,
@@ -138,8 +143,8 @@ function installerArgs(origin, caseName, trustPath, extra = []) {
 
 try {
   const dist = join(temp, 'dist');
-  const sourceCommit = runSync('git', ['rev-parse', 'HEAD']);
-  runSync(process.execPath, [BUILD, '--ref', 'HEAD', '--out', dist]);
+  const sourceCommit = runSync('git', ['rev-parse', `${releaseRef}^{commit}`]);
+  runSync(process.execPath, [BUILD, '--ref', releaseRef, '--out', dist]);
   const base = assetsFrom(dist);
   cases.set('valid', base);
 

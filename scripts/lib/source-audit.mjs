@@ -9,6 +9,7 @@ import {
   classifyPythonSource, inspectPythonSource, PYTHON_SOURCE_RULE_IDS,
 } from './python-source-audit.mjs';
 import { DEFAULT_SOURCE_TRAVERSAL_LIMITS, sourceTraversalLimits } from './project-identity.mjs';
+import { analyzeRouteSecurity, ROUTE_INTEGRITY_RULE_ID } from './route-security-audit.mjs';
 import { SOURCE_RULES } from './source-rules.mjs';
 
 const IGNORED = new Set([
@@ -380,6 +381,8 @@ export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMIT
     }
   }
 
+  const routeSources = [];
+  const routeInputIssues = [];
   for (const file of files) {
     const classification = classifyJsTsSource(file.path);
     if (!classification.eligible) {
@@ -390,12 +393,14 @@ export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMIT
     }
     const loaded = load(file);
     if (loaded.outcome !== 'scanned') {
+      routeInputIssues.push({ code: loaded.code, path: file.path });
       for (const ruleId of JS_TS_SOURCE_RULE_IDS) {
         account(trackers[ruleId], loaded.outcome, loaded.code, file.path);
       }
       noteIntegrity(loaded.outcome, loaded.code, file.path);
       continue;
     }
+    routeSources.push({ path: file.path, text: loaded.text });
     const inspected = inspectJsTsSource(file.path, loaded.text);
     if (inspected.error) {
       for (const ruleId of JS_TS_SOURCE_RULE_IDS) {
@@ -406,6 +411,29 @@ export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMIT
     }
     for (const ruleId of JS_TS_SOURCE_RULE_IDS) account(trackers[ruleId], 'scanned', null, file.path);
     for (const finding of inspected.findings) findings.push(createFinding(finding));
+  }
+
+  const routeAnalysis = analyzeRouteSecurity(routeSources, {
+    inputIssues: routeInputIssues,
+    packageManifests: [...parsedPackages.values()],
+    graphLimits: { maxModules: effectiveLimits.maxFiles },
+  });
+  if (['partial', 'unavailable'].includes(routeAnalysis.reportCoverage.status)) {
+    findings.push(createFinding({
+      ruleId: ROUTE_INTEGRITY_RULE_ID,
+      title: 'Framework route-security evidence is incomplete',
+      severity: 'high',
+      state: 'unknown',
+      summary: 'One or more supported route inputs or relationships could not be analyzed, so the route inventory and control review are incomplete.',
+      evidence: {
+        subject: 'route-security-coverage',
+        status: routeAnalysis.reportCoverage.status,
+        reasons: Object.fromEntries(routeAnalysis.reportCoverage.reasons.map((reason) =>
+          [reason.code, reason.count])),
+      },
+      remediation: 'Review the bounded route coverage reasons, restore parsable source or resolve the relationship, then rerun before treating the route review as complete.',
+      retest: 'Rerun the built-in audit until route-security coverage reports completed, then review the routes and controls that become visible.',
+    }));
   }
 
   for (const file of files) {
@@ -585,10 +613,14 @@ export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMIT
     }));
   }
 
+  const coverage = Object.fromEntries(Object.entries(trackers).map(([ruleId, state]) =>
+    [ruleId, resultFor(state)]));
+  coverage[ROUTE_INTEGRITY_RULE_ID] = routeAnalysis.reportCoverage;
   return {
     findings,
     integrityIssues: [...integrityIssues.values()],
-    coverage: Object.fromEntries(Object.entries(trackers).map(([ruleId, state]) => [ruleId, resultFor(state)])),
+    coverage,
+    routeAnalysis,
     traversal: {
       effectiveLimits,
       entriesSeen: traversal.entriesSeen,
