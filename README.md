@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#see-the-result">Demo</a> ·
-  <a href="#whats-new-in-v060-candidate">v0.6.0 candidate</a> ·
+  <a href="#whats-new-in-v060">v0.6.0</a> ·
   <a href="#install">Install</a> ·
   <a href="#run-the-first-project">First project</a> ·
   <a href="docs/tutorial.md">Tutorial</a> ·
@@ -90,11 +90,11 @@ check reruns the fixture and fails if any surface disagrees.
 For the complete install-to-uninstall path, follow the tested
 [first project tutorial](docs/tutorial.md).
 
-## What's new in v0.6.0 candidate
+## What's new in v0.6.0
 
-v0.6.0 adds a framework-aware review layer beside the existing finding report. It is implemented
-on `main` and remains a release candidate until the signed tag, npm provenance, verified installer
-and Action consumers complete:
+v0.6.0 adds a framework-aware review layer beside the existing finding report. The signed release
+and npm package are public; the trust-chain and Action promotion evidence remains separately
+verifiable below:
 
 - **Route inventory:** bounded stable extraction for direct Express app/router registrations,
   static NestJS controller/method decorators, and direct named Next.js App Router exports.

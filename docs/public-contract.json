@@ -19,10 +19,13 @@
     "docs/case-studies/mealie.md"
   ],
   "currentSourceRelease": {
-    "version": "0.5.4",
+    "version": "0.6.0",
     "status": "published",
     "stableRuleCorpus": "docs/stable-rule-corpus.json",
     "ordinaryProjectReview": "docs/case-studies/journeys/v0.5.0-evidence.json",
+    "routeReview": "docs/reviews/v0.6.0-route-review.json",
+    "stableFrameworks": ["express", "nestjs", "next-app"],
+    "experimentalRules": ["js-route-identifier-direct-object-query"],
     "limitations": [
       "Built-in language depth targets JavaScript/TypeScript and Python only.",
       "Source patterns and external scanner matches are suspected leads unless independently confirmed.",
@@ -32,12 +35,5 @@
       "The historical real-world regression corpus guards named failures and is not a representative accuracy benchmark.",
       "No authenticated DAST, automatic BOLA/IDOR proof or unattended production patching is claimed."
     ]
-  },
-  "candidateSourceRelease": {
-    "version": "0.6.0",
-    "status": "candidate_unpublished",
-    "routeReview": "docs/reviews/v0.6.0-route-review.json",
-    "stableFrameworks": ["express", "nestjs", "next-app"],
-    "experimentalRules": ["js-route-identifier-direct-object-query"]
   }
 }

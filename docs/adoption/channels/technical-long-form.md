@@ -11,7 +11,7 @@ A readable web-security first pass after AI-assisted coding
 After an AI coding session, run one local command from the project root:
 
 ```bash
-npx --yes web-app-security-skill@0.5.4 audit . --fail-on never
+npx --yes web-app-security-skill@0.6.0 audit . --fail-on never
 ```
 
 Web App Security Skill turns each actionable lead into five review questions: what is the security term, what could happen, what did the evidence actually prove, what change is proposed, and what normal behavior could that change break? It keeps security retesting separate from product-function testing and does not edit the project.

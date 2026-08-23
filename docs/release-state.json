@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "repository": "parousia8888/web-app-security-skill",
   "publishedRelease": {
-    "version": "0.5.4",
-    "tag": "v0.5.4",
-    "sourceCommit": "d9ee538089ac813dcd454d10b45f14b958c1ec19",
-    "evidence": "docs/releases/v0.5.4.md",
-    "url": "https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.5.4"
+    "version": "0.6.0",
+    "tag": "v0.6.0",
+    "sourceCommit": "7521e0699eefe26d23a7972fbee6fb37b46fdfe2",
+    "evidence": "docs/releases/v0.6.0.md",
+    "url": "https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.6.0"
   },
   "stableAction": {
     "tag": "v1",
@@ -14,17 +14,17 @@
   },
   "npmPackage": {
     "name": "web-app-security-skill",
-    "version": "0.5.4",
-    "url": "https://www.npmjs.com/package/web-app-security-skill/v/0.5.4",
-    "shasum": "1fb71399684025257e069a63b46eb058cca590d1",
-    "integrity": "sha512-N9UlD9l05Mmm1El7VFf1CGR6nSSG8msea+JjwlN/uwv7rV8gUbGp3DZlEKO8yFMWw+uqLFyYYBocCD8PTRPUdA==",
+    "version": "0.6.0",
+    "url": "https://www.npmjs.com/package/web-app-security-skill/v/0.6.0",
+    "shasum": "6d83dba33b0d1349873e9b77ffd73da6f88b7396",
+    "integrity": "sha512-oe0uooh3BWRiHAsmUk9/JIJoFac7pK/2Ey4SEalos2a7Q1JGBoiDfj8FujlveMkXdBxrF4MpwflqlRwaLkiSJg==",
     "provenance": {
       "predicateType": "https://slsa.dev/provenance/v1",
-      "url": "https://registry.npmjs.org/-/npm/v1/attestations/web-app-security-skill@0.5.4"
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/web-app-security-skill@0.6.0"
     }
   },
   "verifiedInstaller": {
-    "defaultVersion": "0.5.4",
+    "defaultVersion": "0.6.0",
     "trustedVersions": [
       "0.3.0",
       "0.4.0",
@@ -32,7 +32,8 @@
       "0.5.1",
       "0.5.2",
       "0.5.3",
-      "0.5.4"
+      "0.5.4",
+      "0.6.0"
     ]
   }
 }

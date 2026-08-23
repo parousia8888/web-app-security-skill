@@ -11,7 +11,7 @@
 先给能直接运行的入口：
 
 ```bash
-npx --yes web-app-security-skill@0.5.4 audit . --fail-on never
+npx --yes web-app-security-skill@0.6.0 audit . --fail-on never
 ```
 
 主要给使用 AI coding 工具做 Web 产品、但没有专门安全流程的人。报告不会只扔一个漏洞名，而是同时写清楚：行业术语、白话解释、问题成立时的后果、当前证据没有证明什么、准备怎么改、可能影响哪些正常功能，以及安全复测和功能复测分别怎么做。CLI 不会直接改项目。

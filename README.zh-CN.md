@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#查看结果">Demo</a> ·
-  <a href="#v060-candidate-新增内容">v0.6.0 candidate</a> ·
+  <a href="#v060-新增内容">v0.6.0</a> ·
   <a href="#安装">安装</a> ·
   <a href="#执行第一个项目">首个项目</a> ·
   <a href="docs/tutorial.zh-CN.md">完整教程</a> ·
@@ -88,10 +88,10 @@ npm run demo -- --out ./demo-output
 
 完整的安装到卸载流程见经过测试的[第一个项目教程](docs/tutorial.zh-CN.md)。
 
-## v0.6.0 candidate 新增内容
+## v0.6.0 新增内容
 
-v0.6.0 在原有 finding 报告旁边增加框架级路由安全审查层。当前能力已实现在 `main`，但在签名
-tag、npm provenance、可信安装器与 Action consumer 全部通过前仍称为 release candidate：
+v0.6.0 在原有 finding 报告旁边增加框架级路由安全审查层。签名 release 与 npm 包已公开；可信
+安装链和 Action 提升证据继续在下方单独验证：
 
 - **路由清单：**对直接 Express app/router 注册、静态 NestJS controller/method decorator、直接
   Next.js App Router named export 提供有边界的稳定提取。
