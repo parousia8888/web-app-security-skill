@@ -7,8 +7,8 @@ README 推荐命令包含三个可独立审查的阶段，不会因为代码和 
    `bd2fb4e751990acb29bbca675041a51e710ed1c5`，并在交给 `sh` 前验证 SHA-256
    `ec506be013c683b931760c877b54dfb1d6c00a59696c1848b69c3acdd33cbe03`。
 2. bootstrap 把 `install-verified.mjs` 固定到提交
-   `7eaaed03866a1197c7abd29fc9207625c91d09ed`，并在交给 Node 前验证 SHA-256
-   `e1706880df29f4fe894313722a1ac0360dbe02adac59522755a2c8d3c3bba164`。
+   `a9afb943298d70f1d5a2d8005a4d0a928acb3de8`，并在交给 Node 前验证 SHA-256
+   `1bcc929e7b939c6f5b300d91b928467be4ad809856611bfb53c96e1c39f60e5c`。
 3. verifier 只从内置信任表选择显式版本；要求 archive、release manifest、SPDX SBOM 和
    `SHA256SUMS` 各自匹配固定 SHA-256，并交叉检查仓库、产品、tag、源码提交、版本、资产集合、
    归档根目录和路径，最后才调用现有原子 lifecycle installer。
@@ -40,7 +40,7 @@ web-app-security-skill-0.5.4.spdx.json
 web-app-security-skill-0.5.4.tar.gz
 ```
 
-另从提交 `7eaaed03866a1197c7abd29fc9207625c91d09ed` 下载
+另从提交 `a9afb943298d70f1d5a2d8005a4d0a928acb3de8` 下载
 `scripts/install-verified.mjs`，用上方固定值验证其 SHA-256。然后在离线机器运行：
 
 ```bash

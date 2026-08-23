@@ -7,8 +7,8 @@ merely because they came from the same TLS origin as a checksum file.
    `bd2fb4e751990acb29bbca675041a51e710ed1c5` and verifies SHA-256
    `ec506be013c683b931760c877b54dfb1d6c00a59696c1848b69c3acdd33cbe03` before `sh` runs it.
 2. The bootstrap fixes `install-verified.mjs` to commit
-   `7eaaed03866a1197c7abd29fc9207625c91d09ed` and verifies SHA-256
-   `e1706880df29f4fe894313722a1ac0360dbe02adac59522755a2c8d3c3bba164` before Node runs it.
+   `a9afb943298d70f1d5a2d8005a4d0a928acb3de8` and verifies SHA-256
+   `1bcc929e7b939c6f5b300d91b928467be4ad809856611bfb53c96e1c39f60e5c` before Node runs it.
 3. The verifier selects one explicit version from its built-in trust map. It requires fixed SHA-256
    values for the archive, release manifest, SPDX SBOM and `SHA256SUMS`, then cross-checks repository,
    product, tag, source commit, version, asset sets, archive root and paths before invoking the
@@ -44,7 +44,7 @@ web-app-security-skill-0.5.4.tar.gz
 ```
 
 Also download `scripts/install-verified.mjs` from commit
-`7eaaed03866a1197c7abd29fc9207625c91d09ed` and verify its SHA-256 against the value above. On the
+`a9afb943298d70f1d5a2d8005a4d0a928acb3de8` and verify its SHA-256 against the value above. On the
 offline machine, run:
 
 ```bash
