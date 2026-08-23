@@ -32,5 +32,12 @@
       "The historical real-world regression corpus guards named failures and is not a representative accuracy benchmark.",
       "No authenticated DAST, automatic BOLA/IDOR proof or unattended production patching is claimed."
     ]
+  },
+  "candidateSourceRelease": {
+    "version": "0.6.0",
+    "status": "candidate_unpublished",
+    "routeReview": "docs/reviews/v0.6.0-route-review.json",
+    "stableFrameworks": ["express", "nestjs", "next-app"],
+    "experimentalRules": ["js-route-identifier-direct-object-query"]
   }
 }

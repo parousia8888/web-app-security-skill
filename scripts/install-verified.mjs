@@ -265,6 +265,12 @@ function validateSbom(sbom, version) {
       || sbom.packages?.[0]?.versionInfo !== version) {
     throw new Error('SBOM identity or version mismatch');
   }
+  const parser = sbom.packages.find((item) => item.name === '@babel/parser');
+  if (!parser || parser.licenseDeclared !== 'MIT'
+      || !sbom.relationships?.some((item) => item.relationshipType === 'CONTAINS'
+        && item.relatedSpdxElement === parser.SPDXID)) {
+    throw new Error('SBOM bundled parser component is missing or invalid');
+  }
 }
 
 function inspectArchive(archive, version, work) {
@@ -284,7 +290,10 @@ function inspectArchive(archive, version, work) {
   if (verbose.some((line) => !['-', 'd'].includes(line[0]))) {
     throw new Error('archive links or special files are not allowed');
   }
-  const required = ['VERSION', 'SKILL.md', 'scripts/webapp-security.mjs'];
+  const required = [
+    'VERSION', 'SKILL.md', 'THIRD_PARTY_NOTICES.md', 'scripts/webapp-security.mjs',
+    'scripts/vendor/js-ts-parser.bundle.mjs', 'scripts/vendor/js-ts-parser.manifest.json',
+  ];
   for (const name of required) {
     if (!listing.includes(`${root}${name}`)) throw new Error(`archive is missing ${name}`);
   }

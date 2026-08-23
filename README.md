@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#see-the-result">Demo</a> ·
-  <a href="#whats-new-in-v054">v0.5.4</a> ·
+  <a href="#whats-new-in-v060-candidate">v0.6.0 candidate</a> ·
   <a href="#install">Install</a> ·
   <a href="#run-the-first-project">First project</a> ·
   <a href="docs/tutorial.md">Tutorial</a> ·
@@ -38,6 +38,19 @@ For each actionable result, the report gives you:
 - what the evidence proves and what still needs human or runtime confirmation;
 - a reviewable change, likely product side effects, rollback conditions, and separate security and
   normal-behavior retests.
+
+For supported JavaScript/TypeScript frameworks, the same command also writes
+`route-security.json`, `route-security.md` and a SHA-256 sidecar. The route view lists known
+endpoints, shows where recognizable controls were observed, and orders what to review next:
+
+| Security term | Plain meaning | What the route view can say |
+|---|---|---|
+| Authentication (authn) | Who is making the request? | A supported login/session guard was observed, was not observed, or could not be resolved. |
+| Route-level authorization (authz) | May this identity call this operation? | A supported policy/guard was observed, or a custom candidate still needs review. |
+| Object-level authorization (BOLA/IDOR) | May this identity access this specific record? | Usually unresolved; a path such as `/users/:id` is review priority, not proof of a vulnerability. |
+
+`review_first`, `review_next` and `review_later` are work-order labels, not severity scores. A missing
+visible control is never converted into a confirmed vulnerability.
 
 For the widest maintained local pass, select the no-download deep profile. It uses the built-in
 rules and calls pinned Checkov, Gitleaks, Opengrep and OSV-Scanner binaries already installed by the
@@ -77,38 +90,40 @@ check reruns the fixture and fails if any surface disagrees.
 For the complete install-to-uninstall path, follow the tested
 [first project tutorial](docs/tutorial.md).
 
-## What's new in v0.5.4
+## What's new in v0.6.0 candidate
 
-v0.5.4 expands the bounded automatic first pass while preserving the evidence rules used by earlier
-releases:
+v0.6.0 adds a framework-aware review layer beside the existing finding report. It is implemented
+on `main` and remains a release candidate until the signed tag, npm provenance, verified installer
+and Action consumers complete:
 
-- **Five new built-in checks:** a Git-tracked real `.env` filename, JavaScript session secrets and
-  insecure cookie options, plus Python session-cookie and CSRF-disable settings. The Git index fact
-  can be `confirmed`; source-pattern matches remain `suspected` until context is reviewed.
-- **Eight new same-file flow checks:** the pinned Opengrep rules now cover request data reaching SQL,
-  outbound URLs, file paths and redirects in JavaScript/TypeScript and Python, in addition to the
-  existing command-execution pair. This remains bounded same-file taint analysis.
-- **One deep command:** `--profile deep` selects built-in, Checkov, Gitleaks, Opengrep and
-  OSV-Scanner. It downloads nothing, and missing tools produce visible `unknown` evidence.
-- **Machine-checked boundaries:** rule-contract conformance now covers all 25 built-in risk and 2
-  evidence-integrity rules; the separate historical regression corpus keeps the five prior
-  correctness/review cases.
+- **Route inventory:** bounded stable extraction for direct Express app/router registrations,
+  static NestJS controller/method decorators, and direct named Next.js App Router exports.
+- **Control mapping:** authentication, route-level authorization and object-level authorization are
+  separate evidence fields. Supported signals can be observed; custom controls remain candidates;
+  no visible control remains a review question rather than a vulnerability conclusion.
+- **Review order:** state-changing, object-addressed and sensitive-operation routes move earlier in
+  the queue. Priority is not CVSS severity and expected-public auth routes can be benign reviews.
+- **Fail-closed coverage:** aliased Express registrations, unresolved mounts, dynamic Nest paths and
+  Next handler re-exports become partial/unknown evidence instead of silently disappearing.
+- **Experimental direct-Prisma lead:** a same-handler route identifier reaching a direct Prisma
+  operation without a visible principal constraint can be surfaced, but it does not prove BOLA and
+  remains experimental after zero ordinary-project matches.
+- **No runtime install:** a pinned `@babel/parser` bundle ships with the CLI/Skill. Users do not run
+  `npm install` in audited projects, and the parser version, license and digest are recorded.
 
-The v0.5.0 explanation contract remains: every v3 source finding includes the professional term,
-ordinary-language meaning, realistic consequence, evidence boundary, reviewable proposal,
-alternatives, likely side effects, owner decisions, separate security/functional retests and
-rollback. The CLI does not edit the project. Stable detection is 25 built-in risk rules, 2
-evidence-integrity rules and 16 opt-in external-adapter rules, for 43 total, with built-in depth
-concentrated on JavaScript/TypeScript and Python Web code.
+The bounded [57-route ordinary-project review](docs/reviews/v0.6.0-route-review.md) records 51
+detected routes and six explicit misses across fixed Express, NestJS and Next.js commits. This is a
+purposive boundary review, not production precision/recall. The associated [six minimized
+regressions](docs/regressions/v0.6.0-route-real-world-regressions.md) protect the correctness failures
+found during that review.
 
-Exact support and limits are in the [compatibility matrix](docs/compatibility.md), [stable rule
-corpus](docs/stable-rule-corpus.json), [rule-contract conformance](docs/conformance/v0.5.4-rule-contract-conformance.md),
-[historical real-world regressions](docs/regressions/v0.5.4-real-world-regressions.md) and
-[ordinary-project review](docs/case-studies/journeys/v0.5.0-review.md). MCP and future stable-rule
-expansion remain behind the [documented architecture gates](docs/architecture/mcp-and-rule-expansion.md).
-The signed v0.5.4 GitHub assets and provenance, verified installer, public npm package with SLSA
-provenance, and signed `v1` Action alias have passed their public checks. The installer below
-defaults to v0.5.4.
+The existing finding explanation contract remains: every v3 source finding includes the technical
+term, plain-language meaning, realistic consequence, evidence boundary, proposal, alternatives,
+side effects, owner decisions, separate security/functional retests and rollback. Stable rule
+inventory is now 25 built-in risk rules, 3 evidence-integrity rules and 16 opt-in external-adapter
+risk rules, for 44 total. Route records are not counted as vulnerability rules.
+The [v0.6.0 planted rule-contract conformance](docs/conformance/v0.6.0-rule-contract-conformance.md)
+checks the 28 built-in contracts and remains explicitly separate from production accuracy.
 
 ## Install
 
@@ -250,8 +265,8 @@ Multiple `--fail-on-domain <domain=threshold>` options may be combined. Effectiv
 recorded in the report. The [generated rule taxonomy](docs/rule-taxonomy.md) separates source rule
 kind, family, language, domain, severity, default evidence state and standards. Exact stable source
 counts and complete explanation metadata come from the machine-readable
-[`stable-source-rules.json`](docs/stable-source-rules.json): 25 built-in risk rules, 2 built-in
-evidence-integrity rules and 16 external adapter risk rules on `main`, for 43 stable source and
+[`stable-source-rules.json`](docs/stable-source-rules.json): 25 built-in risk rules, 3 built-in
+evidence-integrity rules and 16 external adapter risk rules on `main`, for 44 stable source and
 deployment-policy rules. Ten JavaScript/TypeScript and ten Python built-in rules are bounded lexical
 leads for execution, unsafe browser or framework configuration, transport, authentication/session
 settings and deserialization; five shared checks cover repository and project configuration. Their
@@ -366,7 +381,7 @@ uses: parousia8888/web-app-security-skill@v1
 ```
 
 Source mode defaults to the bundled adapter. The immutable v0.5.4 Action runs the v3 source
-contract, the earlier correctness and distribution gates, 25 built-in risk rules, 2 evidence-
+contract, the earlier correctness and distribution gates, 25 built-in risk rules, 3 evidence-
 integrity rules, and the opt-in `--profile deep` adapter selection. External binaries must be
 installed and pinned by the caller; the Action never downloads them:
 

@@ -7,14 +7,14 @@
   "description": "Security skills for authorized Web product review and hardening.",
   "metadata": {
     "description": "Security skills for authorized Web product review and hardening.",
-    "version": "0.5.4"
+    "version": "0.6.0"
   },
   "plugins": [
     {
       "name": "web-app-security-skill",
       "source": "./",
       "description": "Audit and harden authorized Web projects with explainable, reproducible evidence.",
-      "version": "0.5.4",
+      "version": "0.6.0",
       "author": {
         "name": "parousia8888",
         "url": "https://github.com/parousia8888"

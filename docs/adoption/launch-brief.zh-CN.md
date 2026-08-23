@@ -16,7 +16,7 @@
 
 ## 已实现范围
 
-版本化合同当前列出 **9 个 stable 窄检测家族**和 **0 项 planned 检测能力**；另行记录 **10 项证据/报告**、**1 项生命周期/分发**与 **6 项 agent-guided** 能力。Demo、报告、安装器和 Action 不计入漏洞检测覆盖。
+版本化合同当前列出 **10 个 stable 窄检测家族**和 **0 项 planned 检测能力**；另行记录 **10 项证据/报告**、**1 项生命周期/分发**与 **6 项 agent-guided** 能力。Demo、报告、安装器和 Action 不计入漏洞检测覆盖。
 
 [逐项查看能力与证据](https://github.com/parousia8888/web-app-security-skill/blob/main/docs/capabilities.md)。
 

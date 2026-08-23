@@ -1,6 +1,6 @@
 {
   "name": "web-app-security-skill",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "private": false,
   "type": "module",
   "description": "Check, harden, and retest web projects with an AI coding agent and reproducible evidence.",
@@ -14,6 +14,7 @@
     "VERSION",
     "LICENSE",
     "KNOWN_LIMITATIONS.md",
+    "THIRD_PARTY_NOTICES.md",
     "agents",
     "assets",
     "examples",
@@ -37,19 +38,26 @@
     "docs/rule-taxonomy.md",
     "docs/stable-source-rules.json",
     "docs/stable-rule-corpus.json",
-    "docs/conformance/v0.5.4-rule-contract-conformance.json",
-    "docs/conformance/v0.5.4-rule-contract-conformance.md",
+    "docs/conformance/v0.6.0-rule-contract-conformance.json",
+    "docs/conformance/v0.6.0-rule-contract-conformance.md",
     "docs/regressions/v0.5.4-real-world-regressions.json",
-    "docs/regressions/v0.5.4-real-world-regressions.md"
+    "docs/regressions/v0.5.4-real-world-regressions.md",
+    "docs/regressions/v0.6.0-route-real-world-regressions.json",
+    "docs/regressions/v0.6.0-route-real-world-regressions.md",
+    "docs/reviews/v0.6.0-route-review.json",
+    "docs/reviews/v0.6.0-route-review.md",
+    "docs/route-security-v1.schema.json"
   ],
   "engines": {
     "node": ">=22 <25"
   },
   "scripts": {
     "test": "for f in test/*.test.mjs; do echo \"→ $f\"; node \"$f\" || exit 1; done",
-    "lint": "for f in scripts/*.mjs scripts/lib/*.mjs test/*.test.mjs; do node --check \"$f\" || exit 1; done && for f in scripts/*.sh test/*.sh; do bash -n \"$f\" || exit 1; done && node scripts/generate-capability-matrix.mjs --check && node scripts/generate-source-rule-manifest.mjs --check && node scripts/generate-stable-rule-corpus.mjs --check && node scripts/run-rule-contract-conformance.mjs --check && node scripts/run-real-world-regressions.mjs --check && node scripts/generate-rule-taxonomy.mjs --check && node scripts/generate-demo-evidence.mjs --check && node scripts/generate-demo-gif.mjs --check && node scripts/generate-social-preview.mjs --check && node scripts/generate-launch-evidence.mjs --check && node scripts/generate-adoption-assets.mjs --check && node scripts/check-product-contract.mjs && node scripts/check-identity.mjs && node scripts/check-public-surfaces.mjs && node scripts/check-p7-surfaces.mjs && node scripts/check-evidence-contract.mjs && node scripts/check-case-journeys.mjs && node scripts/check-v050-ordinary-review.mjs && node scripts/check-release-contract.mjs && node scripts/check-release-state.mjs && node scripts/check-adoption-contract.mjs && node scripts/check-distribution-contract.mjs && echo 'lint ok'",
+    "lint": "for f in scripts/*.mjs scripts/lib/*.mjs test/*.test.mjs; do node --check \"$f\" || exit 1; done && for f in scripts/*.sh test/*.sh; do bash -n \"$f\" || exit 1; done && node scripts/build-parser-bundle.mjs --check && node scripts/generate-capability-matrix.mjs --check && node scripts/generate-source-rule-manifest.mjs --check && node scripts/generate-stable-rule-corpus.mjs --check && node scripts/run-rule-contract-conformance.mjs --check && node scripts/run-real-world-regressions.mjs --check && node scripts/generate-v060-route-review.mjs --check && node scripts/generate-rule-taxonomy.mjs --check && node scripts/generate-demo-evidence.mjs --check && node scripts/generate-demo-gif.mjs --check && node scripts/generate-social-preview.mjs --check && node scripts/generate-launch-evidence.mjs --check && node scripts/generate-adoption-assets.mjs --check && node scripts/check-product-contract.mjs && node scripts/check-identity.mjs && node scripts/check-public-surfaces.mjs && node scripts/check-p7-surfaces.mjs && node scripts/check-evidence-contract.mjs && node scripts/check-case-journeys.mjs && node scripts/check-v050-ordinary-review.mjs && node scripts/check-release-contract.mjs && node scripts/check-release-state.mjs && node scripts/check-adoption-contract.mjs && node scripts/check-distribution-contract.mjs && echo 'lint ok'",
+    "build:parser": "node scripts/build-parser-bundle.mjs",
     "conformance:rules": "node scripts/run-rule-contract-conformance.mjs",
     "regressions:real-world": "node scripts/run-real-world-regressions.mjs",
+    "review:routes-v060": "node scripts/generate-v060-route-review.mjs",
     "demo": "node scripts/webapp-security.mjs demo",
     "sbom": "node scripts/generate-sbom.mjs",
     "check": "npm run lint && npm test && bash test/shell-smoke.sh"
@@ -72,5 +80,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/parser": "7.28.4",
+    "esbuild": "0.28.2"
+  }
 }

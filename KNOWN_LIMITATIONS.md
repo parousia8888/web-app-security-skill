@@ -15,6 +15,26 @@ Web application is secure.
 | File-local evidence states | A literal such as `rejectUnauthorized: false` is a strong file-local observation, while production reachability is still unknown. | Pattern matches remain `suspected`. Only the supported missing-lockfile absence and the exact Git-index fact that a sensitive `.env` filename is tracked can produce `confirmed`; neither proves a live vulnerability. | Read `evidenceBoundary` before prioritizing. Do not translate `suspected` or a narrow confirmed fact into “confirmed exploitable vulnerability.” |
 | Equivalent-condition retest matching | A unique rule/snippet can disappear from one path and appear at another because of a rename, a move, or an unrelated delete-plus-add. Static evidence cannot prove object identity. | The condition remains non-fixed and preserves its prior fingerprint; ambiguous duplicates are not paired. | Review the old and new paths before describing causality or author intent. |
 
+## Route-security review
+
+The v0.6.0 route inventory parses supported JavaScript and TypeScript with a pinned bundled
+`@babel/parser`, but framework semantics remain deliberately narrow. The parser understanding a
+file does not mean every framework registration or authorization relationship in that file is
+understood.
+
+| Limitation | What users may observe | Current behavior | Required follow-up |
+|---|---|---|---|
+| Express factory and mount boundary | Routes registered through an aliased app object, a wrapper, a computed mount or an unresolved router relationship can be absent. | Direct `express()`/`Router()` registrations and statically resolved mounts are stable. A route-relevant unresolved relationship produces partial coverage and `js-route-security-evidence-incomplete / unknown`. | Read the route coverage reasons and manually inspect the named files. Do not treat the inventory as exhaustive when Express coverage is partial. |
+| NestJS decorator boundary | Computed controller or method paths, custom decorator composition and runtime global guards may not resolve. | Static controller/method decorators, static controller option paths and supported Passport/custom guard syntax are stable. An unresolved prefix remains path `null`; a method-only path is never guessed. | Review dynamic decorators, global module configuration and custom guards in project context. |
+| Next.js App Router export boundary | A route file that re-exports `GET`, `POST` or another handler through a project alias can be missing from the route list. | Direct named handler exports are stable. An unresolved handler re-export produces `next_route_handler_export_unresolved` and partial coverage. | Inspect the named `route.*` file and its re-export target; record the missing methods manually. |
+| Control signal is not control proof | Passport, a custom `auth` helper, middleware or a guard can be visible while its runtime behavior, order and policy remain unknown. | Authentication, route-level authorization and object-level authorization are separate fields. Supported constructs are `observed`; custom constructs remain `candidate_observed`; absence is `not_observed`, never a confirmed vulnerability. | Verify runtime middleware order, identity binding, role semantics and data-layer owner/tenant constraints. |
+| Priority is not severity | Public login, registration, recovery, status and badge routes can be ranked early because they change state or contain an identifier. | `review_first`/`review_next`/`review_later` order human work; it does not assert a vulnerability or CVSS severity. `router.all` is conservatively treated as potentially state-changing. | Close expected-public routes with project evidence and review abuse controls separately. |
+| Experimental direct-Prisma BOLA lead | Delegated services, wrappers, other ORMs and row-level policies are invisible; a direct query match still cannot prove missing authorization. | Only a same-handler route identifier reaching a supported direct Prisma operation without a visible same-operation principal constraint can emit the experimental lead. The v0.6.0 ordinary-project sample produced zero matches, so the rule remains experimental. | Trace the handler through service/data layers and test with two owner-controlled accounts before making a BOLA conclusion. |
+
+The [57-route ordinary-project review](docs/reviews/v0.6.0-route-review.md) records six visible
+extractor misses and separate framework promotion decisions. Its purposive sample is not a
+production precision/recall measurement.
+
 ## Incremental audit
 
 `--since` and `--staged` are built-in source-audit noise filters. They do not run external adapters,
@@ -43,8 +63,8 @@ neither is a representative accuracy benchmark.
 
 ## MCP and future rule expansion
 
-No MCP server ships in v0.5.4. npm/npx, the ordinary CLI and the Claude plugin invoke the current
-runtime. The current count is 25 built-in risk rules, two evidence-integrity rules and 16 external
+No MCP server ships in v0.6.0. npm/npx, the ordinary CLI and the Claude plugin invoke the current
+runtime. The current count is 25 built-in risk rules, three evidence-integrity rules and 16 external
 adapter risk rules. The documented architecture gates require a permission model and client
 evidence for MCP, and positive/negative fixtures plus false-positive review for every future stable
 rule.
@@ -88,6 +108,9 @@ The following are historical and covered by machine regressions; they are not cu
 | 0.5.2 | v3 Markdown/HTML risk summaries rendered `[object Object]`. | Golden Markdown and HTML summary assertions. |
 | 0.5.2 | Nested SSR/TSX template literals could stop analysis of the whole file. | Nested-template and executable-expression tokenizer regressions. |
 | 0.5.2 | A pure path rename could appear as `fixed + new`. | Unique equivalent-condition and ambiguous-duplicate retest regressions. |
+| 0.6.0 | Static NestJS controller option paths could be emitted at false root paths; a dynamic prefix could also be dropped and guessed. | Static option-path/array and dynamic-prefix-null route regressions. |
+| 0.6.0 | Unrelated import gaps could pollute route coverage, while unresolved Next handler re-exports could disappear without route-specific incomplete evidence. | Route-relevance isolation and Next re-export fail-closed regressions. |
+| 0.6.0 | Route reason counts could describe internal relationship events instead of affected inputs, and Express `all` could be ranked as read-only. | Coverage reason-budget and `ALL` state-change priority regressions. |
 
 Report new false-positive classes or minimized parser failures through
 [GitHub Issues](https://github.com/parousia8888/web-app-security-skill/issues). The handling and

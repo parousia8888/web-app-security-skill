@@ -28,8 +28,11 @@ try {
   const paths = packResult.files.map((file) => file.path);
   for (const required of [
     '.claude-plugin/plugin.json', 'SKILL.md', 'VERSION', 'KNOWN_LIMITATIONS.md',
+    'THIRD_PARTY_NOTICES.md',
     'scripts/webapp-security.mjs', 'scripts/lib/source-audit.mjs',
+    'scripts/vendor/js-ts-parser.bundle.mjs', 'scripts/vendor/js-ts-parser.manifest.json',
     'references/phase-2-api.md', 'rules/opengrep-source.yml', 'docs/report-v3.schema.json',
+    'docs/route-security-v1.schema.json', 'docs/reviews/v0.6.0-route-review.json',
   ]) assert.ok(paths.includes(required), `packed npm artifact is missing ${required}`);
   for (const forbidden of ['test/', 'docs/assets/', 'docs/adoption/', 'docs/V0.5.']) {
     assert.equal(paths.some((path) => path.startsWith(forbidden)), false,

@@ -26,15 +26,27 @@ remain explicit in `security-scope.yml`.
 
 Built-in language depth is intentionally narrower than project discovery:
 
-| Source surface | Stable v0.5.4 built-in boundary | Explicit limit |
+| Source surface | Stable v0.6.0 built-in boundary | Explicit limit |
 |---|---|---|
 | JavaScript / TypeScript | `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx`; direct lexical constructs for dynamic execution, child-process shell use, React/browser HTML sinks, wildcard credentialed CORS, disabled TLS verification, unsafe JWT options, hardcoded auth/session secrets and recognized insecure cookie options | No whole-program data flow, alias-complete symbol resolution, runtime reachability or sanitizer proof |
 | Python | `.py`; tokenizer-backed constructs for dynamic execution, shell subprocess use, pickle and YAML deserialization, disabled TLS verification, framework debug, hardcoded framework secrets, wildcard credentialed CORS, recognized insecure session cookies and explicit CSRF disable/exempt constructs | A tokenizer failure becomes `unknown`; no interprocedural data flow or deployment-state proof |
 | Shared project configuration | Supported manifests/lockfiles, sensitive environment filenames, exact Git-index tracking of real `.env` names, public Node inspector binds and production source-map flags | A filename/config/Git fact proves only the named condition, not secret content, deployment or exploitability |
 | Other languages | Discovery may record the stack. | No equal built-in or bundled Opengrep coverage is claimed; use agent-guided review or another independently governed scanner. |
 
+Framework-aware route review has its own narrower contract:
+
+| Framework | Stable syntax | Explicit limit |
+|---|---|---|
+| Express | Direct `express()`/`Router()` registrations, route chains and statically resolved router mounts | Aliased app objects, wrappers, computed mounts and unresolved route relationships become partial coverage. |
+| NestJS | Static controller/method decorators, static controller option paths/arrays, supported Passport guards and visible custom guard candidates | Dynamic decorator values remain path unknown; custom/global policy behavior and service authorization are not proved. |
+| Next.js App Router | Direct named HTTP handler exports from `route.js`/`route.ts` variants | Handler re-exports and unresolved project aliases become partial coverage; Pages Router is not supported. |
+
+JavaScript/TypeScript parsing uses the pinned bundled `@babel/parser` recorded in the route
+artifact. The bundle is included in npm, Skill and Action payloads; audited projects do not install
+or execute it as a project dependency.
+
 The deterministic source audit currently runs 25 bounded built-in risk rules across shared project
-configuration, JavaScript/TypeScript and Python, plus two evidence-integrity rules. Opt-in Gitleaks
+configuration, JavaScript/TypeScript and Python, plus three evidence-integrity rules. Opt-in Gitleaks
 checks Git history and the working tree; opt-in
 Opengrep checks JavaScript/TypeScript and Python with ten bundled same-file local rules and performs no
 network request. Checkov checks only the three fixed root Dockerfile/GitHub Actions rules documented

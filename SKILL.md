@@ -66,6 +66,14 @@ lines while retaining changed-file evidence failures; `audit <project> --staged`
 index snapshot. These modes do not support external adapters or baseline/retest comparison. A clean
 diff does not establish whole-repository safety, and `--since` excludes untracked files.
 
+For supported Express, NestJS and Next.js App Router syntax, built-in audits also write
+`route-security.json` and `route-security.md`. Read framework coverage first. Keep authentication
+(who the caller is), route-level authorization (whether that caller may invoke the operation) and
+object-level authorization (whether that caller may access the selected record) separate.
+`candidate_observed` is unresolved custom evidence; `not_observed` is not a confirmed
+vulnerability. `review_first`/`review_next`/`review_later` order work and are not severity. The
+direct same-handler Prisma route-ID lead is experimental and cannot prove BOLA/IDOR.
+
 Do not run all phases just because they exist. Pick from the task:
 
 | The user says | Go to |

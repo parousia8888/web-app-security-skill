@@ -63,6 +63,14 @@ general SAST engine. Agent-guided findings may use the same evidence contract, b
 automatic confirmation. Project discovery only establishes source/local scope; it does not prove
 deployment ownership or authorize remote traffic.
 
+For supported Express, NestJS and Next.js App Router syntax, a built-in audit also writes
+`route-security.json` and `route-security.md`. Read framework coverage before using the route list.
+Keep authentication (who the caller is), route-level authorization (whether that caller may invoke
+the operation) and object-level authorization (whether that caller may access this specific record)
+separate. `candidate_observed` needs human interpretation; `not_observed` is not a confirmed
+vulnerability. Route priority orders review work and is not severity. The direct Prisma route-ID
+lead remains experimental and cannot prove BOLA/IDOR.
+
 Every actionable source finding must retain both audiences. Keep the professional term and
 standards reference, then explain the issue without assuming security vocabulary. Phrase the
 consequence conditionally for `suspected` or `unknown` evidence. Never omit likely product side
@@ -76,18 +84,21 @@ production policy on the user's behalf.
    `security-scope.yml` before audit work.
 3. Run `webapp-security audit <run-directory> --name report --fail-on never` so findings do not
    prevent evidence creation.
-4. For wider caller-installed tooling, run `webapp-security doctor <project> --adapter all`, then
+4. Read both `report.md` and `route-security.md` when the route artifact exists. Start with any
+   partial/unavailable framework coverage, then review `review_first` and `review_next`; do not
+   describe missing controls as demonstrated vulnerabilities.
+5. For wider caller-installed tooling, run `webapp-security doctor <project> --adapter all`, then
    use `webapp-security audit <project> --profile deep --fail-on never`. Missing tools are `unknown`;
    the command does not install them.
-5. Use `webapp-security explain <finding-id> --report <report.json>` when evidence, consequence or
+6. Use `webapp-security explain <finding-id> --report <report.json>` when evidence, consequence or
    retest is unclear.
-6. Review `proposed.patch`. Do not apply it automatically. It may combine diffs with manual steps
+7. Review `proposed.patch`. Do not apply it automatically. It may combine diffs with manual steps
    and may cover only part of the report.
-7. If patch-only was requested, stop after delivering the patch, affected files, expected risk and
+8. If patch-only was requested, stop after delivering the patch, affected files, expected risk and
    exact retest command. Do not report any item as fixed.
-8. If changes were authorized and applied, run project tests, then write `retest` evidence to a new
+9. If changes were authorized and applied, run project tests, then write `retest` evidence to a new
    directory using the original JSON report as `--baseline`.
-9. Report `fixed`, `unchanged`, `regressed`, remaining and unreached results separately.
+10. Report `fixed`, `unchanged`, `regressed`, remaining and unreached results separately.
 
 ## Result interpretation
 

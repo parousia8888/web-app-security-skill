@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#查看结果">Demo</a> ·
-  <a href="#v054-新增内容">v0.5.4</a> ·
+  <a href="#v060-candidate-新增内容">v0.6.0 candidate</a> ·
   <a href="#安装">安装</a> ·
   <a href="#执行第一个项目">首个项目</a> ·
   <a href="docs/tutorial.zh-CN.md">完整教程</a> ·
@@ -38,6 +38,19 @@ npx --yes web-app-security-skill audit . --fail-on never
 - 行业术语、白话解释，以及问题成立时可能造成的实际后果；
 - 当前证据证明了什么，还有什么需要人工或运行时确认；
 - 可审查的修改建议、可能影响的正常功能、回滚条件，以及分开的安全复测和功能复测。
+
+对受支持的 JavaScript/TypeScript 框架，同一条命令还会生成 `route-security.json`、
+`route-security.md` 和 SHA-256 校验文件。路由视图列出已识别接口、可识别的控制证据，以及建议的
+人工审查顺序：
+
+| 安全术语 | 白话意思 | 路由视图能说明什么 |
+|---|---|---|
+| Authentication（authn，身份认证） | 发请求的人是谁？ | 看到了受支持的登录/session guard、没看到，或当前无法解析。 |
+| Route-level authorization（路由级授权） | 这个身份能不能调用这个操作？ | 看到了受支持的 policy/guard，或只看到仍需人工确认的自定义候选。 |
+| Object-level authorization（BOLA/IDOR，对象级授权） | 这个身份能不能访问这一条具体记录？ | 通常仍是未解决问题；`/users/:id` 这类路径只会提高审查优先级，不会自动证明漏洞。 |
+
+`review_first`、`review_next`、`review_later` 是工作排序，不是漏洞严重性。源码里没看到控制，
+也不会被自动写成 confirmed 漏洞。
 
 需要目前维护范围内最广的一次本地检查时，使用不下载工具的 deep profile。它运行内置规则，并
 调用用户已经安装的固定版本 Checkov、Gitleaks、Opengrep 与 OSV-Scanner；缺少的工具会记录为
@@ -75,32 +88,34 @@ npm run demo -- --out ./demo-output
 
 完整的安装到卸载流程见经过测试的[第一个项目教程](docs/tutorial.zh-CN.md)。
 
-## v0.5.4 新增内容
+## v0.6.0 candidate 新增内容
 
-v0.5.4 在保留原有证据规则的前提下，加强有边界的自动检查能力：
+v0.6.0 在原有 finding 报告旁边增加框架级路由安全审查层。当前能力已实现在 `main`，但在签名
+tag、npm provenance、可信安装器与 Action consumer 全部通过前仍称为 release candidate：
 
-- **5 条新内置检查：**Git 已跟踪的真实 `.env` 文件名、JavaScript session secret 与不安全 cookie
-  配置，以及 Python session cookie 与关闭 CSRF 的配置。Git index 事实可以是 `confirmed`；源码
-  模式命中在补齐上下文前保持 `suspected`。
-- **8 条新同文件输入流检查：**固定版本 Opengrep 规则在原有命令执行之外，新增 JavaScript/
-  TypeScript 与 Python 的 SQL、服务端外连 URL、文件路径和跳转地址检查；范围仍是同文件 taint。
-- **一个 deep 命令：**`--profile deep` 一次选择内置、Checkov、Gitleaks、Opengrep 和
-  OSV-Scanner，不下载工具；缺失工具会留下明确的 `unknown`。
-- **边界有机器门：**规则合同一致性现在覆盖全部 25 条 built-in risk 与 2 条证据完整性规则；
-  另外保留包含 5 个既有正确性/审查案例的历史回归语料。
+- **路由清单：**对直接 Express app/router 注册、静态 NestJS controller/method decorator、直接
+  Next.js App Router named export 提供有边界的稳定提取。
+- **控制映射：**身份认证、路由级授权、对象级授权分别记录。受支持信号可以记为 observed；自定义
+  控制保持 candidate；源码没看到控制只表示需要复核，不会自动变成漏洞。
+- **审查排序：**修改状态、带对象 ID、涉及敏感操作的路由会排在前面。优先级不是 CVSS 严重性，
+  公开登录、注册、找回密码等路由可以是预期的良性复核。
+- **失败时明确暴露：**Express alias/未解析 mount、动态 Nest path、Next handler re-export 会变成
+  partial/unknown 证据，不会静默消失。
+- **实验性 direct-Prisma 线索：**同 handler 内，路由 ID 进入直接 Prisma 操作且没看到 principal
+  约束时可以提示复核；它不能证明 BOLA，普通项目样本零命中后仍保持 experimental。
+- **不要求运行时安装依赖：**CLI/Skill 自带固定版本 `@babel/parser` bundle；不会在被审计项目中执行
+  `npm install`，parser 版本、许可证和 digest 均有记录。
 
-v0.5.0 的解释合同继续保留：每个 v3 源码 finding 同时给出行业术语、白话含义、实际后果、证据边界、
-待审查提案、替代方案、可能副作用、需要用户决定的事项、安全复测、功能复测和回滚条件。CLI 不直接
-修改项目。stable 检测为 25 条 built-in risk、2 条证据完整性规则和 16 条 opt-in 外部 adapter
-规则，合计 43 条；内置深度集中在 JavaScript/TypeScript 与 Python Web 代码。
+[57 条路由的普通项目审查](docs/reviews/v0.6.0-route-review.md)在固定 Express、NestJS、Next.js
+commit 上记录了 51 条提取结果和 6 条明确漏检。这是有目的的边界审查，不是生产 precision/recall。
+对应的[6 条最小回归](docs/regressions/v0.6.0-route-real-world-regressions.md)保护审查中发现的正确性问题。
 
-准确支持范围见[兼容矩阵](docs/compatibility.md)、[稳定规则语料](docs/stable-rule-corpus.json)、
-[规则合同一致性结果](docs/conformance/v0.5.4-rule-contract-conformance.md)、
-[历史真实回归语料](docs/regressions/v0.5.4-real-world-regressions.md)和
-[普通项目复核](docs/case-studies/journeys/v0.5.0-review.md)。MCP 与后续 stable 规则扩张需要先满足
-[架构决策中的门槛](docs/architecture/mcp-and-rule-expansion.md)。v0.5.4 的签名 GitHub 资产与
-provenance、可信安装器、带 SLSA provenance 的公开 npm 包和签名 `v1` Action 别名都已通过各自的
-公网检查；下面的可信安装器默认安装 v0.5.4。
+原有 finding 解释合同继续生效：每条 v3 源码 finding 都包含专业术语、白话解释、现实后果、证据
+边界、提案、替代方案、副作用、用户决策、安全复测、功能复测和回滚。稳定规则清单现为 25 条
+内置 risk、3 条 evidence-integrity 和 16 条 opt-in 外部 adapter risk，共 44 条。路由记录不计入
+漏洞规则数量。
+[v0.6.0 planted 规则合同一致性](docs/conformance/v0.6.0-rule-contract-conformance.md)检查 28 条
+内置合同，仍明确不代表生产准确率。
 
 ## 安装
 
@@ -234,7 +249,7 @@ webapp-security crawl --site https://example.com --out ./security-report \
 [生成的 rule taxonomy](docs/rule-taxonomy.md)把 source rule 的 kind、family、language、domain、
 severity、默认证据状态与标准引用分开记录。精确 stable source 数量和完整解释元数据来自机器可读的
 [`stable-source-rules.json`](docs/stable-source-rules.json)：`main` 当前是 25 条 built-in 风险规则、
-2 条 built-in 证据完整性规则和 16 条外部适配器风险规则，合计 43 条 stable 源码与部署策略规则。
+3 条 built-in 证据完整性规则和 16 条外部适配器风险规则，合计 44 条 stable 源码与部署策略规则。
 JavaScript/TypeScript 与 Python 各有 10 条 built-in 风险规则，覆盖危险执行、浏览器或框架配置、
 传输、认证/session 设置与反序列化；另有 5 条共享的仓库和项目配置检查。模式命中不能证明输入流
 或运行时可达性，未经独立复现保持 `suspected`；只有规则明确限定的可观察事实才会是 `confirmed`。
@@ -336,7 +351,7 @@ uses: parousia8888/web-app-security-skill@v1
 ```
 
 Source mode 默认只用内置 adapter。v0.5.4 不可变 Action 运行 v3 源码合同、此前的正确性与分发
-门禁、25 条 built-in risk、2 条证据完整性规则，以及 opt-in `--profile deep` adapter 选择。
+门禁、25 条 built-in risk、3 条证据完整性规则，以及 opt-in `--profile deep` adapter 选择。
 外部二进制必须由调用方固定版本并安装，Action 不会下载：
 
 ```yaml

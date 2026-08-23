@@ -4,7 +4,7 @@
   "product": "Web App Security Skill",
   "repository": "https://github.com/parousia8888/web-app-security-skill",
   "marketplace": "https://github.com/marketplace/actions/web-app-security-skill",
-  "productVersion": "0.5.4",
+  "productVersion": "0.6.0",
   "release": {
     "version": "0.5.4",
     "url": "https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.5.4",
@@ -24,8 +24,8 @@
     }
   },
   "capabilityContract": {
-    "total": 26,
-    "stableDetection": 9,
+    "total": 28,
+    "stableDetection": 10,
     "plannedDetection": 0,
     "evidenceReporting": 10,
     "lifecycleDistribution": 1,

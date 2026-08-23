@@ -5,7 +5,34 @@ All notable changes to **Web App Security Skill** are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.6.0] — 2026-08-24
+
+### Added
+- Built-in audits now produce private, digest-bound `route-security.json` and
+  `route-security.md` companions for bounded Express, NestJS and Next.js App Router syntax.
+- Route evidence separates authentication, route-level authorization and object-level
+  authorization, then applies review-order labels that are explicitly not severity.
+- A pinned bundled `@babel/parser` runtime supports AST extraction without installing project
+  dependencies at audit time; version, license, digest and SBOM inclusion are recorded.
+- Exact-compatible route baselines and full-context `--since`/`--staged` route views preserve
+  inherited control evidence and fail closed when current evidence is incomplete.
+- An experimental direct same-handler Prisma route-identifier review lead ships outside the stable
+  risk-rule count and does not claim BOLA/IDOR proof.
+- The fixed-commit 57-route ordinary-project review records 51 detected routes, six explicit misses
+  and separate Express/NestJS/Next promotion decisions without publishing accuracy percentages.
+
+### Changed
+- Stable rule inventory is 25 built-in risk rules, three built-in evidence-integrity rules and 16
+  external adapter risk rules, 44 total. Route records are not counted as vulnerability rules.
+- Express `router.all` is conservatively treated as potentially state-changing for review order.
+
+### Fixed
+- Ordinary-project review guards static Nest controller option paths, dynamic-prefix non-guessing,
+  route-relevant import failure isolation, Next handler re-export incomplete evidence and
+  reconciling route coverage reason counts.
+
+Publication status: v0.6.0 candidate only until signed tag, GitHub Release, npm provenance,
+verified installer, immutable Action and signed `v1` consumers pass.
 
 ## [0.5.4] — 2026-08-23
 

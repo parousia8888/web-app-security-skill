@@ -19,6 +19,14 @@ function fail(message) {
 }
 
 if (contract.schemaVersion !== 1) fail('public contract schemaVersion must be 1');
+if (contract.candidateSourceRelease?.version !== '0.6.0'
+    || contract.candidateSourceRelease?.status !== 'candidate_unpublished'
+    || !existsSync(`${ROOT}/${contract.candidateSourceRelease?.routeReview || ''}`)) {
+  fail('v0.6.0 candidate route-review contract is missing or invalid');
+}
+if (JSON.stringify(contract.candidateSourceRelease?.stableFrameworks) !== JSON.stringify([
+  'express', 'nestjs', 'next-app',
+])) fail('v0.6.0 candidate framework scope changed');
 for (const path of [...(contract.projectJourneys || []), ...(contract.methodStudies || [])]) {
   if (!existsSync(`${ROOT}/${path}`)) fail(`public evidence document is missing: ${path}`);
 }
@@ -63,9 +71,9 @@ for (const [path, text] of [['README.md', en], ['README.zh-CN.md', zh]]) {
 }
 
 for (const [path, text, releaseHeading, explanationMarkers] of [
-  ['README.md', en, "## What's new in v0.5.4",
+  ['README.md', en, "## What's new in v0.6.0 candidate",
     ['plain-language explanation', 'what the evidence proves', 'likely product side effects', 'normal-behavior retests']],
-  ['README.zh-CN.md', zh, '## v0.5.4 新增内容',
+  ['README.zh-CN.md', zh, '## v0.6.0 candidate 新增内容',
     ['白话解释', '当前证据证明了什么', '可能影响的正常功能', '功能复测']],
 ]) {
   const trialIndex = text.indexOf(firstTrial);
@@ -104,6 +112,8 @@ for (const [path, text] of [['README.md', en], ['README.zh-CN.md', zh]]) {
   if (!text.includes('demo-result.json')) fail(`${path} does not name the structured demo fact source`);
   if (!text.includes('fail-on-domain')) fail(`${path} does not document domain policy`);
   if (!text.includes('docs/rule-taxonomy.md')) fail(`${path} does not link the rule taxonomy`);
+  if (!text.includes('route-security.md')) fail(`${path} does not explain the route review artifact`);
+  if (!text.includes('Object-level authorization')) fail(`${path} does not explain object authorization`);
 }
 
 const detectionCount = capabilities.capabilities.filter((item) =>

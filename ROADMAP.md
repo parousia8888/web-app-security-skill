@@ -87,6 +87,21 @@ permission boundaries and evidence requirements are recorded in the
 [MCP and rule-expansion decision](docs/architecture/mcp-and-rule-expansion.md). Exact implementation
 and release progress lives in the [v0.5.3 engineering plan](docs/V0.5.3_ENGINEERING_PLAN.md).
 
+## Implemented for v0.6.0 candidate
+
+v0.6.0 adds a companion route-security artifact to the local Skill + CLI. Bounded stable framework
+support covers direct Express registrations/static mounts, static NestJS decorators/guards and
+direct Next.js App Router handler exports. Authentication, route authorization and object
+authorization remain separate evidence, while review priority remains separate from severity.
+
+A pinned parser bundle removes the need to install dependencies in audited projects. Incremental
+mode retains whole-project route/control context, route baselines compare exact compatible records,
+and incomplete relationships fail closed. A 57-route fixed-commit review records six explicit
+misses and keeps the direct-Prisma BOLA lead experimental after zero ordinary-project matches.
+Implementation evidence is in the [v0.6.0 route review](docs/reviews/v0.6.0-route-review.md),
+[route regressions](docs/regressions/v0.6.0-route-real-world-regressions.md) and
+[engineering plan](docs/V0.6.0_ENGINEERING_PLAN.md). Public release evidence is pending P13/P14.
+
 ## Shipped in v0.5.4
 
 v0.5.4 expands the bounded automatic first pass with five built-in checks, eight same-file
