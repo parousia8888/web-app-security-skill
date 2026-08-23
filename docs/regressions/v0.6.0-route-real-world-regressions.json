@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "release": "v0.6.0",
+  "evidenceType": "ordinary_project_route_regression_corpus",
+  "limitation": "These minimized guards protect six named correctness failures found during a purposive three-project review. They are not a representative accuracy benchmark.",
+  "summary": {
+    "cases": 6,
+    "resolvedRegressions": 6
+  },
+  "cases": [
+    {
+      "id": "nestjs-static-controller-options-path",
+      "sourceProject": "nestjs-boilerplate",
+      "observedFailure": "A static @Controller({ path, version }) prefix was treated as dynamic and method routes were emitted at incorrect root paths.",
+      "minimizedGuard": "test/nest-route-extractor.test.mjs",
+      "protectedContract": "Static NestJS controller option paths and path arrays contribute their declared prefix.",
+      "remainingBoundary": "Computed option values remain dynamic and must not be guessed.",
+      "classification": "resolved_regression"
+    },
+    {
+      "id": "nestjs-dynamic-controller-prefix-not-guessed",
+      "sourceProject": "nestjs-boilerplate",
+      "observedFailure": "A dynamic controller prefix could be dropped while the method-only suffix was emitted as an apparently exact route.",
+      "minimizedGuard": "test/nest-route-extractor.test.mjs",
+      "protectedContract": "An unresolved NestJS controller prefix produces path null instead of a guessed method-only path.",
+      "remainingBoundary": "The analyzer does not evaluate arbitrary TypeScript expressions to recover dynamic decorator values.",
+      "classification": "resolved_regression"
+    },
+    {
+      "id": "route-unrelated-import-failure-isolation",
+      "sourceProject": "uptime-kuma",
+      "observedFailure": "An unrelated unresolved local import polluted the framework route coverage status.",
+      "minimizedGuard": "test/express-route-extractor.test.mjs",
+      "protectedContract": "Only route-relevant structural resolution failures can make Express route coverage incomplete.",
+      "remainingBoundary": "A mount, router or handler relationship that is relevant and unresolved must still produce partial coverage.",
+      "classification": "resolved_regression"
+    },
+    {
+      "id": "next-route-reexport-remains-incomplete",
+      "sourceProject": "vercel-chatbot",
+      "observedFailure": "A route-handler re-export through a project alias could disappear without route-specific incomplete evidence.",
+      "minimizedGuard": "test/next-app-route-extractor.test.mjs",
+      "protectedContract": "Unresolved Next.js route-handler re-exports produce next_route_handler_export_unresolved and partial coverage.",
+      "remainingBoundary": "Cross-module handler re-export resolution is not stable coverage in v0.6.0.",
+      "classification": "resolved_regression"
+    },
+    {
+      "id": "route-coverage-reason-budget",
+      "sourceProject": "uptime-kuma",
+      "observedFailure": "Framework reason counts could exceed the affected-input count exposed by report-v3 coverage.",
+      "minimizedGuard": "test/route-security-integration.test.mjs",
+      "protectedContract": "Route coverage reason counts reconcile to affected input files instead of internal relationship-event volume.",
+      "remainingBoundary": "A reason count is an affected-input count, not a number of missing routes.",
+      "classification": "resolved_regression"
+    },
+    {
+      "id": "express-all-state-change-priority",
+      "sourceProject": "uptime-kuma",
+      "observedFailure": "Express router.all was treated as read-only even though the handler accepts state-changing HTTP methods.",
+      "minimizedGuard": "test/express-route-extractor.test.mjs",
+      "protectedContract": "ALL is conservatively state-changing and receives state-change review reasons when controls are unresolved.",
+      "remainingBoundary": "Static analysis does not know which HTTP methods a handler may reject internally.",
+      "classification": "resolved_regression"
+    }
+  ]
+}

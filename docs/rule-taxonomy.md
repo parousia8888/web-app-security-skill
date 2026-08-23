@@ -8,7 +8,7 @@ Severity is interpreted inside the named risk domain. In particular, a HIGH
 confirmed product vulnerability.
 
 Stable source inventory: 25 built-in risk rules,
-2 built-in evidence-integrity rules and
+3 built-in evidence-integrity rules and
 16 external adapter risk rules.
 
 ## Stable source rules
@@ -42,6 +42,7 @@ Stable source inventory: 25 built-in risk rules,
 | [`python-csrf-protection-disabled`](https://github.com/parousia8888/web-app-security-skill/blob/main/docs/stable-source-rules.json) | `builtin-source@1.1.0` | `risk_detection` | `authentication_session` | `python` | `security_exposure` | `high` / `suspected` | `CWE-352`, `OWASP-TOP10-2025-A01` |
 | [`source-stack-unsupported`](https://github.com/parousia8888/web-app-security-skill/blob/main/docs/stable-source-rules.json) | `builtin-source@1.1.0` | `evidence_integrity` | `deployment_configuration` | `javascript`, `typescript`, `python` | `evidence_integrity` | `info` / `unknown` | None |
 | [`source-evidence-incomplete`](https://github.com/parousia8888/web-app-security-skill/blob/main/docs/stable-source-rules.json) | `builtin-source@1.1.0` | `evidence_integrity` | `deployment_configuration` | `javascript`, `typescript`, `python` | `evidence_integrity` | `high` / `unknown` | None |
+| [`js-route-security-evidence-incomplete`](https://github.com/parousia8888/web-app-security-skill/blob/main/KNOWN_LIMITATIONS.md) | `builtin-source@1.1.0` | `evidence_integrity` | `object_authorization` | `javascript`, `typescript` | `evidence_integrity` | `high` / `unknown` | `CWE-693` |
 | [`checkov-dockerfile-root-user`](https://github.com/parousia8888/web-app-security-skill/blob/main/docs/adapter-protocol.md) | `checkov@3.3.9` | `risk_detection` | `deployment_configuration` | `dockerfile` | `security_exposure` | `medium` / `suspected` | `CWE-250`, `OWASP-TOP10-2025-A02` |
 | [`checkov-dockerfile-healthcheck-missing`](https://github.com/parousia8888/web-app-security-skill/blob/main/docs/adapter-protocol.md) | `checkov@3.3.9` | `risk_detection` | `deployment_configuration` | `dockerfile` | `security_exposure` | `low` / `suspected` | `OWASP-TOP10-2025-A02` |
 | [`checkov-github-actions-write-all`](https://github.com/parousia8888/web-app-security-skill/blob/main/docs/adapter-protocol.md) | `checkov@3.3.9` | `risk_detection` | `deployment_configuration` | `yaml` | `supply_chain` | `high` / `suspected` | `CWE-250`, `OWASP-TOP10-2025-A03` |

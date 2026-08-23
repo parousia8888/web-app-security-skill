@@ -9,8 +9,8 @@ import {
 import { readStableRuleCorpus, validateStableRuleCorpus } from './lib/rule-corpus.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const JSON_OUTPUT = join(ROOT, 'docs', 'conformance', 'v0.5.4-rule-contract-conformance.json');
-const MARKDOWN_OUTPUT = join(ROOT, 'docs', 'conformance', 'v0.5.4-rule-contract-conformance.md');
+const JSON_OUTPUT = join(ROOT, 'docs', 'conformance', 'v0.6.0-rule-contract-conformance.json');
+const MARKDOWN_OUTPUT = join(ROOT, 'docs', 'conformance', 'v0.6.0-rule-contract-conformance.md');
 const check = process.argv.includes('--check');
 if (process.argv.slice(2).some((argument) => argument !== '--check')) {
   console.error('usage: node scripts/run-rule-contract-conformance.mjs [--check]');
@@ -39,7 +39,7 @@ if (check) {
     console.error('rule-contract conformance is stale; run npm run conformance:rules');
     process.exit(1);
   }
-  console.log('rule-contract conformance current: 25 risk + 2 evidence-integrity contracts');
+  console.log('rule-contract conformance current: 25 risk + 3 evidence-integrity contracts');
 } else {
   for (const [path, content] of outputs) writeFileSync(path, content);
   console.log(`${JSON_OUTPUT}\n${MARKDOWN_OUTPUT}`);

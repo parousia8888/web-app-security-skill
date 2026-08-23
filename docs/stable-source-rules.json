@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "semanticDigest": "b7b26a20c5441a70c9d6d0ff6104b3822a17548cb716004b4dec61c5cf7e831e",
+  "semanticDigest": "63ac0c30fd5e0c85ee4080533db4e811eaf10117cb64c28f12e441a9760a2a76",
   "counts": {
-    "stableTotal": 43,
+    "stableTotal": 44,
     "builtInRisk": 25,
-    "builtInIntegrity": 2,
+    "builtInIntegrity": 3,
     "externalRisk": 16
   },
   "rules": [
@@ -1024,6 +1024,91 @@
           {
             "id": "js-insecure-cookie-safe",
             "path": "test/fixtures/js-ts-rules/safe.tsx"
+          }
+        ]
+      }
+    },
+    {
+      "adapter": {
+        "id": "builtin-source",
+        "version": "1.1.0",
+        "maturity": "stable",
+        "type": "built_in"
+      },
+      "maturity": "stable",
+      "revision": "1",
+      "frameworks": [
+        "Express",
+        "NestJS",
+        "Next.js App Router"
+      ],
+      "alternatives": [
+        "Record and manually review the excluded routes and controls while retaining the evidence gap as unknown."
+      ],
+      "userDecisions": [
+        "Confirm whether the incomplete files or dynamic relationships are deployed and whether refactoring or a documented manual review is appropriate."
+      ],
+      "id": "js-route-security-evidence-incomplete",
+      "kind": "evidence_integrity",
+      "family": "object_authorization",
+      "languages": [
+        "javascript",
+        "typescript"
+      ],
+      "domain": "evidence_integrity",
+      "severity": "high",
+      "defaultState": "unknown",
+      "rationale": "required_route_evidence_missing",
+      "technicalTerm": "Incomplete framework route-security evidence",
+      "plainLanguage": "The project appears to use a supported web framework, but one or more files or relationships needed to map its routes and controls could not be analyzed.",
+      "consequence": "A route or authorization boundary may be missing from the route review until the incomplete source evidence is restored.",
+      "confidenceBoundary": "The route coverage ledger records bounded parser, module-linking or handler-resolution failures. It does not prove that an affected route is vulnerable or safe.",
+      "applicability": "JavaScript and TypeScript projects with detected Express, NestJS or Next.js App Router source or manifest evidence.",
+      "detection": {
+        "type": "route_coverage_ledger",
+        "analyzer": "builtin-route",
+        "outcomes": [
+          "parser_error",
+          "module_resolution_incomplete",
+          "handler_unresolved",
+          "bounded_limit"
+        ]
+      },
+      "standards": [
+        {
+          "id": "CWE-693",
+          "url": "https://cwe.mitre.org/data/definitions/693.html"
+        }
+      ],
+      "falsePositiveCauses": [
+        "The incomplete file is unrelated to any deployed route despite living inside a supported framework project.",
+        "A dynamic framework construct is intentionally outside the documented static route contract."
+      ],
+      "proposal": {
+        "status": "review_required",
+        "summary": "Review the named coverage reasons, restore parsable source or simplify the unresolved route relationship, then rerun before treating the route inventory as complete."
+      },
+      "proposalRisks": [
+        "Changing dynamic route registration or framework composition can alter routing order and runtime behavior."
+      ],
+      "sideEffects": [
+        "Refactoring routes for static visibility can change path composition, middleware inheritance or framework startup behavior."
+      ],
+      "securityRetest": "Rerun the built-in audit until the route-security coverage entry is completed, then review the newly inventoried routes and controls.",
+      "functionalRetest": "Exercise framework startup and every affected route method/path after resolving parser or routing structure issues.",
+      "rollback": "Revert a route refactor if routing behavior regresses, keep the route evidence marked unknown, and document a manual review path.",
+      "helpUri": "https://github.com/parousia8888/web-app-security-skill/blob/main/KNOWN_LIMITATIONS.md",
+      "fixtures": {
+        "positive": [
+          {
+            "id": "route-security-incomplete-positive",
+            "path": "test/route-security-integration.test.mjs"
+          }
+        ],
+        "negative": [
+          {
+            "id": "route-security-complete-positive",
+            "path": "test/route-security-integration.test.mjs"
           }
         ]
       }

@@ -1,0 +1,1417 @@
+{
+  "schemaVersion": 1,
+  "release": "v0.6.0",
+  "evidenceType": "bounded_ordinary_project_route_review",
+  "reviewedAt": "2026-08-24T00:00:00.000Z",
+  "method": {
+    "sourceOnly": true,
+    "fixedCommits": true,
+    "hostedInstancesProbed": false,
+    "projectDependenciesExecuted": false,
+    "projectDeploymentsStarted": false,
+    "precisionRecallPublished": false,
+    "routeCountTreatedAsVulnerabilityCount": false,
+    "manualAnnotationCap": 60
+  },
+  "rejectedCandidates": [
+    {
+      "project": "Linkwarden",
+      "repository": "linkwarden/linkwarden",
+      "commit": "62f1b81ff7f66001b0f5f613202f87771f3186ee",
+      "reason": "The fixed revision produced no eligible Next.js App Router route records, so it was rejected as framework evidence rather than counted as a zero-result success."
+    }
+  ],
+  "projects": [
+    {
+      "id": "uptime-kuma",
+      "project": "Uptime Kuma",
+      "repository": "louislam/uptime-kuma",
+      "commit": "6b5ea0155793e666666745fb8d6fef1e829543a2",
+      "license": {
+        "spdx": "MIT",
+        "path": "LICENSE"
+      },
+      "framework": "express",
+      "analyzerRun": {
+        "records": 23,
+        "coverage": "partial",
+        "incompleteReasons": [
+          "express_router_mount_unresolved"
+        ],
+        "sampledOutRecords": 7
+      },
+      "annotations": [
+        {
+          "id": "uptime-kuma-route-01",
+          "expected": {
+            "method": "GET",
+            "path": "/api/entry-page"
+          },
+          "source": {
+            "path": "server/routers/api-router.js",
+            "line": 28,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/routers/api-router.js#L28"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.e81ca223087c6a8e0c198679",
+            "authentication": "not_observed",
+            "authorization": "not_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "appropriate-later",
+          "note": "Public entry-page metadata; no route-level login control is expected from this source path."
+        },
+        {
+          "id": "uptime-kuma-route-02",
+          "expected": {
+            "method": "ALL",
+            "path": "/api/push/:pushToken"
+          },
+          "source": {
+            "path": "server/routers/api-router.js",
+            "line": 47,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/routers/api-router.js#L47"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.e81c7f7be6c6443194c17528",
+            "authentication": "not_observed",
+            "authorization": "not_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "opaque-capability-token",
+          "priorityAssessment": "useful-review-lead",
+          "note": "The token in the path is the capability boundary. Static route controls do not prove token entropy, disclosure resistance or monitor ownership."
+        },
+        {
+          "id": "uptime-kuma-route-03",
+          "expected": {
+            "method": "GET",
+            "path": "/api/badge/:id/status"
+          },
+          "source": {
+            "path": "server/routers/api-router.js",
+            "line": 148,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/routers/api-router.js#L148"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.df319e8dd5783ee0fea664b2",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "expected-benign-review",
+          "note": "The route checks whether the monitor is public; cache/CORS helpers are not authentication controls."
+        },
+        {
+          "id": "uptime-kuma-route-04",
+          "expected": {
+            "method": "GET",
+            "path": "/api/badge/:id/uptime/:duration?"
+          },
+          "source": {
+            "path": "server/routers/api-router.js",
+            "line": 221,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/routers/api-router.js#L221"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.bdfa937316105f5d17c83ecb",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "expected-benign-review",
+          "note": "Public-monitor filtering is performed in route logic; the custom middleware signal itself does not prove authorization."
+        },
+        {
+          "id": "uptime-kuma-route-05",
+          "expected": {
+            "method": "GET",
+            "path": "/api/badge/:id/ping/:duration?"
+          },
+          "source": {
+            "path": "server/routers/api-router.js",
+            "line": 285,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/routers/api-router.js#L285"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.23fa5975b4fc1f53c9739bee",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "expected-benign-review",
+          "note": "The identifier deserves review, but this endpoint intentionally exposes only public-monitor badge data."
+        },
+        {
+          "id": "uptime-kuma-route-06",
+          "expected": {
+            "method": "GET",
+            "path": "/api/badge/:id/avg-response/:duration?"
+          },
+          "source": {
+            "path": "server/routers/api-router.js",
+            "line": 351,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/routers/api-router.js#L351"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.e3fab6e3e92759e19b0f32e2",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "expected-benign-review",
+          "note": "The review priority is conservative; public-monitor filtering is visible in the handler."
+        },
+        {
+          "id": "uptime-kuma-route-07",
+          "expected": {
+            "method": "GET",
+            "path": "/api/badge/:id/cert-exp"
+          },
+          "source": {
+            "path": "server/routers/api-router.js",
+            "line": 424,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/routers/api-router.js#L424"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.ae0f6d9ff8a462a404eb53a8",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "expected-benign-review",
+          "note": "The public-monitor check is relevant; cache and response helpers remain only candidates."
+        },
+        {
+          "id": "uptime-kuma-route-08",
+          "expected": {
+            "method": "GET",
+            "path": "/api/badge/:id/response"
+          },
+          "source": {
+            "path": "server/routers/api-router.js",
+            "line": 507,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/routers/api-router.js#L507"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.8f87eee3a66a07bc390a22aa",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "expected-benign-review",
+          "note": "The object-shaped path is correctly prioritized, while public-monitor logic makes this an expected benign review."
+        },
+        {
+          "id": "uptime-kuma-route-09",
+          "expected": {
+            "method": "GET",
+            "path": "/status/:slug"
+          },
+          "source": {
+            "path": "server/routers/status-page-router.js",
+            "line": 16,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/routers/status-page-router.js#L16"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.bfc12c8fc7e327ba70f7d403",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "appropriate-later",
+          "note": "Status pages are public by product design; cache middleware is not a login control."
+        },
+        {
+          "id": "uptime-kuma-route-10",
+          "expected": {
+            "method": "GET",
+            "path": "/status/:slug/rss"
+          },
+          "source": {
+            "path": "server/routers/status-page-router.js",
+            "line": 22,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/routers/status-page-router.js#L22"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.b36c795c668e09872f7c980b",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "appropriate-later",
+          "note": "The public RSS endpoint is expected to be reachable without login."
+        },
+        {
+          "id": "uptime-kuma-route-11",
+          "expected": {
+            "method": "GET",
+            "path": "/status-page"
+          },
+          "source": {
+            "path": "server/routers/status-page-router.js",
+            "line": 33,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/routers/status-page-router.js#L33"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.0f49526261281d52fbd3acd4",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "appropriate-later",
+          "note": "The default public status page is correctly left for later review."
+        },
+        {
+          "id": "uptime-kuma-route-12",
+          "expected": {
+            "method": "GET",
+            "path": "/api/status-page/:slug"
+          },
+          "source": {
+            "path": "server/routers/status-page-router.js",
+            "line": 39,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/routers/status-page-router.js#L39"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.b607c2d3de56d79758cf8a5d",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "appropriate-later",
+          "note": "The slug selects a published status page rather than a private user object."
+        },
+        {
+          "id": "uptime-kuma-route-13",
+          "expected": {
+            "method": "GET",
+            "path": "/api/status-page/heartbeat/:slug"
+          },
+          "source": {
+            "path": "server/routers/status-page-router.js",
+            "line": 64,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/routers/status-page-router.js#L64"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.e43e58c05513c823fd093d95",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "appropriate-later",
+          "note": "The handler filters monitor groups to public records; route-level auth is intentionally absent."
+        },
+        {
+          "id": "uptime-kuma-route-14",
+          "expected": {
+            "method": "GET",
+            "path": "/api/status-page/:slug/manifest.json"
+          },
+          "source": {
+            "path": "server/routers/status-page-router.js",
+            "line": 113,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/routers/status-page-router.js#L113"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.3d865fa340c0c17804ae9a7e",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "appropriate-later",
+          "note": "A Web app manifest for a published status page is expected public output."
+        },
+        {
+          "id": "uptime-kuma-route-15",
+          "expected": {
+            "method": "GET",
+            "path": "/api/status-page/:slug/incident-history"
+          },
+          "source": {
+            "path": "server/routers/status-page-router.js",
+            "line": 145,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/routers/status-page-router.js#L145"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.e8229670510a21e830d8bc39",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "appropriate-later",
+          "note": "The handler requests public incident history for the selected status page."
+        },
+        {
+          "id": "uptime-kuma-route-16",
+          "expected": {
+            "method": "GET",
+            "path": "/api/status-page/:slug/badge"
+          },
+          "source": {
+            "path": "server/routers/status-page-router.js",
+            "line": 170,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/routers/status-page-router.js#L170"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.bb5e3eaef96ca45ba3eae65d",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "appropriate-later",
+          "note": "The badge aggregates monitors explicitly filtered to public groups."
+        },
+        {
+          "id": "uptime-kuma-route-17",
+          "expected": {
+            "method": "GET",
+            "path": "/"
+          },
+          "source": {
+            "path": "server/server.js",
+            "line": 264,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/server.js#L264"
+          },
+          "observed": {
+            "status": "missed",
+            "routeId": null,
+            "authentication": null,
+            "authorization": null,
+            "priority": null
+          },
+          "controlClass": "not-reviewed-because-missed",
+          "priorityAssessment": "not-assigned-because-missed",
+          "note": "A direct app alias created outside the supported factory pattern hid this registration."
+        },
+        {
+          "id": "uptime-kuma-route-18",
+          "expected": {
+            "method": "GET",
+            "path": "/robots.txt"
+          },
+          "source": {
+            "path": "server/server.js",
+            "line": 342,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/server.js#L342"
+          },
+          "observed": {
+            "status": "missed",
+            "routeId": null,
+            "authentication": null,
+            "authorization": null,
+            "priority": null
+          },
+          "controlClass": "not-reviewed-because-missed",
+          "priorityAssessment": "not-assigned-because-missed",
+          "note": "The same unresolved app alias hid this ordinary public route."
+        },
+        {
+          "id": "uptime-kuma-route-19",
+          "expected": {
+            "method": "GET",
+            "path": "/metrics"
+          },
+          "source": {
+            "path": "server/server.js",
+            "line": 355,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/server.js#L355"
+          },
+          "observed": {
+            "status": "missed",
+            "routeId": null,
+            "authentication": null,
+            "authorization": null,
+            "priority": null
+          },
+          "controlClass": "not-reviewed-because-missed",
+          "priorityAssessment": "not-assigned-because-missed",
+          "note": "The missed route has an apiAuth middleware; missing it also loses a useful authentication signal."
+        },
+        {
+          "id": "uptime-kuma-route-20",
+          "expected": {
+            "method": "GET",
+            "path": "/.well-known/change-password"
+          },
+          "source": {
+            "path": "server/server.js",
+            "line": 367,
+            "url": "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/server.js#L367"
+          },
+          "observed": {
+            "status": "missed",
+            "routeId": null,
+            "authentication": null,
+            "authorization": null,
+            "priority": null
+          },
+          "controlClass": "not-reviewed-because-missed",
+          "priorityAssessment": "not-assigned-because-missed",
+          "note": "The same alias boundary hides this redirect route."
+        }
+      ],
+      "promotion": {
+        "decision": "stable-bounded",
+        "boundary": "Stable for direct Express app/router factory registrations and statically resolved mounts. Aliased app objects and unresolved mount relationships remain explicit partial coverage."
+      },
+      "experimentalBolaReview": {
+        "matches": 0,
+        "classifications": {
+          "actionable_review_lead": 0,
+          "expected_benign_review": 0,
+          "incorrect_match": 0,
+          "unresolved": 0
+        },
+        "decision": "experimental",
+        "reason": "No direct Prisma match occurred in this bounded ordinary-project sample. Planted fixtures alone are insufficient for stable promotion."
+      }
+    },
+    {
+      "id": "nestjs-boilerplate",
+      "project": "NestJS Boilerplate",
+      "repository": "brocoders/nestjs-boilerplate",
+      "commit": "9620f159eefe38f47747d02ab162852367c5472c",
+      "license": {
+        "spdx": "MIT",
+        "path": "LICENSE"
+      },
+      "framework": "nestjs",
+      "analyzerRun": {
+        "records": 24,
+        "coverage": "completed",
+        "incompleteReasons": [],
+        "sampledOutRecords": 4
+      },
+      "annotations": [
+        {
+          "id": "nestjs-boilerplate-route-01",
+          "expected": {
+            "method": "POST",
+            "path": "/auth/apple/login"
+          },
+          "source": {
+            "path": "src/auth-apple/auth-apple.controller.ts",
+            "line": 26,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth-apple/auth-apple.controller.ts#L26"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.4bc323af293d8ca6effb1747",
+            "authentication": "not_observed",
+            "authorization": "not_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "expected-benign-review",
+          "note": "A login initiation endpoint is intentionally public."
+        },
+        {
+          "id": "nestjs-boilerplate-route-02",
+          "expected": {
+            "method": "POST",
+            "path": "/auth/facebook/login"
+          },
+          "source": {
+            "path": "src/auth-facebook/auth-facebook.controller.ts",
+            "line": 26,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth-facebook/auth-facebook.controller.ts#L26"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.73388104c63a2302df951e50",
+            "authentication": "not_observed",
+            "authorization": "not_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "expected-benign-review",
+          "note": "A login initiation endpoint is intentionally public."
+        },
+        {
+          "id": "nestjs-boilerplate-route-03",
+          "expected": {
+            "method": "POST",
+            "path": "/auth/google/login"
+          },
+          "source": {
+            "path": "src/auth-google/auth-google.controller.ts",
+            "line": 26,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth-google/auth-google.controller.ts#L26"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.4df7364c6dd49b21f60427ad",
+            "authentication": "not_observed",
+            "authorization": "not_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "expected-benign-review",
+          "note": "A login initiation endpoint is intentionally public."
+        },
+        {
+          "id": "nestjs-boilerplate-route-04",
+          "expected": {
+            "method": "POST",
+            "path": "/auth/email/login"
+          },
+          "source": {
+            "path": "src/auth/auth.controller.ts",
+            "line": 39,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L39"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.d52c1aec80a4fe49e2d79c3c",
+            "authentication": "not_observed",
+            "authorization": "not_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "expected-benign-review",
+          "note": "Login must be reachable before authentication; abuse controls remain a separate review."
+        },
+        {
+          "id": "nestjs-boilerplate-route-05",
+          "expected": {
+            "method": "POST",
+            "path": "/auth/email/register"
+          },
+          "source": {
+            "path": "src/auth/auth.controller.ts",
+            "line": 51,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L51"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.79269f8c0808134990080037",
+            "authentication": "not_observed",
+            "authorization": "not_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "expected-benign-review",
+          "note": "Registration is intentionally public; rate limits and account policy are outside route-control mapping."
+        },
+        {
+          "id": "nestjs-boilerplate-route-06",
+          "expected": {
+            "method": "POST",
+            "path": "/auth/email/confirm"
+          },
+          "source": {
+            "path": "src/auth/auth.controller.ts",
+            "line": 57,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L57"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.1098f25f7efc04d70ad4ebcc",
+            "authentication": "not_observed",
+            "authorization": "not_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "expected-benign-review",
+          "note": "Confirmation uses a token rather than an existing login session."
+        },
+        {
+          "id": "nestjs-boilerplate-route-07",
+          "expected": {
+            "method": "POST",
+            "path": "/auth/email/confirm/new"
+          },
+          "source": {
+            "path": "src/auth/auth.controller.ts",
+            "line": 65,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L65"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.67ac84ad62ae2e7bf72e958f",
+            "authentication": "not_observed",
+            "authorization": "not_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "expected-benign-review",
+          "note": "Resending confirmation is a public auth workflow; abuse controls require contextual review."
+        },
+        {
+          "id": "nestjs-boilerplate-route-08",
+          "expected": {
+            "method": "POST",
+            "path": "/auth/forgot/password"
+          },
+          "source": {
+            "path": "src/auth/auth.controller.ts",
+            "line": 73,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L73"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.670085ff003edc89e8036f63",
+            "authentication": "not_observed",
+            "authorization": "not_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "expected-benign-review",
+          "note": "Password recovery is intentionally pre-authentication."
+        },
+        {
+          "id": "nestjs-boilerplate-route-09",
+          "expected": {
+            "method": "POST",
+            "path": "/auth/reset/password"
+          },
+          "source": {
+            "path": "src/auth/auth.controller.ts",
+            "line": 81,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L81"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.c78889dc121b443bb1bb5b87",
+            "authentication": "not_observed",
+            "authorization": "not_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "expected-benign-review",
+          "note": "The reset hash is the workflow credential; its validation is not visible as a route guard."
+        },
+        {
+          "id": "nestjs-boilerplate-route-10",
+          "expected": {
+            "method": "GET",
+            "path": "/auth/me"
+          },
+          "source": {
+            "path": "src/auth/auth.controller.ts",
+            "line": 90,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L90"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.a9bcdd7865a8134990080037",
+            "authentication": "local_observed",
+            "authorization": "not_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "supported-authentication-observed",
+          "priorityAssessment": "appropriate-later",
+          "note": "Passport authentication is correctly recognized; the endpoint addresses the current subject."
+        },
+        {
+          "id": "nestjs-boilerplate-route-11",
+          "expected": {
+            "method": "POST",
+            "path": "/auth/refresh"
+          },
+          "source": {
+            "path": "src/auth/auth.controller.ts",
+            "line": 106,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L106"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.6a7e179540be1752cc8bc16c",
+            "authentication": "local_observed",
+            "authorization": "not_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "supported-authentication-observed",
+          "priorityAssessment": "expected-benign-review",
+          "note": "Authentication is visible; refresh-token rotation and replay handling are outside this mapper."
+        },
+        {
+          "id": "nestjs-boilerplate-route-12",
+          "expected": {
+            "method": "POST",
+            "path": "/auth/logout"
+          },
+          "source": {
+            "path": "src/auth/auth.controller.ts",
+            "line": 125,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L125"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.76359c7dc816f428af487ee9",
+            "authentication": "local_observed",
+            "authorization": "not_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "supported-authentication-observed",
+          "priorityAssessment": "expected-benign-review",
+          "note": "The route is session-bound; no separate object authorization is expected."
+        },
+        {
+          "id": "nestjs-boilerplate-route-13",
+          "expected": {
+            "method": "PATCH",
+            "path": "/auth/me"
+          },
+          "source": {
+            "path": "src/auth/auth.controller.ts",
+            "line": 137,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L137"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.76494a5acf9399130e027892",
+            "authentication": "local_observed",
+            "authorization": "not_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "supported-authentication-observed",
+          "priorityAssessment": "expected-benign-review",
+          "note": "The operation updates the authenticated subject rather than a path-selected user."
+        },
+        {
+          "id": "nestjs-boilerplate-route-14",
+          "expected": {
+            "method": "DELETE",
+            "path": "/auth/me"
+          },
+          "source": {
+            "path": "src/auth/auth.controller.ts",
+            "line": 154,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L154"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.99938fb6962c5379b8f42f02",
+            "authentication": "local_observed",
+            "authorization": "not_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "supported-authentication-observed",
+          "priorityAssessment": "expected-benign-review",
+          "note": "Account deletion remains high-impact, but the source binds it to the authenticated subject."
+        },
+        {
+          "id": "nestjs-boilerplate-route-15",
+          "expected": {
+            "method": "POST",
+            "path": "/files/upload"
+          },
+          "source": {
+            "path": "src/files/infrastructure/uploader/local/files.controller.ts",
+            "line": 33,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/files/infrastructure/uploader/local/files.controller.ts#L33"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.556ed6443d4823c7cd23a039",
+            "authentication": "local_observed",
+            "authorization": "not_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "supported-authentication-observed",
+          "priorityAssessment": "useful-review-lead",
+          "note": "Authentication is visible; upload authorization, type and storage policy need contextual review."
+        },
+        {
+          "id": "nestjs-boilerplate-route-16",
+          "expected": {
+            "method": "POST",
+            "path": "/users"
+          },
+          "source": {
+            "path": "src/users/users.controller.ts",
+            "line": 50,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/users/users.controller.ts#L50"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.b027fc7a206e142889758e55",
+            "authentication": "inherited_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "supported-authentication-and-custom-authorization",
+          "priorityAssessment": "useful-review-lead",
+          "note": "Passport and a custom RolesGuard are both visible; the custom role policy remains unresolved."
+        },
+        {
+          "id": "nestjs-boilerplate-route-17",
+          "expected": {
+            "method": "GET",
+            "path": "/users"
+          },
+          "source": {
+            "path": "src/users/users.controller.ts",
+            "line": 62,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/users/users.controller.ts#L62"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.d748d5ec1fca798ba661dfe2",
+            "authentication": "inherited_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "supported-authentication-and-custom-authorization",
+          "priorityAssessment": "useful-review-lead",
+          "note": "The collection route inherits Passport and RolesGuard; runtime role behavior is not proved."
+        },
+        {
+          "id": "nestjs-boilerplate-route-18",
+          "expected": {
+            "method": "GET",
+            "path": "/users/:id"
+          },
+          "source": {
+            "path": "src/users/users.controller.ts",
+            "line": 92,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/users/users.controller.ts#L92"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.1d2e14af2458c7a35a0b0d43",
+            "authentication": "inherited_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "supported-authentication-and-custom-authorization",
+          "priorityAssessment": "useful-review-lead",
+          "note": "The object-shaped path and unresolved custom role guard are correctly prioritized."
+        },
+        {
+          "id": "nestjs-boilerplate-route-19",
+          "expected": {
+            "method": "PATCH",
+            "path": "/users/:id"
+          },
+          "source": {
+            "path": "src/users/users.controller.ts",
+            "line": 109,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/users/users.controller.ts#L109"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.909a92e4af6c9fc4303df26d",
+            "authentication": "inherited_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "supported-authentication-and-custom-authorization",
+          "priorityAssessment": "useful-review-lead",
+          "note": "Authentication and a custom guard are visible; service-layer object checks remain unproved."
+        },
+        {
+          "id": "nestjs-boilerplate-route-20",
+          "expected": {
+            "method": "DELETE",
+            "path": "/users/:id"
+          },
+          "source": {
+            "path": "src/users/users.controller.ts",
+            "line": 129,
+            "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/users/users.controller.ts#L129"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.ea7140c1b36144b83dd42751",
+            "authentication": "inherited_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "supported-authentication-and-custom-authorization",
+          "priorityAssessment": "useful-review-lead",
+          "note": "The destructive object route is correctly surfaced for early authorization review."
+        }
+      ],
+      "promotion": {
+        "decision": "stable-bounded",
+        "boundary": "Stable for static NestJS controller and method decorators, including static controller option paths, arrays and supported Passport/custom guard signals. Dynamic decorator paths remain path unknown."
+      },
+      "experimentalBolaReview": {
+        "matches": 0,
+        "classifications": {
+          "actionable_review_lead": 0,
+          "expected_benign_review": 0,
+          "incorrect_match": 0,
+          "unresolved": 0
+        },
+        "decision": "experimental",
+        "reason": "No direct Prisma match occurred in this bounded ordinary-project sample. Planted fixtures alone are insufficient for stable promotion."
+      }
+    },
+    {
+      "id": "vercel-chatbot",
+      "project": "Vercel AI Chatbot",
+      "repository": "vercel/chatbot",
+      "commit": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
+      "license": {
+        "spdx": "Apache-2.0",
+        "path": "LICENSE"
+      },
+      "framework": "next-app",
+      "analyzerRun": {
+        "records": 15,
+        "coverage": "partial",
+        "incompleteReasons": [
+          "next_route_handler_export_unresolved"
+        ],
+        "sampledOutRecords": 0
+      },
+      "annotations": [
+        {
+          "id": "vercel-chatbot-route-01",
+          "expected": {
+            "method": "GET",
+            "path": "/api/auth/guest"
+          },
+          "source": {
+            "path": "app/(auth)/api/auth/guest/route.ts",
+            "line": 6,
+            "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(auth)/api/auth/guest/route.ts#L6"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.ec9f3983fd7553a06d146cb6",
+            "authentication": "not_observed",
+            "authorization": "not_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "appropriate-later",
+          "note": "The route creates a guest identity and is intentionally reachable before login."
+        },
+        {
+          "id": "vercel-chatbot-route-02",
+          "expected": {
+            "method": "GET",
+            "path": "/api/chat/[id]/stream"
+          },
+          "source": {
+            "path": "app/(chat)/api/chat/[id]/stream/route.ts",
+            "line": 1,
+            "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/chat/[id]/stream/route.ts#L1"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.988768f478a9d1865120e110",
+            "authentication": "not_observed",
+            "authorization": "not_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "useful-review-lead",
+          "note": "The object-shaped stream route delegates its checks; no supported local control is visible."
+        },
+        {
+          "id": "vercel-chatbot-route-03",
+          "expected": {
+            "method": "POST",
+            "path": "/api/chat"
+          },
+          "source": {
+            "path": "app/(chat)/api/chat/route.ts",
+            "line": 70,
+            "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/chat/route.ts#L70"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.e058be486acfa2d8cdbd5002",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "useful-review-lead",
+          "note": "The custom auth helper is visible but requires project-specific validation."
+        },
+        {
+          "id": "vercel-chatbot-route-04",
+          "expected": {
+            "method": "DELETE",
+            "path": "/api/chat"
+          },
+          "source": {
+            "path": "app/(chat)/api/chat/route.ts",
+            "line": 447,
+            "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/chat/route.ts#L447"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.5e73483ae9f934b84d9ea320",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "useful-review-lead",
+          "note": "Custom session and ownership logic is visible inside the handler but not proved by the mapper."
+        },
+        {
+          "id": "vercel-chatbot-route-05",
+          "expected": {
+            "method": "GET",
+            "path": "/api/document"
+          },
+          "source": {
+            "path": "app/(chat)/api/document/route.ts",
+            "line": 19,
+            "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/document/route.ts#L19"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.defda6e45d9a4d52788f28cc",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "useful-review-lead",
+          "note": "The route uses custom session and document-access checks; their correctness remains contextual."
+        },
+        {
+          "id": "vercel-chatbot-route-06",
+          "expected": {
+            "method": "POST",
+            "path": "/api/document"
+          },
+          "source": {
+            "path": "app/(chat)/api/document/route.ts",
+            "line": 51,
+            "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/document/route.ts#L51"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.673a72be393b40e1a75b47ec",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "useful-review-lead",
+          "note": "The state-changing document route is correctly prioritized while custom checks remain unresolved."
+        },
+        {
+          "id": "vercel-chatbot-route-07",
+          "expected": {
+            "method": "DELETE",
+            "path": "/api/document"
+          },
+          "source": {
+            "path": "app/(chat)/api/document/route.ts",
+            "line": 110,
+            "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/document/route.ts#L110"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.4bb07620138ba070b8fed028",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "useful-review-lead",
+          "note": "Deletion uses custom session and ownership logic that requires project review."
+        },
+        {
+          "id": "vercel-chatbot-route-08",
+          "expected": {
+            "method": "POST",
+            "path": "/api/files/upload"
+          },
+          "source": {
+            "path": "app/(chat)/api/files/upload/route.ts",
+            "line": 18,
+            "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/files/upload/route.ts#L18"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.047ab4b983d19b0a916002d9",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "useful-review-lead",
+          "note": "The custom auth helper is visible; upload policy and storage controls remain outside route mapping."
+        },
+        {
+          "id": "vercel-chatbot-route-09",
+          "expected": {
+            "method": "GET",
+            "path": "/api/history"
+          },
+          "source": {
+            "path": "app/(chat)/api/history/route.ts",
+            "line": 6,
+            "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/history/route.ts#L6"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.63cc4835909350c0d45317b1",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "useful-review-lead",
+          "note": "Custom session evidence is visible and should be reviewed with data-layer filtering."
+        },
+        {
+          "id": "vercel-chatbot-route-10",
+          "expected": {
+            "method": "DELETE",
+            "path": "/api/history"
+          },
+          "source": {
+            "path": "app/(chat)/api/history/route.ts",
+            "line": 39,
+            "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/history/route.ts#L39"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.ae7e00ce0d7f8fdf8b82c90b",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "useful-review-lead",
+          "note": "The destructive route is correctly prioritized; custom authorization remains unresolved."
+        },
+        {
+          "id": "vercel-chatbot-route-11",
+          "expected": {
+            "method": "GET",
+            "path": "/api/messages"
+          },
+          "source": {
+            "path": "app/(chat)/api/messages/route.ts",
+            "line": 5,
+            "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/messages/route.ts#L5"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.1343f800aabf9aa9a1fbfc5d",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "useful-review-lead",
+          "note": "Message retrieval uses a custom auth helper and delegated data filtering."
+        },
+        {
+          "id": "vercel-chatbot-route-12",
+          "expected": {
+            "method": "GET",
+            "path": "/api/models"
+          },
+          "source": {
+            "path": "app/(chat)/api/models/route.ts",
+            "line": 3,
+            "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/models/route.ts#L3"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.4f9bb03f9bba04ab6570947e",
+            "authentication": "not_observed",
+            "authorization": "not_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "expected-public-no-route-control",
+          "priorityAssessment": "appropriate-later",
+          "note": "The model catalog is intentionally public in this source version."
+        },
+        {
+          "id": "vercel-chatbot-route-13",
+          "expected": {
+            "method": "GET",
+            "path": "/api/suggestions"
+          },
+          "source": {
+            "path": "app/(chat)/api/suggestions/route.ts",
+            "line": 5,
+            "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/suggestions/route.ts#L5"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.56ba6326b3a6d8aef7d7f0c4",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "useful-review-lead",
+          "note": "Custom session and document access checks require project-context review."
+        },
+        {
+          "id": "vercel-chatbot-route-14",
+          "expected": {
+            "method": "GET",
+            "path": "/api/vote"
+          },
+          "source": {
+            "path": "app/(chat)/api/vote/route.ts",
+            "line": 12,
+            "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/vote/route.ts#L12"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.d1356cc79683f94134bfe4e0",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_later"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "useful-review-lead",
+          "note": "The custom auth helper is visible; query-level ownership must be reviewed separately."
+        },
+        {
+          "id": "vercel-chatbot-route-15",
+          "expected": {
+            "method": "PATCH",
+            "path": "/api/vote"
+          },
+          "source": {
+            "path": "app/(chat)/api/vote/route.ts",
+            "line": 44,
+            "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/vote/route.ts#L44"
+          },
+          "observed": {
+            "status": "detected",
+            "routeId": "route.eb87fe78924fcf6c80b86213",
+            "authentication": "candidate_observed",
+            "authorization": "candidate_observed",
+            "priority": "review_next"
+          },
+          "controlClass": "custom-control-requires-review",
+          "priorityAssessment": "useful-review-lead",
+          "note": "The write route is correctly prioritized, with custom authorization still unresolved."
+        },
+        {
+          "id": "vercel-chatbot-route-16",
+          "expected": {
+            "method": "GET",
+            "path": "/api/auth/[...nextauth]"
+          },
+          "source": {
+            "path": "app/(auth)/api/auth/[...nextauth]/route.ts",
+            "line": 1,
+            "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(auth)/api/auth/[...nextauth]/route.ts#L1"
+          },
+          "observed": {
+            "status": "missed",
+            "routeId": null,
+            "authentication": null,
+            "authorization": null,
+            "priority": null
+          },
+          "controlClass": "not-reviewed-because-missed",
+          "priorityAssessment": "not-assigned-because-missed",
+          "note": "A handler re-export through a project alias remains explicit incomplete coverage."
+        },
+        {
+          "id": "vercel-chatbot-route-17",
+          "expected": {
+            "method": "POST",
+            "path": "/api/auth/[...nextauth]"
+          },
+          "source": {
+            "path": "app/(auth)/api/auth/[...nextauth]/route.ts",
+            "line": 1,
+            "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(auth)/api/auth/[...nextauth]/route.ts#L1"
+          },
+          "observed": {
+            "status": "missed",
+            "routeId": null,
+            "authentication": null,
+            "authorization": null,
+            "priority": null
+          },
+          "controlClass": "not-reviewed-because-missed",
+          "priorityAssessment": "not-assigned-because-missed",
+          "note": "The same unresolved re-export hides the POST handler and its controls."
+        }
+      ],
+      "promotion": {
+        "decision": "stable-bounded",
+        "boundary": "Stable for direct named Next.js App Router handler exports in route files. Handler re-exports, computed exports and unresolved project aliases remain explicit partial coverage."
+      },
+      "experimentalBolaReview": {
+        "matches": 0,
+        "classifications": {
+          "actionable_review_lead": 0,
+          "expected_benign_review": 0,
+          "incorrect_match": 0,
+          "unresolved": 0
+        },
+        "decision": "experimental",
+        "reason": "No direct Prisma match occurred in this bounded ordinary-project sample. Planted fixtures alone are insufficient for stable promotion."
+      }
+    }
+  ],
+  "aggregate": {
+    "projects": 3,
+    "reviewedRoutes": 57,
+    "detectedRoutes": 51,
+    "missedRoutes": 6,
+    "extraRecords": 0,
+    "experimentalBolaMatches": 0
+  },
+  "promotionDecisions": {
+    "express": {
+      "decision": "stable-bounded",
+      "boundary": "Stable for direct Express app/router factory registrations and statically resolved mounts. Aliased app objects and unresolved mount relationships remain explicit partial coverage."
+    },
+    "nestjs": {
+      "decision": "stable-bounded",
+      "boundary": "Stable for static NestJS controller and method decorators, including static controller option paths, arrays and supported Passport/custom guard signals. Dynamic decorator paths remain path unknown."
+    },
+    "next-app": {
+      "decision": "stable-bounded",
+      "boundary": "Stable for direct named Next.js App Router handler exports in route files. Handler re-exports, computed exports and unresolved project aliases remain explicit partial coverage."
+    },
+    "experimental-prisma-bola": {
+      "decision": "experimental",
+      "boundary": "Direct same-handler Prisma route-identifier review only; no ordinary-project matches were available to justify stable promotion."
+    }
+  },
+  "limitations": [
+    "This purposive 57-route review is not a representative sample and does not measure production precision or recall.",
+    "Static control evidence does not prove deployed reachability, middleware execution, role semantics, object ownership, row-level security or exploitability.",
+    "Only selected records were manually annotated where a project emitted more than 20 routes; misses remain visible and were not added to a denominator for an accuracy score."
+  ]
+}

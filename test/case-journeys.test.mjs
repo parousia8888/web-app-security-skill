@@ -52,6 +52,7 @@ for (const rule of OPENGREP_RULES.filter((item) => item.id.startsWith('opengrep-
   currentCoverage[rule.id] = 'not_applicable';
 }
 for (const rule of CHECKOV_RULES) currentCoverage[rule.id] = 'not_applicable';
+currentCoverage['js-route-security-evidence-incomplete'] = 'not_applicable';
 
 try {
   let result = spawnSync(process.execPath, [CHECK], { encoding: 'utf8' });

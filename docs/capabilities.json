@@ -48,8 +48,24 @@
       "name": "Narrow deterministic source audit",
       "category": "detection",
       "maturity": "stable",
-      "scope": "Runs 25 stable built-in risk rules and 2 evidence-integrity rules: five shared repository/configuration checks plus ten bounded JavaScript/TypeScript and ten bounded Python leads. Pattern matches remain suspected; only narrow Git and manifest facts can be confirmed, and this is not whole-program SAST.",
+      "scope": "Runs 25 stable built-in risk rules and 3 evidence-integrity rules: five shared repository/configuration checks plus ten bounded JavaScript/TypeScript and ten bounded Python leads. Pattern matches remain suspected; only narrow Git and manifest facts can be confirmed, and this is not whole-program SAST.",
       "evidence": ["scripts/lib/source-audit.mjs", "scripts/lib/js-ts-source-audit.mjs", "scripts/lib/python-source-audit.mjs", "scripts/lib/source-rule-registry.mjs", "docs/stable-source-rules.json", "test/js-ts-source-audit.test.mjs", "test/python-source-audit.test.mjs", "test/source-rule-registry.test.mjs"]
+    },
+    {
+      "id": "framework-route-security-inventory",
+      "name": "Framework-aware route and control inventory",
+      "category": "detection",
+      "maturity": "stable",
+      "scope": "Produces a separate local route-security artifact for bounded Express, NestJS and Next.js App Router syntax. It maps supported authentication and route-authorization signals, keeps object authorization unresolved unless direct evidence exists, and orders review work without calling priority a severity or missing controls a confirmed vulnerability.",
+      "evidence": ["scripts/lib/route-security-audit.mjs", "scripts/lib/frameworks/express-route-extractor.mjs", "scripts/lib/frameworks/nest-route-extractor.mjs", "scripts/lib/frameworks/next-app-route-extractor.mjs", "docs/reviews/v0.6.0-route-review.json", "test/route-security-integration.test.mjs", "test/v060-route-review.test.mjs"]
+    },
+    {
+      "id": "direct-prisma-route-authorization-review",
+      "name": "Direct Prisma object-authorization review lead",
+      "category": "detection",
+      "maturity": "experimental",
+      "scope": "For supported routes only, observes a route identifier reaching a direct same-handler Prisma operation without a supported same-operation principal constraint. It does not trace services, prove missing authorization, or support a BOLA vulnerability conclusion; the bounded ordinary-project review produced no matches.",
+      "evidence": ["scripts/lib/js-ts-route-authorization-audit.mjs", "docs/reviews/v0.6.0-route-review.json", "test/js-ts-route-authorization-audit.test.mjs", "test/v060-route-review.test.mjs"]
     },
     {
       "id": "aws-exposure-inventory",
@@ -128,8 +144,8 @@
       "name": "Reproducible rule-contract conformance",
       "category": "evidence_reporting",
       "maturity": "stable",
-      "scope": "Regenerates exact JSON and Markdown pass/fail evidence for 25 built-in risk and two evidence-integrity planted positive/negative rule contracts. It is author-maintained conformance evidence, not a production-vulnerability precision, recall, reachability, exploitability or security-coverage measurement.",
-      "evidence": ["scripts/run-rule-contract-conformance.mjs", "scripts/lib/rule-contract-conformance.mjs", "test/rule-contract-conformance.test.mjs", "docs/conformance/v0.5.4-rule-contract-conformance.json"]
+      "scope": "Regenerates exact JSON and Markdown pass/fail evidence for 25 built-in risk and three evidence-integrity planted positive/negative rule contracts. It is author-maintained conformance evidence, not a production-vulnerability precision, recall, reachability, exploitability or security-coverage measurement.",
+      "evidence": ["scripts/run-rule-contract-conformance.mjs", "scripts/lib/rule-contract-conformance.mjs", "test/rule-contract-conformance.test.mjs", "docs/conformance/v0.6.0-rule-contract-conformance.json"]
     },
     {
       "id": "real-world-regression-corpus",

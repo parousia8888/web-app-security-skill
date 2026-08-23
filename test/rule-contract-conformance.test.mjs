@@ -18,7 +18,7 @@ assert.deepEqual(conformance.summary.risk, {
   contracts: 25, positivePassed: 25, positiveFailed: 0,
   negativePassed: 25, negativeFailed: 0, stateMismatches: 0,
 });
-assert.equal(conformance.summary.evidenceIntegrity.positivePassed, 2);
+assert.equal(conformance.summary.evidenceIntegrity.positivePassed, 3);
 assert.equal(conformance.summary.evidenceIntegrity.negativeFailed, 0);
 
 const missingPositive = buildRuleContractConformance(corpus, observations.slice(1));
@@ -36,8 +36,8 @@ const stateMismatch = buildRuleContractConformance(corpus, unexpectedState);
 assert.equal(stateMismatch.summary.combined.stateMismatches, 1);
 assert.match(validateRuleContractConformance(stateMismatch).join('; '), /unexpected evidence state/);
 
-assert.equal(readFileSync(join(ROOT, 'docs', 'conformance', 'v0.5.4-rule-contract-conformance.json'), 'utf8'),
+assert.equal(readFileSync(join(ROOT, 'docs', 'conformance', 'v0.6.0-rule-contract-conformance.json'), 'utf8'),
   `${JSON.stringify(conformance, null, 2)}\n`);
-assert.equal(readFileSync(join(ROOT, 'docs', 'conformance', 'v0.5.4-rule-contract-conformance.md'), 'utf8'),
+assert.equal(readFileSync(join(ROOT, 'docs', 'conformance', 'v0.6.0-rule-contract-conformance.md'), 'utf8'),
   renderRuleContractMarkdown(conformance));
-console.log('rule-contract conformance ok: 27 contracts, committed bytes and planted failure gates');
+console.log('rule-contract conformance ok: 28 contracts, committed bytes and planted failure gates');

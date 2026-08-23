@@ -1,0 +1,707 @@
+{
+  "schemaVersion": 1,
+  "release": "v0.6.0",
+  "evidenceType": "synthetic_rule_contract_conformance",
+  "limitation": "Author-maintained synthetic rule-contract conformance suite; it verifies declared planted examples. It does not measure production-vulnerability precision, recall, reachability, exploitability or security coverage.",
+  "rulesetSemanticDigest": "63ac0c30fd5e0c85ee4080533db4e811eaf10117cb64c28f12e441a9760a2a76",
+  "summary": {
+    "risk": {
+      "contracts": 25,
+      "positivePassed": 25,
+      "positiveFailed": 0,
+      "negativePassed": 25,
+      "negativeFailed": 0,
+      "stateMismatches": 0
+    },
+    "evidenceIntegrity": {
+      "contracts": 3,
+      "positivePassed": 3,
+      "positiveFailed": 0,
+      "negativePassed": 3,
+      "negativeFailed": 0,
+      "stateMismatches": 0
+    },
+    "combined": {
+      "contracts": 28,
+      "positivePassed": 28,
+      "positiveFailed": 0,
+      "negativePassed": 28,
+      "negativeFailed": 0,
+      "stateMismatches": 0
+    }
+  },
+  "rules": [
+    {
+      "ruleId": "browser-html-injection-sink",
+      "kind": "risk_detection",
+      "family": "browser_output",
+      "positive": {
+        "fixtureIds": [
+          "browser-html-sink-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 2,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "browser-html-sink-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "cors-wildcard-with-credentials",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "positive": {
+        "fixtureIds": [
+          "cors-wildcard-credentials-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "cors-wildcard-credentials-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "dependency-lockfile-missing",
+      "kind": "risk_detection",
+      "family": "dependency_configuration",
+      "positive": {
+        "fixtureIds": [
+          "manifest-without-lock"
+        ],
+        "expectedState": "confirmed",
+        "observedStates": [
+          "confirmed"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "manifest-with-lock"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "hardcoded-auth-secret",
+      "kind": "risk_detection",
+      "family": "secret_management",
+      "positive": {
+        "fixtureIds": [
+          "hardcoded-auth-secret-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "hardcoded-auth-secret-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "js-dynamic-code-execution",
+      "kind": "risk_detection",
+      "family": "injection_execution",
+      "positive": {
+        "fixtureIds": [
+          "js-dynamic-execution-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "js-dynamic-execution-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "js-inline-session-secret",
+      "kind": "risk_detection",
+      "family": "secret_management",
+      "positive": {
+        "fixtureIds": [
+          "js-inline-session-secret-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "js-inline-session-secret-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "js-insecure-cookie-options",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "positive": {
+        "fixtureIds": [
+          "js-insecure-cookie-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "js-insecure-cookie-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "js-route-security-evidence-incomplete",
+      "kind": "evidence_integrity",
+      "family": "object_authorization",
+      "positive": {
+        "fixtureIds": [
+          "route-security-incomplete-positive"
+        ],
+        "expectedState": "unknown",
+        "observedStates": [
+          "unknown"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "route-security-complete-positive"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "jwt-unsafe-verification-options",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "positive": {
+        "fixtureIds": [
+          "jwt-unsafe-options-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "jwt-unsafe-options-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "node-child-process-shell-execution",
+      "kind": "risk_detection",
+      "family": "injection_execution",
+      "positive": {
+        "fixtureIds": [
+          "node-shell-execution-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 2,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "node-shell-execution-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "node-inspector-public-bind",
+      "kind": "risk_detection",
+      "family": "framework_exposure",
+      "positive": {
+        "fixtureIds": [
+          "public-inspector-script"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "loopback-inspector-script"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "node-tls-verification-disabled",
+      "kind": "risk_detection",
+      "family": "transport",
+      "positive": {
+        "fixtureIds": [
+          "node-tls-disable-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "node-tls-disable-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "production-source-map-enabled",
+      "kind": "risk_detection",
+      "family": "browser_output",
+      "positive": {
+        "fixtureIds": [
+          "source-map-enabled"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "source-map-default"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "python-cors-wildcard-with-credentials",
+      "kind": "risk_detection",
+      "family": "framework_exposure",
+      "positive": {
+        "fixtureIds": [
+          "python-cors-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "python-cors-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "python-csrf-protection-disabled",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "positive": {
+        "fixtureIds": [
+          "python-csrf-disabled-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 2,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "python-csrf-enabled-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "python-dynamic-code-execution",
+      "kind": "risk_detection",
+      "family": "injection_execution",
+      "positive": {
+        "fixtureIds": [
+          "python-dynamic-execution-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "python-dynamic-execution-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "python-framework-debug-enabled",
+      "kind": "risk_detection",
+      "family": "framework_exposure",
+      "positive": {
+        "fixtureIds": [
+          "python-debug-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "python-debug-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "python-hardcoded-framework-secret",
+      "kind": "risk_detection",
+      "family": "secret_management",
+      "positive": {
+        "fixtureIds": [
+          "python-framework-secret-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "python-framework-secret-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "python-insecure-session-cookie-settings",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "positive": {
+        "fixtureIds": [
+          "python-insecure-cookie-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "python-insecure-cookie-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "python-shell-command-execution",
+      "kind": "risk_detection",
+      "family": "injection_execution",
+      "positive": {
+        "fixtureIds": [
+          "python-shell-execution-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 2,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "python-shell-execution-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "python-tls-verification-disabled",
+      "kind": "risk_detection",
+      "family": "transport",
+      "positive": {
+        "fixtureIds": [
+          "python-tls-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "python-tls-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "python-unsafe-deserialization",
+      "kind": "risk_detection",
+      "family": "deserialization",
+      "positive": {
+        "fixtureIds": [
+          "python-deserialization-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "python-deserialization-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "python-unsafe-yaml-load",
+      "kind": "risk_detection",
+      "family": "deserialization",
+      "positive": {
+        "fixtureIds": [
+          "python-yaml-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "python-yaml-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "react-dangerous-html-sink",
+      "kind": "risk_detection",
+      "family": "browser_output",
+      "positive": {
+        "fixtureIds": [
+          "react-html-sink-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "react-html-sink-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "sensitive-env-file-present",
+      "kind": "risk_detection",
+      "family": "secret_management",
+      "positive": {
+        "fixtureIds": [
+          "real-env-name"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 2,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "template-env-exclusion"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "source-evidence-incomplete",
+      "kind": "evidence_integrity",
+      "family": "deployment_configuration",
+      "positive": {
+        "fixtureIds": [
+          "bounded-traversal"
+        ],
+        "expectedState": "unknown",
+        "observedStates": [
+          "unknown"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "complete-small-project"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "source-stack-unsupported",
+      "kind": "evidence_integrity",
+      "family": "deployment_configuration",
+      "positive": {
+        "fixtureIds": [
+          "unsupported-stack"
+        ],
+        "expectedState": "unknown",
+        "observedStates": [
+          "unknown"
+        ],
+        "findingCount": 2,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "supported-node-stack"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "tracked-sensitive-env-file",
+      "kind": "risk_detection",
+      "family": "secret_management",
+      "positive": {
+        "fixtureIds": [
+          "tracked-env-positive"
+        ],
+        "expectedState": "confirmed",
+        "observedStates": [
+          "confirmed"
+        ],
+        "findingCount": 2,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "tracked-env-safe-neighbor"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    }
+  ]
+}

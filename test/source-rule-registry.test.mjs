@@ -18,13 +18,14 @@ const clone = () => structuredClone(SOURCE_RULE_REGISTRY);
 assert.deepEqual(validateSourceRuleRegistry(SOURCE_RULE_REGISTRY, { root: ROOT }), []);
 const manifest = stableSourceRuleManifest();
 assert.deepEqual(manifest.counts, {
-  stableTotal: 43, builtInRisk: 25, builtInIntegrity: 2, externalRisk: 16,
+  stableTotal: 44, builtInRisk: 25, builtInIntegrity: 3, externalRisk: 16,
 });
 assert.deepEqual(manifest.rules.map((rule) => rule.id),
   [...manifest.rules.map((rule) => rule.id)].sort());
 assert.deepEqual(JSON.parse(readFileSync(`${ROOT}/docs/stable-source-rules.json`, 'utf8')), manifest);
 
-const runtime = SOURCE_RULE_REGISTRY.filter((rule) => rule.adapter.type === 'built_in').map(runtimeRule);
+const runtime = SOURCE_RULE_REGISTRY.filter((rule) =>
+  rule.adapter.type === 'built_in' && rule.maturity === 'stable').map(runtimeRule);
 assert.deepEqual(SOURCE_RULES, runtime);
 assert.deepEqual(CHECKOV_RULES,
   SOURCE_RULE_REGISTRY.filter((rule) => rule.adapter.id === 'checkov').map(runtimeRule));
@@ -38,7 +39,7 @@ assert.deepEqual(resolveAdapterSelection([], 'deep'), DEEP_PROFILE_ADAPTERS);
 assert.throws(() => resolveAdapterSelection(['builtin'], 'deep'), /cannot be combined/);
 assert.throws(() => resolveAdapterSelection([], 'wide'), /unsupported profile/);
 assert.equal(sourceRuleset(['builtin', 'checkov', 'gitleaks', 'opengrep', 'osv']).digest,
-  'b772d69a9f27de4c4e474059eb73e102a6ed69c9ae9b933aaf2253f593425334');
+  'aedf0c2b529efd2d8b06154226af696957ddd8bd189162fcabe44d4a5793001c');
 
 const docsOnly = clone();
 docsOnly[0].plainLanguage = 'Documentation-only wording changed.';
@@ -53,7 +54,7 @@ experimental.push({
   fixtures: structuredClone(experimental[0].fixtures),
 });
 assert.equal(validateSourceRuleRegistry(experimental, { root: ROOT }).length, 0);
-assert.equal(stableSourceRuleManifest(experimental).counts.stableTotal, 43);
+assert.equal(stableSourceRuleManifest(experimental).counts.stableTotal, 44);
 
 for (const mutate of [
   (registry) => { registry[1].id = registry[0].id; },

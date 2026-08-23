@@ -35,7 +35,7 @@ export function collectRuleContractObservations(root) {
     addPositive(auditSource(tracked).findings);
     const incomplete = join(temporary, 'incomplete');
     mkdirSync(join(incomplete, 'src'), { recursive: true });
-    writeFileSync(join(incomplete, 'package.json'), '{"private":true}\n');
+    writeFileSync(join(incomplete, 'package.json'), '{"private":true,"dependencies":{"express":"1.0.0"}}\n');
     writeFileSync(join(incomplete, 'package-lock.json'), '{"lockfileVersion":3}\n');
     writeFileSync(join(incomplete, 'src', 'broken.ts'), 'const value = "unterminated');
     addPositive(auditSource(incomplete).findings);
@@ -107,7 +107,7 @@ export function buildRuleContractConformance(corpus, observations) {
   const integrity = rules.filter((rule) => rule.kind === 'evidence_integrity');
   return {
     schemaVersion: 1,
-    release: 'v0.5.4',
+    release: 'v0.6.0',
     evidenceType: 'synthetic_rule_contract_conformance',
     limitation: LIMITATION,
     rulesetSemanticDigest: corpus.rulesetSemanticDigest,
@@ -134,10 +134,10 @@ export function validateRuleContractConformance(conformance) {
       errors.push(`${result.ruleId} planted positive used an unexpected evidence state`);
     }
   }
-  for (const [group, expected] of [['risk', 25], ['evidenceIntegrity', 2], ['combined', 27]]) {
+  for (const [group, expected] of [['risk', 25], ['evidenceIntegrity', 3], ['combined', 28]]) {
     const value = conformance?.summary?.[group];
     if (value?.contracts !== expected) {
-      errors.push(`${group} contract count differs from the 25 risk + 2 integrity contract`);
+      errors.push(`${group} contract count differs from the 25 risk + 3 integrity contract`);
     }
   }
   return [...new Set(errors)];

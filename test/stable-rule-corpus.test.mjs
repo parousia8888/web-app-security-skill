@@ -29,7 +29,8 @@ const temp = mkdtempSync(join(tmpdir(), 'web-app-security-corpus-'));
 try {
   const incomplete = join(temp, 'incomplete');
   mkdirSync(join(incomplete, 'src'), { recursive: true });
-  writeFileSync(join(incomplete, 'package.json'), '{"private":true}\n');
+  writeFileSync(join(incomplete, 'package.json'),
+    '{"private":true,"dependencies":{"express":"4.0.0"}}\n');
   writeFileSync(join(incomplete, 'package-lock.json'), '{"lockfileVersion":3}\n');
   writeFileSync(join(incomplete, 'src', 'broken.ts'), 'const value = "unterminated');
   add(auditSource(incomplete).findings);
@@ -56,7 +57,7 @@ try {
     assert.match(validateCorpusObservations(corpus, mutated, { adapterType: 'built_in' }).join('; '),
       new RegExp(`missing positive/negative observation ${rule.ruleId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
   }
-  console.log('stable rule corpus ok: 27 built-in observations and 27 planted missing-observation failures');
+  console.log('stable rule corpus ok: 28 built-in observations and 28 planted missing-observation failures');
 } finally {
   rmSync(temp, { recursive: true, force: true });
 }
