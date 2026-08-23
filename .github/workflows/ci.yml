@@ -13,6 +13,7 @@ jobs:
           fetch-depth: 0 # verify immutable installer trust anchors from repository history
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with: { node-version: '${{ matrix.node }}' }
+      - run: npm ci --ignore-scripts
       - run: npm run lint
       - run: npm test                        # unit + robots + real-CLI integration (fixture)
       - run: bash test/shell-smoke.sh        # real gate: exit codes + Bash 3.2, no `|| true`
