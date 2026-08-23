@@ -99,7 +99,12 @@ try {
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const cleanReport = JSON.parse(readFileSync(join(cleanOut, 'report.json'), 'utf8'));
   assert.equal(cleanReport.findings.filter((finding) => finding.state === 'confirmed').length, 0);
-  assert.equal(cleanReport.findings.filter((finding) => finding.adapter.id === 'opengrep').length, 0);
+  assert.deepEqual(cleanReport.findings.filter((finding) => finding.adapter.id === 'opengrep')
+    .map((finding) => ({
+      ruleId: finding.rule.id,
+      state: finding.state,
+      reasonCode: finding.evidence.reasonCode || null,
+    })), []);
   assert.equal(cleanReport.findings.filter((finding) => finding.adapter.id === 'checkov').length, 0);
   assert.ok(cleanReport.coverage.every((entry) => entry.status === 'completed'));
 
