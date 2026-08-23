@@ -7,6 +7,8 @@ export const PYTHON_SOURCE_RULE_IDS = [
   'python-framework-debug-enabled',
   'python-hardcoded-framework-secret',
   'python-cors-wildcard-with-credentials',
+  'python-insecure-session-cookie-settings',
+  'python-csrf-protection-disabled',
 ];
 
 export const PYTHON_DEFERRED_CANDIDATES = [
@@ -305,6 +307,14 @@ const OUTPUT = {
     title: 'Python credentialed wildcard CORS requires review', severity: 'medium',
     text: 'A Python CORS configuration combines wildcard origins with credentials. Effective middleware behavior remains unknown.',
   },
+  'python-insecure-session-cookie-settings': {
+    title: 'Python session cookie protection is explicitly disabled', severity: 'medium',
+    text: 'A supported Django or Flask setting explicitly disables Secure or HttpOnly for a session-related cookie. Deployment use remains unknown.',
+  },
+  'python-csrf-protection-disabled': {
+    title: 'Python CSRF protection is explicitly disabled', severity: 'high',
+    text: 'A supported Django or Flask construct explicitly disables or exempts CSRF protection. Route exposure and compensating controls remain unknown.',
+  },
 };
 
 export function inspectPythonSource(path, text) {
@@ -315,6 +325,7 @@ export function inspectPythonSource(path, text) {
   const findings = [];
   const emitted = new Set();
   const flaskApps = new Set();
+  const csrfProtectors = new Set();
   const add = (ruleId, token, kind, evidence = {}) => {
     const key = `${ruleId}:${token.line}:${kind}`;
     if (emitted.has(key)) return;
@@ -326,6 +337,9 @@ export function inspectPythonSource(path, text) {
     const call = resolvedCall(tokens, index, bindings);
     if (call?.module === 'flask' && call.operation === 'Flask' && valueAt(tokens, index - 1) === '='
         && tokens[index - 2]?.type === 'identifier') flaskApps.add(valueAt(tokens, index - 2));
+    if (call && ['flask_wtf.csrf', 'flask_seasurf'].includes(call.module)
+        && ['CSRFProtect', 'SeaSurf'].includes(call.operation) && valueAt(tokens, index - 1) === '='
+        && tokens[index - 2]?.type === 'identifier') csrfProtectors.add(valueAt(tokens, index - 2));
   }
 
   for (let index = 0; index < tokens.length; index += 1) {
@@ -393,6 +407,54 @@ export function inspectPythonSource(path, text) {
     if (/(?:^|\/)settings\.py$/i.test(path) && token.value === 'DEBUG'
         && valueAt(tokens, index + 1) === '=' && valueAt(tokens, index + 2) === 'True') {
       add('python-framework-debug-enabled', token, 'django_debug_true');
+    }
+
+    if (/(?:^|\/)settings\.py$/i.test(path) && [
+      'SESSION_COOKIE_SECURE', 'SESSION_COOKIE_HTTPONLY', 'CSRF_COOKIE_SECURE',
+    ].includes(token.value) && valueAt(tokens, index + 1) === '='
+        && valueAt(tokens, index + 2) === 'False') {
+      add('python-insecure-session-cookie-settings', token,
+        `django_${token.value.toLowerCase()}_false`);
+    }
+
+    const csrfExempt = bindings.named.get(token.value);
+    if (csrfExempt?.module === 'django.views.decorators.csrf'
+        && csrfExempt.operation === 'csrf_exempt' && valueAt(tokens, index - 1) === '@') {
+      add('python-csrf-protection-disabled', token, 'django_csrf_exempt_decorator');
+    }
+    if (csrfProtectors.has(token.value) && valueAt(tokens, index + 1) === '.'
+        && valueAt(tokens, index + 2) === 'exempt') {
+      add('python-csrf-protection-disabled', token, 'flask_csrf_exempt');
+    }
+
+    if (flaskApps.has(token.value) && valueAt(tokens, index + 1) === '.'
+        && valueAt(tokens, index + 2) === 'config' && valueAt(tokens, index + 3) === '['
+        && tokens[index + 4]?.type === 'string' && valueAt(tokens, index + 5) === ']'
+        && valueAt(tokens, index + 6) === '=' && valueAt(tokens, index + 7) === 'False') {
+      const setting = valueAt(tokens, index + 4);
+      if (['SESSION_COOKIE_SECURE', 'SESSION_COOKIE_HTTPONLY'].includes(setting)) {
+        add('python-insecure-session-cookie-settings', token,
+          `flask_${setting.toLowerCase()}_false`);
+      }
+      if (['WTF_CSRF_ENABLED', 'WTF_CSRF_CHECK_DEFAULT'].includes(setting)) {
+        add('python-csrf-protection-disabled', token, `flask_${setting.toLowerCase()}_false`);
+      }
+    }
+
+    if (flaskApps.has(token.value) && valueAt(tokens, index + 1) === '.'
+        && valueAt(tokens, index + 2) === 'config' && valueAt(tokens, index + 3) === '.'
+        && ['update', 'from_mapping'].includes(valueAt(tokens, index + 4))
+        && valueAt(tokens, index + 5) === '(') {
+      const close = matchingToken(tokens, index + 5);
+      const args = close > index ? splitArguments(tokens, index + 5, close) : [];
+      for (const setting of ['SESSION_COOKIE_SECURE', 'SESSION_COOKIE_HTTPONLY']) {
+        if (literalIs(keyword(args, setting), 'False')) add('python-insecure-session-cookie-settings', token,
+          `flask_${setting.toLowerCase()}_false`);
+      }
+      for (const setting of ['WTF_CSRF_ENABLED', 'WTF_CSRF_CHECK_DEFAULT']) {
+        if (literalIs(keyword(args, setting), 'False')) add('python-csrf-protection-disabled', token,
+          `flask_${setting.toLowerCase()}_false`);
+      }
     }
 
     const staticSecret = tokens[index + 2]?.type === 'string' && !tokens[index + 2].dynamic

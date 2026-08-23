@@ -51,6 +51,19 @@ for (const secret of secrets) {
 }
 assert.doesNotMatch(JSON.stringify(vulnerable), /fixture-python-secret-never-deploy/);
 
+const unrelatedSettings = inspectPythonSource('src/constants.py', `
+  SESSION_COOKIE_SECURE = False
+  WTF_CSRF_ENABLED = False
+`);
+assert.deepEqual(unrelatedSettings.findings, []);
+const djangoProtections = inspectPythonSource('project/settings.py', `
+  SESSION_COOKIE_SECURE = False
+  SESSION_COOKIE_HTTPONLY = False
+  CSRF_COOKIE_SECURE = False
+`);
+assert.equal(djangoProtections.findings.filter((finding) =>
+  finding.ruleId === 'python-insecure-session-cookie-settings').length, 3);
+
 const masked = inspectPythonSource('src/masked.py', String.raw`
   # eval(user); requests.get(url, verify=False)
   a = "eval(user); subprocess.run(user, shell=True)"
@@ -167,4 +180,4 @@ try {
   rmSync(temp, { recursive: true, force: true });
 }
 
-console.log('python source audit ok: 8 stable leads, aliases, safe neighbours, redaction and coverage');
+console.log('python source audit ok: 10 stable leads, aliases, safe neighbours, redaction and coverage');

@@ -39,7 +39,7 @@ if (check) {
     console.error('rule-contract conformance is stale; run npm run conformance:rules');
     process.exit(1);
   }
-  console.log('rule-contract conformance current: 20 risk + 2 evidence-integrity contracts');
+  console.log('rule-contract conformance current: 25 risk + 2 evidence-integrity contracts');
 } else {
   for (const [path, content] of outputs) writeFileSync(path, content);
   console.log(`${JSON_OUTPUT}\n${MARKDOWN_OUTPUT}`);

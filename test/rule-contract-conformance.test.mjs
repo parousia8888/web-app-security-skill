@@ -15,8 +15,8 @@ const observations = collectRuleContractObservations(ROOT);
 const conformance = buildRuleContractConformance(corpus, observations);
 assert.deepEqual(validateRuleContractConformance(conformance), []);
 assert.deepEqual(conformance.summary.risk, {
-  contracts: 20, positivePassed: 20, positiveFailed: 0,
-  negativePassed: 20, negativeFailed: 0, stateMismatches: 0,
+  contracts: 25, positivePassed: 25, positiveFailed: 0,
+  negativePassed: 25, negativeFailed: 0, stateMismatches: 0,
 });
 assert.equal(conformance.summary.evidenceIntegrity.positivePassed, 2);
 assert.equal(conformance.summary.evidenceIntegrity.negativeFailed, 0);
@@ -40,4 +40,4 @@ assert.equal(readFileSync(join(ROOT, 'docs', 'conformance', 'v0.5.4-rule-contrac
   `${JSON.stringify(conformance, null, 2)}\n`);
 assert.equal(readFileSync(join(ROOT, 'docs', 'conformance', 'v0.5.4-rule-contract-conformance.md'), 'utf8'),
   renderRuleContractMarkdown(conformance));
-console.log('rule-contract conformance ok: 22 contracts, committed bytes and planted failure gates');
+console.log('rule-contract conformance ok: 27 contracts, committed bytes and planted failure gates');

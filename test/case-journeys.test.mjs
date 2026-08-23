@@ -48,7 +48,9 @@ const adapter = (id, status, findingDigests = false) => {
 const currentCoverage = Object.fromEntries([
   ...SOURCE_RULES, ...CHECKOV_RULES, ...GITLEAKS_RULES, ...OPENGREP_RULES, ...OSV_RULES,
 ].map((rule) => [rule.id, 'completed']));
-currentCoverage['opengrep-python-request-command-flow'] = 'not_applicable';
+for (const rule of OPENGREP_RULES.filter((item) => item.id.startsWith('opengrep-python-'))) {
+  currentCoverage[rule.id] = 'not_applicable';
+}
 for (const rule of CHECKOV_RULES) currentCoverage[rule.id] = 'not_applicable';
 
 try {

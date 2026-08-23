@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { createFinding } from './evidence.mjs';
@@ -44,6 +45,7 @@ function tracker() {
   return {
     counts: { discovered: 0, eligible: 0, scanned: 0, excluded: 0, skipped: 0, truncated: 0, errors: 0 },
     reasonMap: new Map(),
+    statusOverride: null,
   };
 }
 
@@ -61,10 +63,35 @@ function account(trackerState, outcome, code, path) {
 function resultFor(trackerState) {
   const incomplete = trackerState.counts.skipped + trackerState.counts.truncated + trackerState.counts.errors;
   return {
-    status: incomplete ? (trackerState.counts.scanned ? 'partial' : 'unavailable') : 'completed',
+    status: trackerState.statusOverride
+      || (incomplete ? (trackerState.counts.scanned ? 'partial' : 'unavailable') : 'completed'),
     counts: trackerState.counts,
     reasons: [...trackerState.reasonMap.values()].sort((left, right) => left.code.localeCompare(right.code)),
   };
+}
+
+function trackedSensitiveEnvFiles(root) {
+  const options = { encoding: 'utf8', timeout: 5000, maxBuffer: 4 * 1024 * 1024, windowsHide: true };
+  const identity = spawnSync('git', ['-C', root, 'rev-parse', '--is-inside-work-tree'], options);
+  if (identity.error) {
+    return { status: 'unavailable', code: identity.error.code === 'ETIMEDOUT'
+      ? 'git_identity_timeout' : 'git_command_unavailable', paths: [] };
+  }
+  if (identity.status !== 0 || identity.stdout.trim() !== 'true') {
+    if (identity.status === 128) return { status: 'not_applicable', code: 'not_git_repository', paths: [] };
+    return { status: 'unavailable', code: 'git_identity_failed', paths: [] };
+  }
+  const listed = spawnSync('git', ['-C', root, 'ls-files', '-z', '--cached', '--', '.'], options);
+  if (listed.error) {
+    return { status: 'unavailable', code: listed.error.code === 'ETIMEDOUT'
+      ? 'git_index_timeout' : 'git_index_unavailable', paths: [] };
+  }
+  if (listed.status !== 0) return { status: 'unavailable', code: 'git_index_failed', paths: [] };
+  const paths = listed.stdout.split('\0').filter(Boolean).map(posix).filter((path) => {
+    const name = path.split('/').at(-1);
+    return ENV_FILE.test(name) && !ENV_TEMPLATE.test(name);
+  });
+  return { status: 'completed', code: null, paths: [...new Set(paths)].sort() };
 }
 
 function walk(root, limits) {
@@ -262,7 +289,7 @@ function coveredByWorkspace(manifest, parsedPackages, pnpmWorkspaces, lockRoots)
   return { covered: false, uncertainty };
 }
 
-export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMITS) {
+export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMITS, evidenceOptions = {}) {
   const root = resolve(projectRoot);
   if (!existsSync(root) || !statSync(root).isDirectory()) throw new Error(`project root is invalid: ${projectRoot}`);
   const effectiveLimits = sourceTraversalLimits(limits);
@@ -325,6 +352,31 @@ export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMIT
       pnpmWorkspaces.set(workspaceRoot, {
         outcome: 'errors', code: 'pnpm_workspace_parse_error', path: file.path,
       });
+    }
+  }
+
+  const trackedEnvironment = trackedSensitiveEnvFiles(resolve(evidenceOptions.gitRoot || root));
+  if (trackedEnvironment.status === 'not_applicable') {
+    account(trackers['tracked-sensitive-env-file'], 'excluded', trackedEnvironment.code, '.');
+    trackers['tracked-sensitive-env-file'].statusOverride = 'not_applicable';
+  } else if (trackedEnvironment.status === 'unavailable') {
+    account(trackers['tracked-sensitive-env-file'], 'errors', trackedEnvironment.code, '.');
+    noteIntegrity('errors', trackedEnvironment.code, '.');
+  } else {
+    account(trackers['tracked-sensitive-env-file'], 'scanned', null, '.');
+    for (const path of trackedEnvironment.paths) {
+      findings.push(createFinding({
+        ruleId: 'tracked-sensitive-env-file',
+        title: 'Sensitive environment filename is tracked by Git',
+        severity: 'medium',
+        state: 'confirmed',
+        discriminator: path,
+        summary: 'Git confirms that an environment-named file is tracked. The audit did not read it and does not claim that it contains a valid credential.',
+        location: { path, line: 1 },
+        evidence: { subject: path, observed: 'tracked in current Git index', contentsRead: false },
+        remediation: 'Privately verify whether the file contains sensitive values, rotate any exposed credential, remove it from current and relevant historical source, and keep only a placeholder example.',
+        retest: 'Use Git index and history checks without printing values, then rerun the source audit and confirm this tracking fact is absent.',
+      }));
     }
   }
 

@@ -7,6 +7,8 @@ export const JS_TS_SOURCE_RULE_IDS = [
   'node-tls-verification-disabled',
   'jwt-unsafe-verification-options',
   'hardcoded-auth-secret',
+  'js-inline-session-secret',
+  'js-insecure-cookie-options',
 ];
 
 export const JS_TS_DEFERRED_CANDIDATES = [
@@ -359,6 +361,61 @@ function propertyHas(tokens, start, end, name, expected, type = null, targetDept
   return false;
 }
 
+function argumentRanges(tokens, open, close) {
+  const ranges = [];
+  let start = open + 1;
+  const stack = [];
+  for (let index = open + 1; index < close; index += 1) {
+    const value = valueAt(tokens, index);
+    if (['(', '[', '{'].includes(value)) stack.push(value);
+    if ([')', ']', '}'].includes(value)) stack.pop();
+    if (value === ',' && !stack.length) {
+      ranges.push([start, index]);
+      start = index + 1;
+    }
+  }
+  if (start < close) ranges.push([start, close]);
+  return ranges;
+}
+
+function objectArgument(tokens, open, close, position) {
+  const range = argumentRanges(tokens, open, close)[position];
+  if (!range || valueAt(tokens, range[0]) !== '{') return null;
+  const end = matchingToken(tokens, range[0], '{', '}');
+  return end === range[1] - 1 ? [range[0], end] : null;
+}
+
+function propertyToken(tokens, start, end, name, targetDepth = 0) {
+  let depth = 0;
+  for (let index = start + 1; index < end; index += 1) {
+    const value = valueAt(tokens, index);
+    if (depth === targetDepth && value === name && valueAt(tokens, index + 1) === ':') return index;
+    if (['{', '[', '('].includes(value)) depth += 1;
+    if (['}', ']', ')'].includes(value)) depth -= 1;
+  }
+  return -1;
+}
+
+function nestedObject(tokens, start, end, name, targetDepth = 0) {
+  const property = propertyToken(tokens, start, end, name, targetDepth);
+  const open = property >= 0 && valueAt(tokens, property + 2) === '{' ? property + 2 : -1;
+  const close = open >= 0 ? matchingToken(tokens, open, '{', '}') : -1;
+  return close > open ? [open, close] : null;
+}
+
+function unsafeCookieProperty(tokens, bounds) {
+  if (!bounds) return null;
+  for (const name of ['httpOnly', 'secure']) {
+    const property = propertyToken(tokens, bounds[0], bounds[1], name);
+    if (property >= 0 && valueAt(tokens, property + 2) === 'false') return { token: tokens[property], name };
+  }
+  return null;
+}
+
+function namedBindingLocal(bindings, operation) {
+  return bindings.named.get(operation) || null;
+}
+
 function finding(ruleId, path, token, kind, summary, evidence, remediation, retest) {
   const discriminator = `${path}:${token.line}:${kind}`;
   return {
@@ -408,6 +465,14 @@ const OUTPUT = {
     title: 'Authentication secret is hard-coded in source', severity: 'high',
     text: 'A security-named variable is assigned a non-placeholder string. The value is redacted and whether it is deployed remains unknown.',
   },
+  'js-inline-session-secret': {
+    title: 'Session or token signing secret is inline in framework configuration', severity: 'high',
+    text: 'A recognized session or JWT configuration receives a fixed secret literal. The value is redacted and deployment use remains unknown.',
+  },
+  'js-insecure-cookie-options': {
+    title: 'Session cookie protection is explicitly disabled', severity: 'medium',
+    text: 'A recognized session or cookie API explicitly disables Secure or HttpOnly. Runtime transport and deployment use remain unknown.',
+  },
 };
 
 export function inspectJsTsSource(path, text) {
@@ -429,6 +494,11 @@ export function inspectJsTsSource(path, text) {
 
   const childProcess = moduleBindings(tokens, new Set(['child_process', 'node:child_process']));
   const jsonwebtoken = moduleBindings(tokens, new Set(['jsonwebtoken']));
+  const expressSession = moduleBindings(tokens, new Set(['express-session']));
+  const nextAuth = moduleBindings(tokens, new Set(['next-auth', '@auth/core']));
+  const nestJwt = moduleBindings(tokens, new Set(['@nestjs/jwt']));
+  const cookieModule = moduleBindings(tokens, new Set(['cookie']));
+  const cookiesNext = moduleBindings(tokens, new Set(['cookies-next']));
   for (let index = 0; index < tokens.length; index += 1) {
     const token = tokens[index];
     if ((token.value === 'eval' && valueAt(tokens, index + 1) === '(')
@@ -512,6 +582,74 @@ export function inspectJsTsSource(path, text) {
         });
       }
     }
+
+    let frameworkOptions = null;
+    let frameworkKind = null;
+    if (valueAt(tokens, index + 1) === '('
+        && (expressSession.namespaces.has(token.value) || nextAuth.namespaces.has(token.value))) {
+      const close = matchingToken(tokens, index + 1);
+      frameworkOptions = close > index ? objectArgument(tokens, index + 1, close, 0) : null;
+      frameworkKind = expressSession.namespaces.has(token.value) ? 'express_session' : 'next_auth';
+    }
+    const jwtModuleLocal = namedBindingLocal(nestJwt, 'JwtModule');
+    if (jwtModuleLocal === token.value && valueAt(tokens, index + 1) === '.'
+        && valueAt(tokens, index + 2) === 'register' && valueAt(tokens, index + 3) === '(') {
+      const close = matchingToken(tokens, index + 3);
+      frameworkOptions = close > index ? objectArgument(tokens, index + 3, close, 0) : null;
+      frameworkKind = 'nest_jwt_register';
+    }
+    if (frameworkOptions) {
+      const secretProperty = propertyToken(tokens, frameworkOptions[0], frameworkOptions[1], 'secret');
+      const literalToken = secretProperty >= 0 ? tokens[secretProperty + 2] : null;
+      if (literalToken?.type === 'string' && literalToken.value.length >= 12
+          && !PLACEHOLDER.test(literalToken.value)) {
+        add('js-inline-session-secret', tokens[secretProperty], `${frameworkKind}_secret_literal`, {
+          literalRedacted: true,
+          literalLengthBand: literalToken.value.length < 24 ? '12-23'
+            : literalToken.value.length < 48 ? '24-47' : '48+',
+        });
+      }
+      if (frameworkKind === 'express_session') {
+        const unsafe = unsafeCookieProperty(tokens,
+          nestedObject(tokens, frameworkOptions[0], frameworkOptions[1], 'cookie'));
+        if (unsafe) add('js-insecure-cookie-options', unsafe.token,
+          `express_session_cookie_${unsafe.name}_false`);
+      }
+      if (frameworkKind === 'next_auth') {
+        const cookies = nestedObject(tokens, frameworkOptions[0], frameworkOptions[1], 'cookies');
+        if (cookies) {
+          for (let cursor = cookies[0] + 1; cursor < cookies[1]; cursor += 1) {
+            if (!['httpOnly', 'secure'].includes(valueAt(tokens, cursor))
+                || valueAt(tokens, cursor + 1) !== ':' || valueAt(tokens, cursor + 2) !== 'false') continue;
+            add('js-insecure-cookie-options', tokens[cursor],
+              `next_auth_cookie_${valueAt(tokens, cursor)}_false`);
+          }
+        }
+      }
+    }
+
+    let cookieOptions = null;
+    let cookieKind = null;
+    if (['res', 'response'].includes(token.value) && valueAt(tokens, index + 1) === '.'
+        && valueAt(tokens, index + 2) === 'cookie' && valueAt(tokens, index + 3) === '(') {
+      const close = matchingToken(tokens, index + 3);
+      cookieOptions = close > index ? objectArgument(tokens, index + 3, close, 2) : null;
+      cookieKind = 'express_response_cookie';
+    }
+    if (cookieModule.namespaces.has(token.value) && valueAt(tokens, index + 1) === '.'
+        && valueAt(tokens, index + 2) === 'serialize' && valueAt(tokens, index + 3) === '(') {
+      const close = matchingToken(tokens, index + 3);
+      cookieOptions = close > index ? objectArgument(tokens, index + 3, close, 2) : null;
+      cookieKind = 'cookie_serialize';
+    }
+    if (namedBindingLocal(cookiesNext, 'setCookie') === token.value && valueAt(tokens, index + 1) === '(') {
+      const close = matchingToken(tokens, index + 1);
+      cookieOptions = close > index ? objectArgument(tokens, index + 1, close, 2) : null;
+      cookieKind = 'cookies_next_set_cookie';
+    }
+    const unsafeCookie = unsafeCookieProperty(tokens, cookieOptions);
+    if (unsafeCookie) add('js-insecure-cookie-options', unsafeCookie.token,
+      `${cookieKind}_${unsafeCookie.name}_false`);
   }
   return { findings, error: null };
 }

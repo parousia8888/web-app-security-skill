@@ -24,10 +24,10 @@
     }
   },
   "capabilityContract": {
-    "total": 25,
+    "total": 26,
     "stableDetection": 9,
     "plannedDetection": 0,
-    "evidenceReporting": 9,
+    "evidenceReporting": 10,
     "lifecycleDistribution": 1,
     "agentGuided": 6,
     "evidence": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/capabilities.md"

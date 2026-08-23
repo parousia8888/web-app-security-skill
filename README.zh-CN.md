@@ -39,6 +39,14 @@ npx --yes web-app-security-skill audit . --fail-on never
 - 当前证据证明了什么，还有什么需要人工或运行时确认；
 - 可审查的修改建议、可能影响的正常功能、回滚条件，以及分开的安全复测和功能复测。
 
+需要目前维护范围内最广的一次本地检查时，使用不下载工具的 deep profile。它运行内置规则，并
+调用用户已经安装的固定版本 Checkov、Gitleaks、Opengrep 与 OSV-Scanner；缺少的工具会记录为
+带安装指引的 `unknown`：
+
+```bash
+npx --yes web-app-security-skill audit . --profile deep --fail-on never
+```
+
 <p align="center">
   <a href="docs/demo-evidence.md"><img src="docs/assets/demo.gif" alt="自有本地源码 fixture：发现一条 suspected HIGH 命令注入线索，用专业术语和白话解释，提出取消 shell 解析的修改，再分别复测安全条件和正常产品行为"></a>
 </p>
@@ -69,27 +77,27 @@ npm run demo -- --out ./demo-output
 
 ## v0.5.4 新增内容
 
-v0.5.4 修正“检测证据该叫什么”，并把真实项目审查中遇到的故障变成可执行防回退门；stable 检测
-数量没有增加：
+v0.5.4 在保留原有证据规则的前提下，加强有边界的自动检查能力：
 
-- **证据名称改准确：**作者自己维护的 planted suite 现在叫“规则合同一致性检查”，覆盖 22 条
-  正例/负例/证据状态合同；不再使用容易被引用成真实准确率的 TP/FP 表述。
-- **真实遇到的问题变成机器门：**4 个历史正确性故障和 1 个数值 SVG DOM sink 审查案例会直接执行
-  产品代码。第 5 个仍是需要人工关闭的 `expected_benign_match`，没有加入一刀切静音。
-- **首次试用跟随 npm latest：**主分支首个 npx 命令不固定版本；可复用 CI、签名 release 和可信
-  安装仍固定到版本或完整 commit。
-- **不靠规则数制造升级感：**stable 检测仍是 20 条 built-in risk、2 条证据完整性规则和 8 条
-  opt-in 外部 adapter 规则。
+- **5 条新内置检查：**Git 已跟踪的真实 `.env` 文件名、JavaScript session secret 与不安全 cookie
+  配置，以及 Python session cookie 与关闭 CSRF 的配置。Git index 事实可以是 `confirmed`；源码
+  模式命中在补齐上下文前保持 `suspected`。
+- **8 条新同文件输入流检查：**固定版本 Opengrep 规则在原有命令执行之外，新增 JavaScript/
+  TypeScript 与 Python 的 SQL、服务端外连 URL、文件路径和跳转地址检查；范围仍是同文件 taint。
+- **一个 deep 命令：**`--profile deep` 一次选择内置、Checkov、Gitleaks、Opengrep 和
+  OSV-Scanner，不下载工具；缺失工具会留下明确的 `unknown`。
+- **边界有机器门：**规则合同一致性现在覆盖全部 25 条 built-in risk 与 2 条证据完整性规则；
+  另外保留包含 5 个既有正确性/审查案例的历史回归语料。
 
 v0.5.0 的解释合同继续保留：每个 v3 源码 finding 同时给出行业术语、白话含义、实际后果、证据边界、
 待审查提案、替代方案、可能副作用、需要用户决定的事项、安全复测、功能复测和回滚条件。CLI 不直接
-修改项目。stable 检测仍为 20 条 built-in risk、2 条证据完整性规则和 8 条 opt-in 外部 adapter
-规则，内置深度集中在 JavaScript/TypeScript 与 Python Web 代码。
+修改项目。stable 检测为 25 条 built-in risk、2 条证据完整性规则和 16 条 opt-in 外部 adapter
+规则，合计 43 条；内置深度集中在 JavaScript/TypeScript 与 Python Web 代码。
 
 准确支持范围见[兼容矩阵](docs/compatibility.md)、[稳定规则语料](docs/stable-rule-corpus.json)、
 [规则合同一致性结果](docs/conformance/v0.5.4-rule-contract-conformance.md)、
 [历史真实回归语料](docs/regressions/v0.5.4-real-world-regressions.md)和
-[普通项目复核](docs/case-studies/journeys/v0.5.0-review.md)。MCP 与新增 stable 规则需要先满足
+[普通项目复核](docs/case-studies/journeys/v0.5.0-review.md)。MCP 与后续 stable 规则扩张需要先满足
 [架构决策中的门槛](docs/architecture/mcp-and-rule-expansion.md)。v0.5.3 的签名 GitHub 资产与
 provenance、可信安装器、公开 npm 包和签名 `v1` Action 别名都已通过各自的公网检查；下面的
 可信安装器默认安装 v0.5.3。
@@ -195,13 +203,13 @@ webapp-security audit . --staged --fail-on never
 
 ```bash
 webapp-security doctor . --adapter all --json
-webapp-security audit . --adapter checkov --adapter gitleaks --adapter opengrep --adapter osv --fail-on never
+webapp-security audit . --profile deep --fail-on never
 ```
 
 已测试版本为 Checkov `3.3.9`、Gitleaks `8.30.1`、Opengrep `1.27.0` 和 OSV-Scanner `2.5.0`；CLI 与
 Action 都不会自动下载。Checkov 只运行三条固定的根目录 Dockerfile/GitHub Actions 规则，并使用
 `--skip-download`；它可能向 PyPI 查询版本元数据，但不会上传项目源码。Opengrep 只使用内置、摘要
-固定的两条本地规则且不访问网络；OSV-Scanner 可能查询公共 OSV 数据库。所有 adapter 都不会执行
+固定的十条本地规则且不访问网络；OSV-Scanner 可能查询公共 OSV 数据库。所有 adapter 都不会执行
 项目依赖。Compose、Terraform、Kubernetes 和 Checkov 的其他规则不属于 stable 覆盖。外部结果要影响阻断退出码前，还必须在使用方仓库接受
 [`docs/alert-policy.md`](docs/alert-policy.md) 中的责任，并传入
 `--acknowledge-alert-policy`。版本、失败与脱敏语义见
@@ -225,10 +233,11 @@ webapp-security crawl --site https://example.com --out ./security-report \
 可以组合多个 `--fail-on-domain <domain=threshold>`。有效 threshold 会写入 report。
 [生成的 rule taxonomy](docs/rule-taxonomy.md)把 source rule 的 kind、family、language、domain、
 severity、默认证据状态与标准引用分开记录。精确 stable source 数量和完整解释元数据来自机器可读的
-[`stable-source-rules.json`](docs/stable-source-rules.json)：`main` 当前是 20 条 built-in 风险规则、
-2 条 built-in 证据完整性规则和 8 条外部适配器风险规则，合计 30 条 stable 源码与部署策略规则。其中 JavaScript/TypeScript 与 Python
-各有 8 条 built-in 风险规则，都是有边界的词法线索，覆盖危险执行、浏览器或框架配置、传输、
-认证密钥与反序列化。它们不能证明输入流或运行时可达性，未经独立复现一律保持 `suspected`。
+[`stable-source-rules.json`](docs/stable-source-rules.json)：`main` 当前是 25 条 built-in 风险规则、
+2 条 built-in 证据完整性规则和 16 条外部适配器风险规则，合计 43 条 stable 源码与部署策略规则。
+JavaScript/TypeScript 与 Python 各有 10 条 built-in 风险规则，覆盖危险执行、浏览器或框架配置、
+传输、认证/session 设置与反序列化；另有 5 条共享的仓库和项目配置检查。模式命中不能证明输入流
+或运行时可达性，未经独立复现保持 `suspected`；只有规则明确限定的可观察事实才会是 `confirmed`。
 
 ## 能力边界
 
@@ -261,7 +270,7 @@ webapp-security start .
 # 只读源码 audit、finding 解释与强制 baseline 复测
 webapp-security audit .webapp-security/runs/<run-id> --fail-on high
 webapp-security doctor . --adapter all
-webapp-security audit . --adapter checkov --adapter gitleaks --adapter opengrep --adapter osv --fail-on never
+webapp-security audit . --profile deep --fail-on never
 webapp-security explain <finding-id> --report <report.json>
 webapp-security start . --run-id <retest-run-id>
 webapp-security retest .webapp-security/runs/<retest-run-id> \

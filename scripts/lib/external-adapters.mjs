@@ -9,8 +9,9 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   CHECKOV_ADAPTER, CHECKOV_RULES, GITLEAKS_ADAPTER, GITLEAKS_RULES, OPENGREP_ADAPTER,
-  OPENGREP_RULES, OPENGREP_RULESET, OSV_ADAPTER, OSV_RULES,
+  OPENGREP_RULE_ID_MAP, OPENGREP_RULES, OPENGREP_RULESET, OSV_ADAPTER, OSV_RULES,
 } from './adapter-definitions.mjs';
+import { sourceRuleRegistryEntry } from './source-rule-registry.mjs';
 
 const MAX_OUTPUT_BYTES = 16 * 1024 * 1024;
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -335,11 +336,6 @@ export function parseOsvJson(stdout, projectRoot) {
   return findings;
 }
 
-const OPENGREP_RULE_MAP = new Map([
-  ['webapp-security.javascript.request-to-command', 'opengrep-js-request-command-flow'],
-  ['webapp-security.python.request-to-command', 'opengrep-python-request-command-flow'],
-]);
-
 export function parseOpengrepJson(stdout, projectRoot) {
   let parsed;
   try { parsed = JSON.parse(stdout || '{}'); } catch { throw new Error('malformed_json'); }
@@ -349,19 +345,20 @@ export function parseOpengrepJson(stdout, projectRoot) {
   if (parsed.errors.length) throw new Error('scan_errors');
   if (parsed.paths.scanned.some((path) => !safeProjectPath(projectRoot, path))) throw new Error('unsafe_path');
   const findings = parsed.results.map((item) => {
-    const localRuleId = OPENGREP_RULE_MAP.get(item?.check_id);
+    const localRuleId = OPENGREP_RULE_ID_MAP.get(item?.check_id);
     if (!localRuleId || !Number.isInteger(item?.start?.line) || item.start.line < 1
         || !Number.isInteger(item?.start?.col) || item.start.col < 1
         || item?.extra?.engine_kind !== 'OSS') throw new Error('malformed_output');
     const path = safeProjectPath(projectRoot, item.path);
     if (!path) throw new Error('unsafe_path');
+    const rule = sourceRuleRegistryEntry(OPENGREP_ADAPTER.id, localRuleId);
     return {
       adapterId: OPENGREP_ADAPTER.id,
       ruleId: localRuleId,
-      title: `Request-to-command data-flow lead from ${item.check_id}`,
-      severity: 'high',
+      title: rule.technicalTerm,
+      severity: rule.severity,
       state: 'suspected',
-      summary: `Opengrep matched local rule ${item.check_id} at ${path}:${item.start.line}; reachability and exploitability were not inferred.`,
+      summary: `Opengrep matched local rule ${item.check_id} at ${path}:${item.start.line}. ${rule.confidenceBoundary}`,
       location: { path, line: item.start.line },
       evidence: {
         subject: `${item.check_id}:${path}:${item.start.line}:${item.start.col}`,
@@ -370,8 +367,8 @@ export function parseOpengrepJson(stdout, projectRoot) {
         column: item.start.col,
         rulesetSha256: OPENGREP_RULESET.sha256,
       },
-      remediation: 'Trace the reported request path, remove shell interpretation or map allowed requests to fixed server-side operations, then review the proposed behavior change.',
-      retest: 'Rerun the pinned Opengrep adapter and exercise the owned request path with harmless shell metacharacters plus the normal product journey.',
+      remediation: rule.proposal.summary,
+      retest: rule.securityRetest,
     };
   });
   const unique = new Map();
@@ -653,7 +650,7 @@ export function runOpengrep(projectRoot, {
       try { parsed = JSON.parse(result.stdout); } catch { throw new Error('malformed_json'); }
       const scannedPaths = [...new Set(parsed.paths.scanned.map((path) => safeProjectPath(projectRoot, path)))];
       const pathsForRule = (rule) => scannedPaths.filter((path) => {
-        if (rule.id === 'opengrep-python-request-command-flow') return /\.py$/i.test(path);
+        if (rule.id.startsWith('opengrep-python-')) return /\.py$/i.test(path);
         return /\.(?:cjs|cts|js|jsx|mjs|mts|ts|tsx)$/i.test(path);
       });
       return {

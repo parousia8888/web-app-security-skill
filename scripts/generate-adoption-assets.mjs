@@ -59,7 +59,7 @@ requireFact(ordinaryReview.projects?.length === journeys.journeys.length
   && ordinaryReview.method?.hostedInstancesProbed === false
   && ordinaryReview.method?.networkAccessPerformed === false,
   'v0.5.0 ordinary review boundary drifted');
-requireFact(ruleCorpus.counts?.stableTotal === 30, 'stable rule corpus count drifted');
+requireFact(ruleCorpus.counts?.stableTotal === 43, 'stable rule corpus count drifted');
 
 const capabilityCount = (category, maturity) => capabilities.capabilities.filter((item) =>
   item.category === category && (!maturity || item.maturity === maturity)).length;

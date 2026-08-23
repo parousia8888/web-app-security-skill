@@ -8,7 +8,9 @@ import {
   initializeFindingsV3, readBaselineV3, sourceFindingV3, writeReportBundleV3,
 } from './lib/evidence-v3.mjs';
 import { auditSource, renderPatch } from './lib/source-audit.mjs';
-import { parseAdapterSelection, parseAdapterTimeout } from './lib/adapter-definitions.mjs';
+import {
+  parseAdapterTimeout, resolveAdapterSelection,
+} from './lib/adapter-definitions.mjs';
 import { runExternalAdapters } from './lib/external-adapters.mjs';
 import { buildScope, discoverProject } from './lib/project-discovery.mjs';
 import {
@@ -39,6 +41,7 @@ Options:
   --max-files <n>         Maximum discovered files, 1..200000 (default: 20000)
   --max-entries <n>       Maximum directory entries, 1..500000 (default: 50000)
   --max-file-bytes <n>    Maximum candidate bytes, 1024..16777216 (default: 1048576)
+  --profile <id>          deep selects built-in plus all four external adapters
   --adapter <id>           builtin, checkov, gitleaks, opengrep, osv, or all; repeatable (default: builtin)
   --adapter-timeout <sec> External adapter timeout, 1..600 (default: 120)
   --acknowledge-alert-policy
@@ -72,6 +75,7 @@ const staged = args.includes('--staged');
 if (staged) args.splice(args.indexOf('--staged'), 1);
 const failOn = take('--fail-on', 'high');
 const failOnDomains = takeAll('--fail-on-domain');
+const profile = take('--profile');
 const adapterValues = takeAll('--adapter');
 const adapterTimeoutArg = take('--adapter-timeout');
 const acknowledgeAlertPolicy = args.includes('--acknowledge-alert-policy');
@@ -91,6 +95,7 @@ if (mode === 'retest' && !baselinePath) usage(2, 'retest requires --baseline <re
 if (sinceRef !== null && staged) usage(2, '--since and --staged are mutually exclusive');
 if ((sinceRef !== null || staged) && mode !== 'audit') usage(2, 'diff scope is only supported by audit');
 if ((sinceRef !== null || staged) && baselinePath) usage(2, 'diff scope cannot be combined with --baseline');
+if (profile !== null && adapterValues.length) usage(2, '--profile cannot be combined with --adapter');
 
 function timestamp() {
   const now = process.env.SOURCE_DATE_EPOCH ? new Date(Number(process.env.SOURCE_DATE_EPOCH) * 1000) : new Date();
@@ -134,7 +139,8 @@ try {
     limits = sourceTraversalLimits(localScope.auditBoundary.traversalLimits);
     selectedAdapters = localScope.auditBoundary.adapters || ['builtin'];
     adapterTimeoutSeconds = localScope.auditBoundary.adapterTimeoutSeconds || 120;
-    if (adapterValues.length && JSON.stringify(parseAdapterSelection(adapterValues)) !== JSON.stringify(selectedAdapters)) {
+    if ((adapterValues.length || profile !== null)
+        && JSON.stringify(resolveAdapterSelection(adapterValues, profile)) !== JSON.stringify(selectedAdapters)) {
       throw new Error('adapter selection is fixed by the persisted scope; create a new run to change it');
     }
     if (adapterTimeoutArg !== null && parseAdapterTimeout(adapterTimeoutArg) !== adapterTimeoutSeconds) {
@@ -153,7 +159,7 @@ try {
     }
     limits = sourceTraversalLimits(Object.fromEntries(Object.entries(limitArgs)
       .filter(([, value]) => value !== null).map(([key, value]) => [key, Number(value)])));
-    selectedAdapters = parseAdapterSelection(adapterValues);
+    selectedAdapters = resolveAdapterSelection(adapterValues, profile);
     adapterTimeoutSeconds = parseAdapterTimeout(adapterTimeoutArg === null ? undefined : adapterTimeoutArg);
     const auditBoundary = sourceAuditBoundary(limits, {
       adapters: selectedAdapters, timeoutSeconds: adapterTimeoutSeconds,
@@ -192,7 +198,7 @@ try {
 
   const ruleset = sourceRuleset(selectedAdapters);
   const audit = selectedAdapters.includes('builtin')
-    ? auditSource(diffScope?.auditRoot || projectRoot, limits)
+    ? auditSource(diffScope?.auditRoot || projectRoot, limits, { gitRoot: projectRoot })
     : { findings: [], coverage: {}, traversal: null };
   const rawFindings = diffScope ? selectDiffFindings(audit, diffScope) : audit.findings;
   const external = diffScope ? [] : runExternalAdapters(

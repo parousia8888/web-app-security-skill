@@ -4,11 +4,15 @@ import os
 import requests
 import yaml
 from flask import Flask
+from flask_wtf.csrf import CSRFProtect
 from starlette.middleware.cors import CORSMiddleware
 from subprocess import run
 
 app = Flask(__name__)
 app.secret_key = os.environ["FLASK_SECRET_KEY"]
+app.config["SESSION_COOKIE_SECURE"] = True
+app.config["WTF_CSRF_ENABLED"] = True
+csrf = CSRFProtect(app)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://app.example"],

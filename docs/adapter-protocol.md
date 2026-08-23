@@ -48,10 +48,11 @@ Checkov state is redirected to a private temporary HOME/cache/TMPDIR and deleted
 probe/scan. Upstream exposes no reliable switch for its PyPI update check, so the product does not
 claim zero network attempts; an OS-level network-denied run remains supported.
 
-Opengrep is intentionally limited to two same-file request-to-command data-flow rules. It is not a
+Opengrep is intentionally limited to ten same-file data-flow rules: request data reaching command,
+SQL, outbound-URL, file-path or redirect sinks in JavaScript/TypeScript and Python. It is not a
 general Opengrep rules catalogue and is not advertised as whole-program analysis. The bundled
 `rules/opengrep-source.yml` file has SHA-256
-`3a3a28549f516b50e716449d9e80ee6f855d912f9bb41371d514f2e324667979`; a missing or changed file
+`6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d`; a missing or changed file
 makes coverage unavailable. The caller installs the exact engine and may set
 `WEBAPP_SECURITY_OPENGREP_BIN`; the runtime does not download an executable or remote rules.
 
@@ -60,6 +61,11 @@ Use `--adapter builtin|checkov|gitleaks|opengrep|osv|all` repeatedly and
 for evidence-only external runs. Any external adapter run that can affect an exit-code gate also
 requires `--acknowledge-alert-policy`; see
 [`alert-policy.md`](alert-policy.md).
+
+`--profile deep` is the no-download shorthand for `builtin`, `checkov`, `gitleaks`, `opengrep` and
+`osv` in stable order. It cannot be combined with explicit `--adapter`, `--since` or `--staged`.
+Unavailable prerequisites still produce one `unknown` result per applicable adapter rule and exit
+3; `webapp-security doctor . --adapter all --json` reports exact version/setup guidance.
 
 ## Provenance and deferred adapters
 

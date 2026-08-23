@@ -1,6 +1,6 @@
 # JavaScript and TypeScript built-in rule decisions
 
-Status: v0.5.0 M3 implementation record
+Status: v0.5.0 M3 implementation record with v0.5.4 additions
 
 This record separates stable detectors from candidates that the bounded, zero-dependency lexical
 engine cannot support precisely. A deferred candidate is not executable and is not included in
@@ -23,6 +23,17 @@ All eight rules report `suspected`. Each has one vulnerable fixture, one safe ne
 sanitized structural evidence, a professional and plain-language explanation, security and
 functional retests, side effects, rollback conditions and user decisions.
 
+## Added in v0.5.4
+
+| Rule | Promoted signal | Evidence limit |
+|---|---|---|
+| `js-inline-session-secret` | A non-placeholder literal assigned to a recognized Express session/cookie-session secret option | No proof of production selection, credential validity or external exposure; literal value is never persisted. |
+| `js-insecure-cookie-options` | Recognized session/cookie API options explicitly set `secure: false`, `httpOnly: false` or an unsafe `sameSite` value | No proof of HTTPS termination, cookie purpose, middleware reachability or resolved environment override. |
+
+Both rules remain `suspected` and use resolved imports or recognized framework calls rather than
+generic property-name matching. Their findings include the same explanation, decision, dual-retest
+and rollback contract as the v0.5.0 rules.
+
 ## Deferred from the built-in engine
 
 | Candidate | Reason |
@@ -31,7 +42,7 @@ functional retests, side effects, rollback conditions and user decisions.
 | Generic path construction and file access | `join`, `resolve`, and file reads are overwhelmingly legitimate without trust-boundary data flow. |
 | Logging password/token/cookie-named variables | Variable names alone do not establish sensitive contents, production logging or redaction behavior. |
 | MD5, SHA-1 and `Math.random` uses | These APIs are often non-security identifiers, cache keys or sampling; a security purpose must be established. |
-| Missing cookie flags | Framework defaults, reverse proxies, environment branches and cookie purpose change the correct conclusion. |
+| Generic or dynamically resolved cookie flags outside recognized session APIs | Framework defaults, reverse proxies, environment branches and cookie purpose change the correct conclusion. |
 | Upload size/type policy | Limits and validation can live at middleware, edge, storage or application layers; one local syntax match is not enough. |
 | Reflected dynamic CORS origin | Correct evaluation needs callback behavior, normalization and the actual origin allowlist data flow. |
 

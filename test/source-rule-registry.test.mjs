@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
-  CHECKOV_RULES, GITLEAKS_RULES, OPENGREP_RULES, OSV_RULES,
+  CHECKOV_RULES, DEEP_PROFILE_ADAPTERS, GITLEAKS_RULES, OPENGREP_RULES, OSV_RULES,
+  resolveAdapterSelection,
 } from '../scripts/lib/adapter-definitions.mjs';
 import {
   SOURCE_RULE_REGISTRY, registrySemanticDigest, runtimeRule, stableSourceRuleManifest,
@@ -17,7 +18,7 @@ const clone = () => structuredClone(SOURCE_RULE_REGISTRY);
 assert.deepEqual(validateSourceRuleRegistry(SOURCE_RULE_REGISTRY, { root: ROOT }), []);
 const manifest = stableSourceRuleManifest();
 assert.deepEqual(manifest.counts, {
-  stableTotal: 30, builtInRisk: 20, builtInIntegrity: 2, externalRisk: 8,
+  stableTotal: 43, builtInRisk: 25, builtInIntegrity: 2, externalRisk: 16,
 });
 assert.deepEqual(manifest.rules.map((rule) => rule.id),
   [...manifest.rules.map((rule) => rule.id)].sort());
@@ -33,8 +34,11 @@ assert.deepEqual(OPENGREP_RULES,
   SOURCE_RULE_REGISTRY.filter((rule) => rule.adapter.id === 'opengrep').map(runtimeRule));
 assert.deepEqual(OSV_RULES,
   SOURCE_RULE_REGISTRY.filter((rule) => rule.adapter.id === 'osv').map(runtimeRule));
+assert.deepEqual(resolveAdapterSelection([], 'deep'), DEEP_PROFILE_ADAPTERS);
+assert.throws(() => resolveAdapterSelection(['builtin'], 'deep'), /cannot be combined/);
+assert.throws(() => resolveAdapterSelection([], 'wide'), /unsupported profile/);
 assert.equal(sourceRuleset(['builtin', 'checkov', 'gitleaks', 'opengrep', 'osv']).digest,
-  'c127d361ff758b0115425dfbaa9add2201ddc924a17e37edd873778e71a32330');
+  'ff67cdb5cff8f19246ec4c00e9faab3b858cd101e57aabb8fe511bda86c6241a');
 
 const docsOnly = clone();
 docsOnly[0].plainLanguage = 'Documentation-only wording changed.';
@@ -49,7 +53,7 @@ experimental.push({
   fixtures: structuredClone(experimental[0].fixtures),
 });
 assert.equal(validateSourceRuleRegistry(experimental, { root: ROOT }).length, 0);
-assert.equal(stableSourceRuleManifest(experimental).counts.stableTotal, 30);
+assert.equal(stableSourceRuleManifest(experimental).counts.stableTotal, 43);
 
 for (const mutate of [
   (registry) => { registry[1].id = registry[0].id; },

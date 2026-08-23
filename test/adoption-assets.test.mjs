@@ -29,7 +29,7 @@ function runRenderer(value, name) {
 try {
   let result = spawnSync(process.execPath, [GENERATOR, '--check'], { cwd: ROOT, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr || result.stdout);
-  assert.match(result.stdout, /13 files, 25 capabilities, 5 journeys, 5 studies/);
+  assert.match(result.stdout, /13 files, 26 capabilities, 5 journeys, 5 studies/);
 
   const schema = JSON.parse(readFileSync(join(ROOT, 'docs', 'case-studies', 'template.schema.json'), 'utf8'));
   assert.equal(schema.properties.source.properties.commit.pattern, '^[a-f0-9]{40}$');

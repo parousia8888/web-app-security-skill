@@ -39,6 +39,14 @@ For each actionable result, the report gives you:
 - a reviewable change, likely product side effects, rollback conditions, and separate security and
   normal-behavior retests.
 
+For the widest maintained local pass, select the no-download deep profile. It uses the built-in
+rules and calls pinned Checkov, Gitleaks, Opengrep and OSV-Scanner binaries already installed by the
+user. A missing tool becomes `unknown` evidence with setup guidance:
+
+```bash
+npx --yes web-app-security-skill audit . --profile deep --fail-on never
+```
+
 <p align="center">
   <a href="docs/demo-evidence.md"><img src="docs/assets/demo.gif" alt="Owned local source fixture: a suspected HIGH OS command injection lead is explained, changed from shell execution to argument-separated execution, then security and normal product behavior are retested"></a>
 </p>
@@ -71,32 +79,33 @@ For the complete install-to-uninstall path, follow the tested
 
 ## What's new in v0.5.4
 
-v0.5.4 corrects how detector evidence is named and adds executable guards for failures seen during
-real project review. It does not increase the stable detector count:
+v0.5.4 expands the bounded automatic first pass while preserving the evidence rules used by earlier
+releases:
 
-- **Accurate evidence name:** the author-maintained planted suite is now rule-contract conformance,
-  with 22 positive/negative/state contracts. It no longer uses TP/FP language that could be quoted
-  as production accuracy.
-- **Observed failures become gates:** four historical correctness failures and one numeric-SVG DOM
-  sink review case now execute against product code. The fifth remains a visible
-  `expected_benign_match`; no blanket suppression is added.
-- **Try-now command follows npm latest:** the main-branch first trial omits a version pin. Reusable
-  CI, signed releases and verified installation remain fixed to a version or full commit.
-- **No detector-count inflation:** stable detection remains 20 built-in risk rules, 2
-  evidence-integrity rules and 8 opt-in external-adapter rules.
+- **Five new built-in checks:** a Git-tracked real `.env` filename, JavaScript session secrets and
+  insecure cookie options, plus Python session-cookie and CSRF-disable settings. The Git index fact
+  can be `confirmed`; source-pattern matches remain `suspected` until context is reviewed.
+- **Eight new same-file flow checks:** the pinned Opengrep rules now cover request data reaching SQL,
+  outbound URLs, file paths and redirects in JavaScript/TypeScript and Python, in addition to the
+  existing command-execution pair. This remains bounded same-file taint analysis.
+- **One deep command:** `--profile deep` selects built-in, Checkov, Gitleaks, Opengrep and
+  OSV-Scanner. It downloads nothing, and missing tools produce visible `unknown` evidence.
+- **Machine-checked boundaries:** rule-contract conformance now covers all 25 built-in risk and 2
+  evidence-integrity rules; the separate historical regression corpus keeps the five prior
+  correctness/review cases.
 
 The v0.5.0 explanation contract remains: every v3 source finding includes the professional term,
 ordinary-language meaning, realistic consequence, evidence boundary, reviewable proposal,
 alternatives, likely side effects, owner decisions, separate security/functional retests and
-rollback. The CLI does not edit the project. Stable detection remains 20 built-in risk rules, 2
-evidence-integrity rules and 8 opt-in external-adapter rules, with built-in depth concentrated on
-JavaScript/TypeScript and Python Web code.
+rollback. The CLI does not edit the project. Stable detection is 25 built-in risk rules, 2
+evidence-integrity rules and 16 opt-in external-adapter rules, for 43 total, with built-in depth
+concentrated on JavaScript/TypeScript and Python Web code.
 
 Exact support and limits are in the [compatibility matrix](docs/compatibility.md), [stable rule
 corpus](docs/stable-rule-corpus.json), [rule-contract conformance](docs/conformance/v0.5.4-rule-contract-conformance.md),
 [historical real-world regressions](docs/regressions/v0.5.4-real-world-regressions.md) and
-[ordinary-project review](docs/case-studies/journeys/v0.5.0-review.md). MCP and additional stable
-rules are deferred behind the [documented architecture gates](docs/architecture/mcp-and-rule-expansion.md).
+[ordinary-project review](docs/case-studies/journeys/v0.5.0-review.md). MCP and future stable-rule
+expansion remain behind the [documented architecture gates](docs/architecture/mcp-and-rule-expansion.md).
 The signed v0.5.3 GitHub assets and provenance, verified installer, public npm package and signed
 `v1` Action alias have passed their public checks. The installer below defaults to v0.5.3.
 
@@ -205,13 +214,13 @@ The default is the bundled, network-free source adapter. Optional external adapt
 
 ```bash
 webapp-security doctor . --adapter all --json
-webapp-security audit . --adapter checkov --adapter gitleaks --adapter opengrep --adapter osv --fail-on never
+webapp-security audit . --profile deep --fail-on never
 ```
 
 Tested versions are Checkov `3.3.9`, Gitleaks `8.30.1`, Opengrep `1.27.0` and OSV-Scanner `2.5.0`.
 The CLI and Action do not download them. Checkov runs only three fixed root Dockerfile/GitHub
 Actions rules with `--skip-download`; it may query PyPI for version metadata but does not upload
-project source. Opengrep uses only the bundled, digest-pinned two-rule local ruleset and makes no
+project source. Opengrep uses only the bundled, digest-pinned ten-rule local ruleset and makes no
 network request; OSV-Scanner may query the public OSV database. Project dependencies are not
 executed. Compose, Terraform, Kubernetes and the rest of Checkov are not stable coverage. A
 blocking external-adapter run additionally requires `--acknowledge-alert-policy` after the consuming repository accepts the responsibilities in
@@ -240,14 +249,15 @@ Multiple `--fail-on-domain <domain=threshold>` options may be combined. Effectiv
 recorded in the report. The [generated rule taxonomy](docs/rule-taxonomy.md) separates source rule
 kind, family, language, domain, severity, default evidence state and standards. Exact stable source
 counts and complete explanation metadata come from the machine-readable
-[`stable-source-rules.json`](docs/stable-source-rules.json): 20 built-in risk rules, 2 built-in
-evidence-integrity rules and 8 external adapter risk rules on `main`, for 30 stable source and
-deployment-policy rules. Eight JavaScript/TypeScript
-and eight Python rules are bounded lexical leads for execution, unsafe browser or framework
-configuration, transport, authentication secrets and deserialization. Their exact detection and
-false-positive boundaries are recorded in the [JS/TS](docs/js-ts-rule-decisions.md) and
-[Python](docs/python-rule-decisions.md) decisions. They do not prove input flow or runtime
-reachability and remain `suspected` until independently reproduced.
+[`stable-source-rules.json`](docs/stable-source-rules.json): 25 built-in risk rules, 2 built-in
+evidence-integrity rules and 16 external adapter risk rules on `main`, for 43 stable source and
+deployment-policy rules. Ten JavaScript/TypeScript and ten Python built-in rules are bounded lexical
+leads for execution, unsafe browser or framework configuration, transport, authentication/session
+settings and deserialization; five shared checks cover repository and project configuration. Their
+exact detection and false-positive boundaries are recorded in the
+[JS/TS](docs/js-ts-rule-decisions.md) and [Python](docs/python-rule-decisions.md) decisions. Pattern
+matches do not prove input flow or runtime reachability and remain `suspected` until independently
+reproduced; only a narrow rule-specific observable fact can be `confirmed`.
 
 ## Capability boundary
 
@@ -289,7 +299,7 @@ webapp-security audit .webapp-security/runs/<run-id> --fail-on high
 webapp-security audit . --since HEAD~1 --fail-on never
 webapp-security audit . --staged --fail-on never
 webapp-security doctor . --adapter all
-webapp-security audit . --adapter checkov --adapter gitleaks --adapter opengrep --adapter osv --fail-on never
+webapp-security audit . --profile deep --fail-on never
 webapp-security explain <finding-id> --report <report.json>
 webapp-security start . --run-id <retest-run-id>
 webapp-security retest .webapp-security/runs/<retest-run-id> \

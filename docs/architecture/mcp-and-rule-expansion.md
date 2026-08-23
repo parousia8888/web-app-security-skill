@@ -1,12 +1,12 @@
 # MCP and detection-rule expansion decision
 
-Status: accepted for v0.5.3
+Status: accepted for v0.5.3; gates applied to the v0.5.4 rule expansion
 
 ## Context
 
 Web App Security Skill currently exposes one deterministic runtime through the ordinary CLI, npm
 and `npx`; Claude Code can also discover the same root `SKILL.md` through its plugin marketplace.
-The stable source boundary is 20 built-in risk rules, two evidence-integrity rules and eight opt-in
+The stable source boundary is 25 built-in risk rules, two evidence-integrity rules and 16 opt-in
 external-adapter rules. The built-in rules are deliberately narrow and do not claim whole-program
 data flow or production reachability.
 
@@ -31,6 +31,18 @@ v0.5.3 does not ship an MCP server and does not expand the stable detection-rule
 
 This is a deferral with explicit entry gates, not a claim that MCP or additional rules have no
 value.
+
+## v0.5.4 application
+
+v0.5.4 keeps MCP deferred and promotes five bounded built-in rules plus eight project-owned
+Opengrep rules after applying the detection-rule gates below. Each promoted rule has registry
+metadata, positive and neighboring negative fixtures, an explicit evidence boundary, dual retests,
+rollback language and focused parser/adapter regression coverage. The built-in additions are exact
+Git/configuration or recognized file-local constructs; the request-flow additions use the existing
+pinned same-file Opengrep adapter.
+
+The `--profile deep` CLI option is orchestration over the same runtime and adapters. It does not add
+a transport, daemon or automatic dependency install, and it does not count as another detector.
 
 ## MCP entry gates
 

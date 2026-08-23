@@ -2,6 +2,7 @@ import { SOURCE_RULE_REGISTRY, runtimeRule } from './source-rule-registry.mjs';
 
 export const EXTERNAL_ADAPTER_TIMEOUT_SECONDS = 120;
 export const SUPPORTED_EXTERNAL_ADAPTERS = ['checkov', 'gitleaks', 'opengrep', 'osv'];
+export const DEEP_PROFILE_ADAPTERS = ['builtin', ...SUPPORTED_EXTERNAL_ADAPTERS];
 
 const checkovRegistry = SOURCE_RULE_REGISTRY.filter((rule) => rule.adapter.id === 'checkov');
 const gitleaksRegistry = SOURCE_RULE_REGISTRY.filter((rule) => rule.adapter.id === 'gitleaks');
@@ -30,9 +31,12 @@ export const OPENGREP_ADAPTER = {
 };
 
 export const OPENGREP_RULES = opengrepRegistry.map(runtimeRule);
+export const OPENGREP_RULE_ID_MAP = new Map(opengrepRegistry.map((rule) => [
+  rule.detection.externalRuleId, rule.id,
+]));
 export const OPENGREP_RULESET = {
   relativePath: 'rules/opengrep-source.yml',
-  sha256: '3a3a28549f516b50e716449d9e80ee6f855d912f9bb41371d514f2e324667979',
+  sha256: '6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d',
 };
 
 export const OSV_ADAPTER = {
@@ -70,6 +74,13 @@ export function parseAdapterSelection(values = []) {
   }
   if (!selected.size) throw new Error('at least one adapter is required');
   return ['builtin', ...SUPPORTED_EXTERNAL_ADAPTERS].filter((value) => selected.has(value));
+}
+
+export function resolveAdapterSelection(values = [], profile = null) {
+  if (profile === null) return parseAdapterSelection(values);
+  if (values.length) throw new Error('--profile cannot be combined with --adapter');
+  if (profile !== 'deep') throw new Error(`unsupported profile ${profile}; use deep`);
+  return [...DEEP_PROFILE_ADAPTERS];
 }
 
 export function parseAdapterTimeout(value = EXTERNAL_ADAPTER_TIMEOUT_SECONDS) {

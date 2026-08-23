@@ -92,8 +92,7 @@ node "$S/scripts/webapp-security.mjs" start /path/to/project
 # Deterministic source evidence, explanation and baseline retest
 node "$S/scripts/webapp-security.mjs" audit /path/to/project/.webapp-security/runs/<run-id> --fail-on high
 node "$S/scripts/webapp-security.mjs" doctor /path/to/project --adapter all
-node "$S/scripts/webapp-security.mjs" audit /path/to/project \
-  --adapter gitleaks --adapter osv --fail-on never
+node "$S/scripts/webapp-security.mjs" audit /path/to/project --profile deep --fail-on never
 node "$S/scripts/webapp-security.mjs" audit /path/to/project --since HEAD~1 --fail-on never
 node "$S/scripts/webapp-security.mjs" audit /path/to/project --staged --fail-on never
 node "$S/scripts/webapp-security.mjs" explain <finding-id> --report <report.json>

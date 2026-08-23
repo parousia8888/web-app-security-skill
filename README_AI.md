@@ -45,7 +45,7 @@ Never infer ownership from repository access, DNS reachability, or a user-agent 
 - `node scripts/webapp-security.mjs install [--target claude|codex|cli|both|all]`
 - `node scripts/webapp-security.mjs version`
 - `node scripts/webapp-security.mjs start <project>`
-- `node scripts/webapp-security.mjs audit <project-or-run>`
+- `node scripts/webapp-security.mjs audit <project-or-run> [--profile deep]`
 - `node scripts/webapp-security.mjs explain <finding-id> --report <report.json>`
 - `node scripts/webapp-security.mjs repair-plan <finding-id> --report <report.json> --out <directory>`
 - `node scripts/webapp-security.mjs repair-validate <repair-record.json>`
@@ -76,15 +76,18 @@ production policy on the user's behalf.
    `security-scope.yml` before audit work.
 3. Run `webapp-security audit <run-directory> --name report --fail-on never` so findings do not
    prevent evidence creation.
-4. Use `webapp-security explain <finding-id> --report <report.json>` when evidence, consequence or
+4. For wider caller-installed tooling, run `webapp-security doctor <project> --adapter all`, then
+   use `webapp-security audit <project> --profile deep --fail-on never`. Missing tools are `unknown`;
+   the command does not install them.
+5. Use `webapp-security explain <finding-id> --report <report.json>` when evidence, consequence or
    retest is unclear.
-5. Review `proposed.patch`. Do not apply it automatically. It may combine diffs with manual steps
+6. Review `proposed.patch`. Do not apply it automatically. It may combine diffs with manual steps
    and may cover only part of the report.
-6. If patch-only was requested, stop after delivering the patch, affected files, expected risk and
+7. If patch-only was requested, stop after delivering the patch, affected files, expected risk and
    exact retest command. Do not report any item as fixed.
-7. If changes were authorized and applied, run project tests, then write `retest` evidence to a new
+8. If changes were authorized and applied, run project tests, then write `retest` evidence to a new
    directory using the original JSON report as `--baseline`.
-8. Report `fixed`, `unchanged`, `regressed`, remaining and unreached results separately.
+9. Report `fixed`, `unchanged`, `regressed`, remaining and unreached results separately.
 
 ## Result interpretation
 

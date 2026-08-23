@@ -391,6 +391,16 @@ try {
     version: '1.27.0', results: [], errors: [], paths: { scanned: [join(project, 'config.txt')] },
   });
   assert.deepEqual(parseOpengrepJson(opengrepClean, project), []);
+  const redirectFinding = parseOpengrepJson(JSON.stringify({
+    version: '1.27.0', errors: [], paths: { scanned: [join(project, 'source.js')] }, results: [{
+      check_id: 'webapp-security.javascript.request-to-redirect', path: join(project, 'source.js'),
+      start: { line: 4, col: 3 }, extra: { engine_kind: 'OSS' },
+    }],
+  }), project)[0];
+  assert.equal(redirectFinding.ruleId, 'opengrep-js-request-redirect-flow');
+  assert.equal(redirectFinding.severity, 'medium');
+  assert.match(redirectFinding.title, /redirect/i);
+  assert.match(redirectFinding.remediation, /local relative paths|approved destination/i);
   assert.throws(() => parseOpengrepJson('{bad', project), /malformed_json/);
   assert.throws(() => parseOpengrepJson(JSON.stringify({
     version: '1.27.0', results: [], errors: [], paths: { scanned: ['../escape.js'] },
@@ -497,6 +507,33 @@ try {
     assert.match(output, /3\.3\.9/);
     assert.match(output, /coverage|Coverage/);
   }
+
+  const deepDir = join(temp, 'deep-profile');
+  result = cli(['audit', project, '--out', deepDir, '--profile', 'deep', '--fail-on', 'never'], {
+    WEBAPP_SECURITY_CHECKOV_BIN: join(temp, 'missing-checkov'),
+    WEBAPP_SECURITY_GITLEAKS_BIN: join(temp, 'missing-gitleaks'),
+    WEBAPP_SECURITY_OPENGREP_BIN: join(temp, 'missing-opengrep'),
+    WEBAPP_SECURITY_OSV_SCANNER_BIN: join(temp, 'missing-osv'),
+  });
+  assert.equal(result.status, 3, result.stderr || result.stdout);
+  const deepReport = JSON.parse(readFileSync(join(deepDir, 'report.json'), 'utf8'));
+  assert.deepEqual(deepReport.scope.auditBoundary.adapters,
+    ['builtin', 'checkov', 'gitleaks', 'opengrep', 'osv']);
+  assert.equal(deepReport.scope.networkAccessPerformed, false);
+  const deepExternal = deepReport.findings.filter((finding) => finding.adapter.id !== 'builtin-source');
+  assert.equal(deepExternal.length, 16);
+  assert.ok(deepExternal.every((finding) => finding.state === 'unknown'));
+  assert.ok(deepExternal.every((finding) => /doctor/.test(finding.explanation.proposal.summary)));
+  const conflictDir = join(temp, 'deep-conflict');
+  result = cli(['audit', project, '--out', conflictDir, '--profile', 'deep', '--adapter', 'builtin']);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /cannot be combined/);
+  assert.equal(existsSync(conflictDir), false);
+  const unknownProfileDir = join(temp, 'unknown-profile');
+  result = cli(['audit', project, '--out', unknownProfileDir, '--profile', 'wide']);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /unsupported profile/);
+  assert.equal(existsSync(unknownProfileDir), false);
 
   result = cli(['doctor', project, '--adapter', 'all', '--json'], {
     WEBAPP_SECURITY_CHECKOV_BIN: join(temp, 'missing-checkov'),

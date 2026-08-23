@@ -75,8 +75,12 @@ try {
   assert.ok(report.findings.some((finding) => finding.rule.id === 'gitleaks-committed-secret'));
   assert.ok(report.findings.some((finding) => finding.rule.id === 'gitleaks-working-tree-secret'));
   assert.ok(report.findings.some((finding) => finding.rule.id === 'osv-known-vulnerability'));
-  assert.ok(report.findings.some((finding) => finding.rule.id === 'opengrep-js-request-command-flow'));
-  assert.ok(report.findings.some((finding) => finding.rule.id === 'opengrep-python-request-command-flow'));
+  const expectedOpengrepRules = ['command', 'sql', 'ssrf', 'path', 'redirect'].flatMap((risk) => [
+    `opengrep-js-request-${risk}-flow`, `opengrep-python-request-${risk}-flow`,
+  ]);
+  for (const ruleId of expectedOpengrepRules) {
+    assert.ok(report.findings.some((finding) => finding.rule.id === ruleId), `missing ${ruleId}`);
+  }
   assert.ok(report.findings.some((finding) => finding.rule.id === 'checkov-dockerfile-root-user'));
   assert.ok(report.findings.some((finding) => finding.rule.id === 'checkov-dockerfile-healthcheck-missing'));
   assert.ok(report.findings.some((finding) => finding.rule.id === 'checkov-github-actions-write-all'));
@@ -112,7 +116,7 @@ try {
       new RegExp(`missing positive/negative observation ${rule.ruleId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
   }
 
-  console.log('real adapters ok: 8 corpus-linked pinned adapters with 8 planted missing-observation failures');
+  console.log('real adapters ok: 16 corpus-linked pinned adapters with 16 planted missing-observation failures');
 } finally {
   rmSync(temp, { recursive: true, force: true });
 }

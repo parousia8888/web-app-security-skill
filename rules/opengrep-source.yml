@@ -32,3 +32,161 @@ rules:
       - pattern-either:
           - pattern: subprocess.run($CMD, ..., shell=True, ...)
           - pattern: subprocess.call($CMD, ..., shell=True, ...)
+
+  - id: webapp-security.javascript.request-to-sql
+    mode: taint
+    languages: [javascript, typescript]
+    message: Request data may reach a SQL execution argument.
+    severity: WARNING
+    metadata:
+      family: injection_execution
+      cwe: CWE-89
+    pattern-sources:
+      - pattern-either:
+          - pattern: $REQ.query.$KEY
+          - pattern: $REQ.query[$KEY]
+          - pattern: $REQ.params.$KEY
+          - pattern: $REQ.body.$KEY
+    pattern-sinks:
+      - pattern-either:
+          - pattern: $DB.query($QUERY, ...)
+          - pattern: $DB.execute($QUERY, ...)
+
+  - id: webapp-security.python.request-to-sql
+    mode: taint
+    languages: [python]
+    message: Request data may reach a SQL execution argument.
+    severity: WARNING
+    metadata:
+      family: injection_execution
+      cwe: CWE-89
+    pattern-sources:
+      - pattern-either:
+          - pattern: request.args.get(...)
+          - pattern: request.args[$KEY]
+          - pattern: request.form.get(...)
+          - pattern: request.form[$KEY]
+    pattern-sinks:
+      - pattern-either:
+          - pattern: $CURSOR.execute($QUERY, ...)
+          - pattern: $CURSOR.executemany($QUERY, ...)
+
+  - id: webapp-security.javascript.request-to-url
+    mode: taint
+    languages: [javascript, typescript]
+    message: Request data may select an outbound request URL.
+    severity: WARNING
+    metadata:
+      family: injection_execution
+      cwe: CWE-918
+    pattern-sources:
+      - pattern-either:
+          - pattern: $REQ.query.$KEY
+          - pattern: $REQ.query[$KEY]
+          - pattern: $REQ.params.$KEY
+          - pattern: $REQ.body.$KEY
+    pattern-sinks:
+      - pattern-either:
+          - pattern: fetch($URL, ...)
+          - pattern: $HTTP.get($URL, ...)
+          - pattern: $HTTP.request($URL, ...)
+
+  - id: webapp-security.python.request-to-url
+    mode: taint
+    languages: [python]
+    message: Request data may select an outbound request URL.
+    severity: WARNING
+    metadata:
+      family: injection_execution
+      cwe: CWE-918
+    pattern-sources:
+      - pattern-either:
+          - pattern: request.args.get(...)
+          - pattern: request.args[$KEY]
+          - pattern: request.form.get(...)
+          - pattern: request.form[$KEY]
+    pattern-sinks:
+      - pattern-either:
+          - pattern: requests.get($URL, ...)
+          - pattern: requests.request(..., $URL, ...)
+          - pattern: httpx.get($URL, ...)
+          - pattern: urllib.request.urlopen($URL, ...)
+
+  - id: webapp-security.javascript.request-to-file-path
+    mode: taint
+    languages: [javascript, typescript]
+    message: Request data may select a filesystem path.
+    severity: WARNING
+    metadata:
+      family: file_path
+      cwe: CWE-22
+    pattern-sources:
+      - pattern-either:
+          - pattern: $REQ.query.$KEY
+          - pattern: $REQ.query[$KEY]
+          - pattern: $REQ.params.$KEY
+          - pattern: $REQ.body.$KEY
+    pattern-sinks:
+      - pattern-either:
+          - pattern: $FS.readFile($PATH, ...)
+          - pattern: $FS.readFileSync($PATH, ...)
+          - pattern: $FS.createReadStream($PATH, ...)
+          - pattern: $FS.writeFile($PATH, ...)
+
+  - id: webapp-security.python.request-to-file-path
+    mode: taint
+    languages: [python]
+    message: Request data may select a filesystem path.
+    severity: WARNING
+    metadata:
+      family: file_path
+      cwe: CWE-22
+    pattern-sources:
+      - pattern-either:
+          - pattern: request.args.get(...)
+          - pattern: request.args[$KEY]
+          - pattern: request.form.get(...)
+          - pattern: request.form[$KEY]
+    pattern-sinks:
+      - pattern-either:
+          - pattern: open($PATH, ...)
+          - pattern: send_file($PATH, ...)
+          - pattern: send_from_directory(..., $PATH, ...)
+
+  - id: webapp-security.javascript.request-to-redirect
+    mode: taint
+    languages: [javascript, typescript]
+    message: Request data may select a browser redirect target.
+    severity: WARNING
+    metadata:
+      family: authentication_session
+      cwe: CWE-601
+    pattern-sources:
+      - pattern-either:
+          - pattern: $REQ.query.$KEY
+          - pattern: $REQ.query[$KEY]
+          - pattern: $REQ.params.$KEY
+          - pattern: $REQ.body.$KEY
+    pattern-sinks:
+      - pattern-either:
+          - pattern: $RES.redirect($URL, ...)
+          - pattern: redirect($URL, ...)
+
+  - id: webapp-security.python.request-to-redirect
+    mode: taint
+    languages: [python]
+    message: Request data may select a browser redirect target.
+    severity: WARNING
+    metadata:
+      family: authentication_session
+      cwe: CWE-601
+    pattern-sources:
+      - pattern-either:
+          - pattern: request.args.get(...)
+          - pattern: request.args[$KEY]
+          - pattern: request.form.get(...)
+          - pattern: request.form[$KEY]
+    pattern-sinks:
+      - pattern-either:
+          - pattern: redirect($URL, ...)
+          - pattern: $HTTP.redirect($URL, ...)

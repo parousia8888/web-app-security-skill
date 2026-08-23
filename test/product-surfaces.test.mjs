@@ -244,8 +244,13 @@ try {
   assert.equal(installedReport.schemaVersion, 3);
   assert.equal(installedReport.subject.binding, 'ephemeral');
   assert.equal(JSON.stringify(installedReport).includes(installedAuditOut), false);
-  assert.equal(installedReport.summary.byState.confirmed, 1);
+  assert.equal(installedReport.summary.byState.confirmed, 2);
   assert.equal(installedReport.summary.byState.suspected, 3);
+  assert.deepEqual(installedReport.findings.filter((finding) => finding.state === 'confirmed')
+    .map((finding) => finding.rule.id).sort(), [
+    'dependency-lockfile-missing',
+    'tracked-sensitive-env-file',
+  ]);
   assert.ok(existsSync(join(installedAuditOut, 'installed.html')));
   assert.ok(existsSync(join(installedAuditOut, 'installed.sarif')));
 

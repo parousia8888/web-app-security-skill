@@ -58,8 +58,17 @@ try {
   const cleanAudit = auditSource(clean);
   const cleanCoverage = sourceCoverage(cleanAudit);
   assert.deepEqual(cleanAudit.findings, []);
-  assert.ok(cleanCoverage.every((entry) => entry.status === 'completed'));
+  assert.equal(cleanCoverage.find((entry) => entry.ruleId === 'tracked-sensitive-env-file').status,
+    'not_applicable');
+  assert.ok(cleanCoverage.filter((entry) => entry.ruleId !== 'tracked-sensitive-env-file')
+    .every((entry) => entry.status === 'completed'));
   assertReconciled(cleanCoverage);
+  const trackedFixture = auditSource(join(ROOT, 'test', 'fixtures', 'audit-app'));
+  const trackedFinding = trackedFixture.findings.find((finding) =>
+    finding.ruleId === 'tracked-sensitive-env-file');
+  assert.equal(trackedFinding.state, 'confirmed');
+  assert.equal(trackedFinding.location.path, '.env.production');
+  assert.equal(trackedFinding.evidence.contentsRead, false);
   let result = run(clean, 'clean');
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.report.findings.length, 0);
@@ -172,7 +181,10 @@ try {
   const excludedCoverage = sourceCoverage(excludedAudit);
   assert.equal(excludedAudit.findings.some((finding) =>
     ['production-source-map-enabled', 'source-evidence-incomplete'].includes(finding.ruleId)), false);
-  assert.ok(excludedCoverage.every((entry) => entry.status === 'completed'));
+  assert.equal(excludedCoverage.find((entry) => entry.ruleId === 'tracked-sensitive-env-file').status,
+    'not_applicable');
+  assert.ok(excludedCoverage.filter((entry) => entry.ruleId !== 'tracked-sensitive-env-file')
+    .every((entry) => entry.status === 'completed'));
   assert.ok(excludedCoverage.some((entry) => entry.reasons.some((reason) =>
     reason.code === 'policy_excluded_directory')));
   assert.ok(excludedCoverage.some((entry) => entry.reasons.some((reason) =>

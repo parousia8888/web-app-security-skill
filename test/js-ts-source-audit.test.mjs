@@ -45,6 +45,19 @@ assert.equal(secret.evidence.literalRedacted, true);
 assert.deepEqual(Object.keys(secret.evidence).sort(),
   ['construct', 'line', 'literalLengthBand', 'literalRedacted', 'subject'].sort());
 assert.doesNotMatch(JSON.stringify(secret), /fixture-value-never-use-12345/);
+const sessionSecret = vulnerable.findings.find((finding) => finding.ruleId === 'js-inline-session-secret');
+assert.equal(sessionSecret.evidence.literalRedacted, true);
+assert.deepEqual(Object.keys(sessionSecret.evidence).sort(),
+  ['construct', 'line', 'literalLengthBand', 'literalRedacted', 'subject'].sort());
+assert.doesNotMatch(JSON.stringify(sessionSecret), /fixture-session-secret-never-deploy/);
+
+const unrelatedOptions = inspectJsTsSource('src/options.ts', `
+  const options = {
+    secret: 'ordinary-fixed-text-not-a-session-key',
+    cookie: { httpOnly: false, secure: false },
+  };
+`);
+assert.deepEqual(unrelatedOptions.findings, []);
 
 const masked = inspectJsTsSource('src/masked.ts', String.raw`
   // eval(user); document.body.innerHTML = user;
@@ -165,4 +178,4 @@ try {
   rmSync(temp, { recursive: true, force: true });
 }
 
-console.log('js/ts source audit ok: 8 stable leads, safe neighbours, masking, redaction and coverage');
+console.log('js/ts source audit ok: 10 stable leads, safe neighbours, masking, redaction and coverage');

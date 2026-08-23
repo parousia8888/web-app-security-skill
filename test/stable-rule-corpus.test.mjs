@@ -56,7 +56,7 @@ try {
     assert.match(validateCorpusObservations(corpus, mutated, { adapterType: 'built_in' }).join('; '),
       new RegExp(`missing positive/negative observation ${rule.ruleId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
   }
-  console.log('stable rule corpus ok: 22 built-in observations and 22 planted missing-observation failures');
+  console.log('stable rule corpus ok: 27 built-in observations and 27 planted missing-observation failures');
 } finally {
   rmSync(temp, { recursive: true, force: true });
 }

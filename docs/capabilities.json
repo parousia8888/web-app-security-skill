@@ -48,7 +48,7 @@
       "name": "Narrow deterministic source audit",
       "category": "detection",
       "maturity": "stable",
-      "scope": "Runs 20 stable built-in risk rules and 2 evidence-integrity rules: four shared configuration checks plus eight bounded JavaScript/TypeScript and eight bounded Python leads. Syntax matches remain suspected and this is not whole-program SAST.",
+      "scope": "Runs 25 stable built-in risk rules and 2 evidence-integrity rules: five shared repository/configuration checks plus ten bounded JavaScript/TypeScript and ten bounded Python leads. Pattern matches remain suspected; only narrow Git and manifest facts can be confirmed, and this is not whole-program SAST.",
       "evidence": ["scripts/lib/source-audit.mjs", "scripts/lib/js-ts-source-audit.mjs", "scripts/lib/python-source-audit.mjs", "scripts/lib/source-rule-registry.mjs", "docs/stable-source-rules.json", "test/js-ts-source-audit.test.mjs", "test/python-source-audit.test.mjs", "test/source-rule-registry.test.mjs"]
     },
     {
@@ -80,7 +80,7 @@
       "name": "Opengrep source data-flow adapter",
       "category": "detection",
       "maturity": "stable",
-      "scope": "Opt-in Opengrep 1.27.0 adapter with two project-owned, digest-pinned same-file request-to-command taint rules for JavaScript/TypeScript and Python. It is not a general rules catalogue or whole-program SAST; every match remains suspected.",
+      "scope": "Opt-in Opengrep 1.27.0 adapter with ten project-owned, digest-pinned same-file request-to-command, SQL, outbound-URL, file-path and redirect taint rules for JavaScript/TypeScript and Python. It is not a general rules catalogue or whole-program SAST; every match remains suspected.",
       "evidence": ["rules/opengrep-source.yml", "scripts/lib/external-adapters.mjs", "docs/sast-adapter-benchmark.md", "test/external-adapters.test.mjs", "test/real-adapters.test.mjs"]
     },
     {
@@ -116,11 +116,19 @@
       "evidence": ["scripts/lib/git-diff-scope.mjs", "scripts/project-audit.mjs", "test/incremental-source-audit.test.mjs"]
     },
     {
+      "id": "deep-audit-profile",
+      "name": "No-download deep audit profile",
+      "category": "evidence_reporting",
+      "maturity": "stable",
+      "scope": "Expands one audit command to the built-in detector plus Checkov, Gitleaks, Opengrep and OSV-Scanner in stable order. It never downloads a tool; every missing, incompatible or failed external adapter remains explicit unknown evidence with doctor guidance.",
+      "evidence": ["scripts/project-audit.mjs", "scripts/lib/adapter-definitions.mjs", "scripts/lib/external-adapters.mjs", "test/external-adapters.test.mjs"]
+    },
+    {
       "id": "rule-contract-conformance",
       "name": "Reproducible rule-contract conformance",
       "category": "evidence_reporting",
       "maturity": "stable",
-      "scope": "Regenerates exact JSON and Markdown pass/fail evidence for 20 built-in risk and two evidence-integrity planted positive/negative rule contracts. It is author-maintained conformance evidence, not a production-vulnerability precision, recall, reachability, exploitability or security-coverage measurement.",
+      "scope": "Regenerates exact JSON and Markdown pass/fail evidence for 25 built-in risk and two evidence-integrity planted positive/negative rule contracts. It is author-maintained conformance evidence, not a production-vulnerability precision, recall, reachability, exploitability or security-coverage measurement.",
       "evidence": ["scripts/run-rule-contract-conformance.mjs", "scripts/lib/rule-contract-conformance.mjs", "test/rule-contract-conformance.test.mjs", "docs/conformance/v0.5.4-rule-contract-conformance.json"]
     },
     {

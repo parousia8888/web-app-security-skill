@@ -26,17 +26,17 @@ remain explicit in `security-scope.yml`.
 
 Built-in language depth is intentionally narrower than project discovery:
 
-| Source surface | Stable v0.5.0 built-in boundary | Explicit limit |
+| Source surface | Stable v0.5.4 built-in boundary | Explicit limit |
 |---|---|---|
-| JavaScript / TypeScript | `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx`; direct lexical constructs for dynamic execution, child-process shell use, React/browser HTML sinks, wildcard credentialed CORS, disabled TLS verification, unsafe JWT options and hardcoded auth secrets | No whole-program data flow, alias-complete symbol resolution, runtime reachability or sanitizer proof |
-| Python | `.py`; tokenizer-backed constructs for dynamic execution, shell subprocess use, pickle and YAML deserialization, disabled TLS verification, framework debug, hardcoded framework secrets and wildcard credentialed CORS | A tokenizer failure becomes `unknown`; no interprocedural data flow or deployment-state proof |
-| Shared project configuration | Supported manifests/lockfiles, sensitive environment filenames, public Node inspector binds and production source-map flags | A filename/config match proves only the named fact, not exploitability |
-| Other languages | Discovery may record the stack; optional Opengrep may add only its two bundled same-file request-to-command rules where applicable | No equal built-in coverage is claimed; use agent-guided review or another independently governed scanner |
+| JavaScript / TypeScript | `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx`; direct lexical constructs for dynamic execution, child-process shell use, React/browser HTML sinks, wildcard credentialed CORS, disabled TLS verification, unsafe JWT options, hardcoded auth/session secrets and recognized insecure cookie options | No whole-program data flow, alias-complete symbol resolution, runtime reachability or sanitizer proof |
+| Python | `.py`; tokenizer-backed constructs for dynamic execution, shell subprocess use, pickle and YAML deserialization, disabled TLS verification, framework debug, hardcoded framework secrets, wildcard credentialed CORS, recognized insecure session cookies and explicit CSRF disable/exempt constructs | A tokenizer failure becomes `unknown`; no interprocedural data flow or deployment-state proof |
+| Shared project configuration | Supported manifests/lockfiles, sensitive environment filenames, exact Git-index tracking of real `.env` names, public Node inspector binds and production source-map flags | A filename/config/Git fact proves only the named condition, not secret content, deployment or exploitability |
+| Other languages | Discovery may record the stack. | No equal built-in or bundled Opengrep coverage is claimed; use agent-guided review or another independently governed scanner. |
 
-The deterministic source audit currently runs 20 bounded built-in risk rules across shared project
+The deterministic source audit currently runs 25 bounded built-in risk rules across shared project
 configuration, JavaScript/TypeScript and Python, plus two evidence-integrity rules. Opt-in Gitleaks
 checks Git history and the working tree; opt-in
-Opengrep checks JavaScript/TypeScript and Python with the bundled local ruleset and performs no
+Opengrep checks JavaScript/TypeScript and Python with ten bundled same-file local rules and performs no
 network request. Checkov checks only the three fixed root Dockerfile/GitHub Actions rules documented
 in the adapter protocol; it uses `--skip-download` but may query PyPI for version metadata and never
 uploads project source. OSV-Scanner checks recorded lockfiles and may query the public OSV database.
@@ -45,6 +45,10 @@ external scanner result remains `suspected` unless a rule-specific independent c
 contract is satisfied. JSON, Markdown, HTML, SARIF
 2.1.0 and JUnit render from one report object. Compose, Terraform, Kubernetes and other security
 domains remain unavailable or agent-guided until a specific deterministic adapter ships.
+
+`--profile deep` selects the built-in detector and all four external adapters in one command. It
+does not change these coverage boundaries or install prerequisites; a missing tool is explicit
+`unknown` evidence and exit 3. Diff-scoped `--since` and `--staged` runs remain built-in-only.
 
 Node 20 or earlier may run some scripts but is not a supported release target. TLS results vary by curl TLS
 backend; protocol checks are capability-tested and stop with `unknown` if they cannot be proven.

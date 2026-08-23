@@ -3,13 +3,13 @@
   "release": "v0.5.4",
   "evidenceType": "synthetic_rule_contract_conformance",
   "limitation": "Author-maintained synthetic rule-contract conformance suite; it verifies declared planted examples. It does not measure production-vulnerability precision, recall, reachability, exploitability or security coverage.",
-  "rulesetSemanticDigest": "7e5d8a25b5377afbc4aa2c9e1125ab06135bca837c2b8361cc8a3cac582b5b58",
+  "rulesetSemanticDigest": "1caf2d86f0db08aa88e19731bca00013730a23c40e4bda56d8ecd11e86748c43",
   "summary": {
     "risk": {
-      "contracts": 20,
-      "positivePassed": 20,
+      "contracts": 25,
+      "positivePassed": 25,
       "positiveFailed": 0,
-      "negativePassed": 20,
+      "negativePassed": 25,
       "negativeFailed": 0,
       "stateMismatches": 0
     },
@@ -22,10 +22,10 @@
       "stateMismatches": 0
     },
     "combined": {
-      "contracts": 22,
-      "positivePassed": 22,
+      "contracts": 27,
+      "positivePassed": 27,
       "positiveFailed": 0,
-      "negativePassed": 22,
+      "negativePassed": 27,
       "negativeFailed": 0,
       "stateMismatches": 0
     }
@@ -146,6 +146,54 @@
       "negative": {
         "fixtureIds": [
           "js-dynamic-execution-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "js-inline-session-secret",
+      "kind": "risk_detection",
+      "family": "secret_management",
+      "positive": {
+        "fixtureIds": [
+          "js-inline-session-secret-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "js-inline-session-secret-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "js-insecure-cookie-options",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "positive": {
+        "fixtureIds": [
+          "js-insecure-cookie-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "js-insecure-cookie-safe"
         ],
         "findingCount": 0,
         "passed": true
@@ -296,6 +344,30 @@
       }
     },
     {
+      "ruleId": "python-csrf-protection-disabled",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "positive": {
+        "fixtureIds": [
+          "python-csrf-disabled-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 2,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "python-csrf-enabled-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
       "ruleId": "python-dynamic-code-execution",
       "kind": "risk_detection",
       "family": "injection_execution",
@@ -362,6 +434,30 @@
       "negative": {
         "fixtureIds": [
           "python-framework-secret-safe"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "python-insecure-session-cookie-settings",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "positive": {
+        "fixtureIds": [
+          "python-insecure-cookie-positive"
+        ],
+        "expectedState": "suspected",
+        "observedStates": [
+          "suspected"
+        ],
+        "findingCount": 1,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "python-insecure-cookie-safe"
         ],
         "findingCount": 0,
         "passed": true
@@ -499,7 +595,7 @@
         "observedStates": [
           "suspected"
         ],
-        "findingCount": 1,
+        "findingCount": 2,
         "stateMatched": true,
         "passed": true
       },
@@ -547,13 +643,37 @@
         "observedStates": [
           "unknown"
         ],
-        "findingCount": 1,
+        "findingCount": 2,
         "stateMatched": true,
         "passed": true
       },
       "negative": {
         "fixtureIds": [
           "supported-node-stack"
+        ],
+        "findingCount": 0,
+        "passed": true
+      }
+    },
+    {
+      "ruleId": "tracked-sensitive-env-file",
+      "kind": "risk_detection",
+      "family": "secret_management",
+      "positive": {
+        "fixtureIds": [
+          "tracked-env-positive"
+        ],
+        "expectedState": "confirmed",
+        "observedStates": [
+          "confirmed"
+        ],
+        "findingCount": 2,
+        "stateMatched": true,
+        "passed": true
+      },
+      "negative": {
+        "fixtureIds": [
+          "tracked-env-safe-neighbor"
         ],
         "findingCount": 0,
         "passed": true

@@ -8,7 +8,7 @@ const LOCKFILE_NAMES = new Set([
   'package-lock.json', 'npm-shrinkwrap.json', 'pnpm-lock.yaml', 'yarn.lock', 'bun.lock',
   'bun.lockb', 'uv.lock', 'poetry.lock', 'Pipfile.lock',
 ]);
-const PATH_LEVEL_RULES = new Set(['sensitive-env-file-present']);
+const PATH_LEVEL_RULES = new Set(['sensitive-env-file-present', 'tracked-sensitive-env-file']);
 const GLOBAL_INTEGRITY_REASONS = new Set([
   'directory_unreadable', 'depth_limit_reached', 'entry_limit_reached', 'file_limit_reached',
 ]);

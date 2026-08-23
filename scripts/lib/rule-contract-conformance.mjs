@@ -1,6 +1,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { auditSource } from './source-audit.mjs';
 import { inspectJsTsSource } from './js-ts-source-audit.mjs';
 import { inspectPythonSource } from './python-source-audit.mjs';
@@ -24,6 +25,14 @@ export function collectRuleContractObservations(root) {
 
   const temporary = mkdtempSync(join(tmpdir(), 'web-app-security-rule-contract-'));
   try {
+    const tracked = join(temporary, 'tracked');
+    mkdirSync(tracked);
+    writeFileSync(join(tracked, '.env.production'), 'RULE_CONTRACT_PLACEHOLDER=true\n');
+    for (const args of [['init', '-q'], ['add', '.env.production']]) {
+      const result = spawnSync('git', args, { cwd: tracked, encoding: 'utf8' });
+      if (result.status !== 0) throw new Error(`git fixture setup failed: ${result.stderr || result.stdout}`);
+    }
+    addPositive(auditSource(tracked).findings);
     const incomplete = join(temporary, 'incomplete');
     mkdirSync(join(incomplete, 'src'), { recursive: true });
     writeFileSync(join(incomplete, 'package.json'), '{"private":true}\n');
@@ -125,10 +134,10 @@ export function validateRuleContractConformance(conformance) {
       errors.push(`${result.ruleId} planted positive used an unexpected evidence state`);
     }
   }
-  for (const [group, expected] of [['risk', 20], ['evidenceIntegrity', 2], ['combined', 22]]) {
+  for (const [group, expected] of [['risk', 25], ['evidenceIntegrity', 2], ['combined', 27]]) {
     const value = conformance?.summary?.[group];
     if (value?.contracts !== expected) {
-      errors.push(`${group} contract count differs from the 20 risk + 2 integrity contract`);
+      errors.push(`${group} contract count differs from the 25 risk + 2 integrity contract`);
     }
   }
   return [...new Set(errors)];

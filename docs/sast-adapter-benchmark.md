@@ -14,9 +14,9 @@ engine-quality or performance ranking.
 | Opengrep | `1.27.0`, released 2026-08-12 | Signed GitHub macOS arm64 executable, 47,248,688 bytes, SHA-256 `9f2c016ac74b9821b73fa3bea86a2d0b9ccb9aabe7b5bd9d6e3ff3b3b05cbd07` | LGPL-2.1-or-later | LGPL-2.1 plus Commons Clause |
 
 Executable and rules licenses are separate. This project does not copy, modify, download at runtime
-or redistribute either public rules repository. The promoted adapter uses only the two MIT-licensed
-rules in `rules/opengrep-source.yml`, whose SHA-256 is
-`3a3a28549f516b50e716449d9e80ee6f855d912f9bb41371d514f2e324667979`.
+or redistribute either public rules repository. The current adapter uses only the ten project-owned
+MIT-licensed rules in `rules/opengrep-source.yml`, whose v0.5.4 SHA-256 is
+`6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d`.
 
 Immutable source references used in the review:
 
@@ -28,7 +28,7 @@ Immutable source references used in the review:
 
 ## Method
 
-Both engines ran the same local YAML with two same-file taint rules:
+The original v0.5.0 engine comparison ran the same local YAML with two same-file taint rules:
 
 1. JavaScript/TypeScript request query data reaching command execution;
 2. Python Flask request data reaching `subprocess` with `shell=True`.
@@ -67,9 +67,21 @@ rules in the bounded fixture but is not integrated in v0.5.0 because its packagi
 evidence behavior add maintenance cost without improving these two proven rules.
 
 The selection does not claim Opengrep is universally more accurate than Semgrep. It also does not
-adopt the Opengrep public rules catalogue. Stable coverage is exactly the two rules above; every
-match remains `suspected`, same-file only, and requires route/reachability review plus a security
-and functional retest.
+adopt the Opengrep public rules catalogue. Every match remains `suspected`, same-file only, and
+requires route/reachability review plus a security and functional retest.
+
+## v0.5.4 bounded ruleset expansion
+
+v0.5.4 keeps the same Opengrep engine/version and adds eight project-owned rules. JavaScript/
+TypeScript and Python now each cover request data reaching SQL query text, outbound request URLs,
+filesystem paths and browser redirect targets, alongside the original command-execution rule.
+The current stable inventory is ten rules total.
+
+This expansion is a rule-contract change, not a new engine ranking or a production accuracy
+benchmark. Each language still uses one planted vulnerable fixture and one neighboring safe fixture;
+the pinned real-adapter CI cell requires all ten positives and no planted safe match. The rules do
+not perform interfile analysis, prove framework routing, establish runtime reachability or test
+exploitability.
 
 ## Adapter gates
 

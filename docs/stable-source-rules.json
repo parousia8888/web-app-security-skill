@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "semanticDigest": "7e5d8a25b5377afbc4aa2c9e1125ab06135bca837c2b8361cc8a3cac582b5b58",
+  "semanticDigest": "1caf2d86f0db08aa88e19731bca00013730a23c40e4bda56d8ecd11e86748c43",
   "counts": {
-    "stableTotal": 30,
-    "builtInRisk": 20,
+    "stableTotal": 43,
+    "builtInRisk": 25,
     "builtInIntegrity": 2,
-    "externalRisk": 8
+    "externalRisk": 16
   },
   "rules": [
     {
@@ -846,6 +846,198 @@
       "maturity": "stable",
       "revision": "1",
       "frameworks": [
+        "Express Session",
+        "NextAuth",
+        "Auth.js",
+        "NestJS JWT"
+      ],
+      "alternatives": [
+        "Use managed asymmetric signing keys when token consumers and rotation requirements support them."
+      ],
+      "userDecisions": [
+        "Confirm whether the literal is deployed, which services share it and whether mass reauthentication is acceptable."
+      ],
+      "id": "js-inline-session-secret",
+      "kind": "risk_detection",
+      "family": "secret_management",
+      "languages": [
+        "javascript",
+        "typescript"
+      ],
+      "domain": "security_exposure",
+      "severity": "high",
+      "defaultState": "suspected",
+      "rationale": "inline_framework_session_secret_lead",
+      "technicalTerm": "Inline session or JWT signing secret lead (CWE-798)",
+      "plainLanguage": "A recognized session or token library receives its signing secret as fixed text in source code.",
+      "consequence": "If the value is real and deployed, source or artifact readers may be able to forge sessions or tokens.",
+      "confidenceBoundary": "The bounded rule resolves a supported framework configuration and records only the literal length band. It does not retain the value or prove validity, deployment use or exposure.",
+      "applicability": "Direct Express Session, NextAuth/Auth.js configuration calls and NestJS JwtModule.register option objects in non-test JavaScript or TypeScript.",
+      "detection": {
+        "type": "bounded_js_ts_tokens",
+        "resolvedModules": [
+          "express-session",
+          "next-auth",
+          "@auth/core",
+          "@nestjs/jwt"
+        ],
+        "property": "secret",
+        "minimumLiteralLength": 12,
+        "literalOutput": "redacted_length_band"
+      },
+      "standards": [
+        {
+          "id": "CWE-798",
+          "url": "https://cwe.mitre.org/data/definitions/798.html"
+        },
+        {
+          "id": "OWASP-TOP10-2025-A07",
+          "url": "https://owasp.org/Top10/2025/A07_2025-Authentication_Failures/"
+        }
+      ],
+      "falsePositiveCauses": [
+        "The value is a deliberately fake development constant outside conventional fixture paths.",
+        "A later runtime configuration replaces the literal before any signing operation."
+      ],
+      "proposal": {
+        "status": "review_required",
+        "summary": "Validate privately, rotate any deployed value and inject the replacement from a protected secret source."
+      },
+      "proposalRisks": [
+        "Rotating the secret can invalidate active sessions or tokens across every application instance."
+      ],
+      "sideEffects": [
+        "Users may be signed out and services sharing the old key may fail until rollout is coordinated."
+      ],
+      "securityRetest": "Rerun source and secret scans, verify the old key cannot authenticate and confirm reports contain no literal value.",
+      "functionalRetest": "Run login, session continuity, token issuance, refresh, verification and logout through every service using the key.",
+      "rollback": "Do not reactivate a disclosed value; switch to a separately issued fallback key if the new rollout fails.",
+      "helpUri": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/stable-source-rules.json",
+      "fixtures": {
+        "positive": [
+          {
+            "id": "js-inline-session-secret-positive",
+            "path": "test/fixtures/js-ts-rules/vulnerable.tsx"
+          }
+        ],
+        "negative": [
+          {
+            "id": "js-inline-session-secret-safe",
+            "path": "test/fixtures/js-ts-rules/safe.tsx"
+          }
+        ]
+      }
+    },
+    {
+      "adapter": {
+        "id": "builtin-source",
+        "version": "1.1.0",
+        "maturity": "stable",
+        "type": "built_in"
+      },
+      "maturity": "stable",
+      "revision": "1",
+      "frameworks": [
+        "Express",
+        "Express Session",
+        "NextAuth",
+        "cookies-next",
+        "cookie"
+      ],
+      "alternatives": [
+        "Use a separate non-sensitive browser-readable cookie while keeping authentication state in an HttpOnly Secure cookie."
+      ],
+      "userDecisions": [
+        "Confirm which cookie carries authentication state, whether browser JavaScript must read it and where HTTPS terminates."
+      ],
+      "id": "js-insecure-cookie-options",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "languages": [
+        "javascript",
+        "typescript"
+      ],
+      "domain": "security_exposure",
+      "severity": "medium",
+      "defaultState": "suspected",
+      "rationale": "explicit_insecure_session_cookie_option",
+      "technicalTerm": "Explicitly insecure session-cookie option (CWE-614/CWE-1004)",
+      "plainLanguage": "A recognized cookie or session API explicitly turns off browser protection that keeps the cookie on HTTPS or away from JavaScript.",
+      "consequence": "Depending on the disabled flag, a session cookie may travel over an unencrypted connection or become easier to steal through browser script injection.",
+      "confidenceBoundary": "The rule observes httpOnly:false or secure:false in a supported API option object. It does not infer missing flags, cookie purpose, effective proxy TLS or deployed middleware behavior.",
+      "applicability": "Direct supported JavaScript/TypeScript session and cookie API calls with explicit option literals.",
+      "detection": {
+        "type": "bounded_js_ts_tokens",
+        "resolvedModules": [
+          "express-session",
+          "next-auth",
+          "@auth/core",
+          "cookie",
+          "cookies-next"
+        ],
+        "explicitProperties": {
+          "httpOnly": false,
+          "secure": false
+        },
+        "inferMissing": false
+      },
+      "standards": [
+        {
+          "id": "CWE-614",
+          "url": "https://cwe.mitre.org/data/definitions/614.html"
+        },
+        {
+          "id": "CWE-1004",
+          "url": "https://cwe.mitre.org/data/definitions/1004.html"
+        },
+        {
+          "id": "OWASP-TOP10-2025-A07",
+          "url": "https://owasp.org/Top10/2025/A07_2025-Authentication_Failures/"
+        }
+      ],
+      "falsePositiveCauses": [
+        "The cookie is non-sensitive and intentionally readable by browser code.",
+        "A local-only HTTP development profile overrides the option in production."
+      ],
+      "proposal": {
+        "status": "review_required",
+        "summary": "Identify the cookie purpose, enable HttpOnly for server-only cookies and Secure for HTTPS deployments using environment-aware framework configuration."
+      },
+      "proposalRisks": [
+        "Secure cookies do not work over plain HTTP and HttpOnly cookies cannot be read by frontend JavaScript."
+      ],
+      "sideEffects": [
+        "Local development, embedded clients or frontend token-reading code may require an HTTPS setup or a different state flow."
+      ],
+      "securityRetest": "Inspect the owned response and verify the intended authentication cookie has the required Secure and HttpOnly attributes, then rerun the source audit.",
+      "functionalRetest": "Run login, refresh, logout, local development and any embedded-client journeys that depend on cookie behavior.",
+      "rollback": "Use an environment-specific local cookie policy if development breaks; do not disable production session-cookie protection globally.",
+      "helpUri": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/stable-source-rules.json",
+      "fixtures": {
+        "positive": [
+          {
+            "id": "js-insecure-cookie-positive",
+            "path": "test/fixtures/js-ts-rules/vulnerable.tsx"
+          }
+        ],
+        "negative": [
+          {
+            "id": "js-insecure-cookie-safe",
+            "path": "test/fixtures/js-ts-rules/safe.tsx"
+          }
+        ]
+      }
+    },
+    {
+      "adapter": {
+        "id": "builtin-source",
+        "version": "1.1.0",
+        "maturity": "stable",
+        "type": "built_in"
+      },
+      "maturity": "stable",
+      "revision": "1",
+      "frameworks": [
         "jsonwebtoken"
       ],
       "alternatives": [
@@ -1186,7 +1378,7 @@
         "type": "external"
       },
       "maturity": "stable",
-      "revision": "1-3a3a28549f516b50e716449d9e80ee6f855d912f9bb41371d514f2e324667979",
+      "revision": "1-6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
       "frameworks": [
         "Node.js",
         "Express"
@@ -1216,7 +1408,7 @@
       "detection": {
         "type": "external_taint_adapter",
         "engine": "opengrep",
-        "rulesetSha256": "3a3a28549f516b50e716449d9e80ee6f855d912f9bb41371d514f2e324667979",
+        "rulesetSha256": "6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
         "externalRuleId": "webapp-security.javascript.request-to-command",
         "interfile": false
       },
@@ -1271,7 +1463,343 @@
         "type": "external"
       },
       "maturity": "stable",
-      "revision": "1-3a3a28549f516b50e716449d9e80ee6f855d912f9bb41371d514f2e324667979",
+      "revision": "1-6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
+      "frameworks": [
+        "Express"
+      ],
+      "alternatives": [
+        "Store an allowlisted ID-to-file mapping and never accept filesystem paths from requests."
+      ],
+      "userDecisions": [
+        "Confirm the intended base directory, symlink policy, supported platforms and whether users need nested paths."
+      ],
+      "id": "opengrep-js-request-path-flow",
+      "kind": "risk_detection",
+      "family": "file_path",
+      "languages": [
+        "javascript",
+        "typescript"
+      ],
+      "domain": "security_exposure",
+      "severity": "high",
+      "defaultState": "suspected",
+      "rationale": "request_data_reaches_path_sink",
+      "technicalTerm": "Request-to-file-path data-flow lead (CWE-22)",
+      "plainLanguage": "Opengrep followed a request value in one file into a filesystem read or write path.",
+      "consequence": "If path traversal is possible, an attacker may read private files or overwrite data outside the intended directory.",
+      "confidenceBoundary": "The pinned local taint rule observed a same-file JavaScript and TypeScript request-source-to-path sink path. It did not prove framework routing, validation bypass, runtime reachability, exploitability or a deployed endpoint.",
+      "applicability": "JavaScript and TypeScript scanned by caller-installed Opengrep 1.27.0 with the bundled local ruleset.",
+      "detection": {
+        "type": "external_taint_adapter",
+        "engine": "opengrep",
+        "rulesetSha256": "6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
+        "externalRuleId": "webapp-security.javascript.request-to-file-path",
+        "interfile": false
+      },
+      "standards": [
+        {
+          "id": "CWE-22",
+          "url": "https://cwe.mitre.org/data/definitions/22.html"
+        },
+        {
+          "id": "OWASP-TOP10-2025-A01",
+          "url": "https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/"
+        }
+      ],
+      "falsePositiveCauses": [
+        "The route is unreachable or the request value is replaced by a strict fixed allowlist before the sink.",
+        "A wrapper or earlier canonicalization check may confine the final path to an owned base directory."
+      ],
+      "proposal": {
+        "status": "review_required",
+        "summary": "Resolve the requested identifier under a fixed base directory, reject escapes after canonicalization and prefer server-generated identifiers over paths."
+      },
+      "proposalRisks": [
+        "Canonical path enforcement can reject symlinks, legacy relative paths or platform-specific path forms."
+      ],
+      "sideEffects": [
+        "Download, upload, export or template features may need identifier and storage-layout migration."
+      ],
+      "securityRetest": "Use owned traversal and encoded-separator cases and verify no access outside the intended base directory, then rerun Opengrep.",
+      "functionalRetest": "Run valid download, upload, export and template journeys across supported platforms and storage layouts.",
+      "rollback": "Restore only a fixed reviewed mapping if valid files become unreachable; do not accept arbitrary relative or absolute paths.",
+      "helpUri": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/adapter-protocol.md",
+      "fixtures": {
+        "positive": [
+          {
+            "id": "opengrep-js-path-positive",
+            "path": "test/fixtures/opengrep-rules/vulnerable.js"
+          }
+        ],
+        "negative": [
+          {
+            "id": "opengrep-js-path-safe",
+            "path": "test/fixtures/opengrep-rules/safe.js"
+          }
+        ]
+      }
+    },
+    {
+      "adapter": {
+        "id": "opengrep",
+        "version": "1.27.0",
+        "maturity": "stable",
+        "type": "external"
+      },
+      "maturity": "stable",
+      "revision": "1-6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
+      "frameworks": [
+        "Express"
+      ],
+      "alternatives": [
+        "Remove caller-selected redirects and use a fixed post-action destination."
+      ],
+      "userDecisions": [
+        "Confirm every legitimate external return origin and whether local paths alone satisfy the product flow."
+      ],
+      "id": "opengrep-js-request-redirect-flow",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "languages": [
+        "javascript",
+        "typescript"
+      ],
+      "domain": "security_exposure",
+      "severity": "medium",
+      "defaultState": "suspected",
+      "rationale": "request_data_reaches_redirect_sink",
+      "technicalTerm": "Request-to-redirect data-flow lead (CWE-601)",
+      "plainLanguage": "Opengrep followed a request value in one file into a browser redirect target.",
+      "consequence": "An attacker may create a trusted-looking link that sends users to a phishing or malware site after it reaches the application.",
+      "confidenceBoundary": "The pinned local taint rule observed a same-file JavaScript and TypeScript request-source-to-redirect sink path. It did not prove framework routing, validation bypass, runtime reachability, exploitability or a deployed endpoint.",
+      "applicability": "JavaScript and TypeScript scanned by caller-installed Opengrep 1.27.0 with the bundled local ruleset.",
+      "detection": {
+        "type": "external_taint_adapter",
+        "engine": "opengrep",
+        "rulesetSha256": "6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
+        "externalRuleId": "webapp-security.javascript.request-to-redirect",
+        "interfile": false
+      },
+      "standards": [
+        {
+          "id": "CWE-601",
+          "url": "https://cwe.mitre.org/data/definitions/601.html"
+        },
+        {
+          "id": "OWASP-TOP10-2025-A01",
+          "url": "https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/"
+        }
+      ],
+      "falsePositiveCauses": [
+        "The route is unreachable or the request value is replaced by a strict fixed allowlist before the sink.",
+        "The framework or an earlier validator may limit the target to a local path or approved origin."
+      ],
+      "proposal": {
+        "status": "review_required",
+        "summary": "Accept only local relative paths or map approved destination names to fixed URLs; reject protocol-relative and unapproved absolute targets."
+      },
+      "proposalRisks": [
+        "External identity, payment or tenant-specific return journeys can stop working if their destinations are omitted."
+      ],
+      "sideEffects": [
+        "Login, checkout and invitation flows may need an explicit return-target registry."
+      ],
+      "securityRetest": "Use owned absolute, protocol-relative and encoded redirect targets and verify rejection while approved local paths work, then rerun Opengrep.",
+      "functionalRetest": "Run login, logout, checkout, invitation and external identity return journeys for every approved destination.",
+      "rollback": "Add a reviewed exact destination if a valid journey fails; do not restore arbitrary redirect targets.",
+      "helpUri": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/adapter-protocol.md",
+      "fixtures": {
+        "positive": [
+          {
+            "id": "opengrep-js-redirect-positive",
+            "path": "test/fixtures/opengrep-rules/vulnerable.js"
+          }
+        ],
+        "negative": [
+          {
+            "id": "opengrep-js-redirect-safe",
+            "path": "test/fixtures/opengrep-rules/safe.js"
+          }
+        ]
+      }
+    },
+    {
+      "adapter": {
+        "id": "opengrep",
+        "version": "1.27.0",
+        "maturity": "stable",
+        "type": "external"
+      },
+      "maturity": "stable",
+      "revision": "1-6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
+      "frameworks": [
+        "Express"
+      ],
+      "alternatives": [
+        "Map user choices to fixed reviewed query templates without accepting SQL text."
+      ],
+      "userDecisions": [
+        "Confirm the database driver, allowed dynamic identifiers and affected read/write journeys."
+      ],
+      "id": "opengrep-js-request-sql-flow",
+      "kind": "risk_detection",
+      "family": "injection_execution",
+      "languages": [
+        "javascript",
+        "typescript"
+      ],
+      "domain": "security_exposure",
+      "severity": "high",
+      "defaultState": "suspected",
+      "rationale": "request_data_reaches_sql_sink",
+      "technicalTerm": "Request-to-SQL data-flow lead (CWE-89)",
+      "plainLanguage": "Opengrep followed a request value in one file into the query-text argument of a database execution call.",
+      "consequence": "If the value changes SQL structure instead of being passed as data, an attacker may read, alter or delete database records.",
+      "confidenceBoundary": "The pinned local taint rule observed a same-file JavaScript and TypeScript request-source-to-sql sink path. It did not prove framework routing, validation bypass, runtime reachability, exploitability or a deployed endpoint.",
+      "applicability": "JavaScript and TypeScript scanned by caller-installed Opengrep 1.27.0 with the bundled local ruleset.",
+      "detection": {
+        "type": "external_taint_adapter",
+        "engine": "opengrep",
+        "rulesetSha256": "6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
+        "externalRuleId": "webapp-security.javascript.request-to-sql",
+        "interfile": false
+      },
+      "standards": [
+        {
+          "id": "CWE-89",
+          "url": "https://cwe.mitre.org/data/definitions/89.html"
+        },
+        {
+          "id": "OWASP-TOP10-2025-A05",
+          "url": "https://owasp.org/Top10/2025/A05_2025-Injection/"
+        }
+      ],
+      "falsePositiveCauses": [
+        "The route is unreachable or the request value is replaced by a strict fixed allowlist before the sink.",
+        "The matched database wrapper may parameterize or reject the value before execution."
+      ],
+      "proposal": {
+        "status": "review_required",
+        "summary": "Replace query-string construction with the driver or ORM parameter-binding API and allowlist any unavoidable identifier choices."
+      },
+      "proposalRisks": [
+        "Query behavior, placeholder syntax and result typing can change across database drivers."
+      ],
+      "sideEffects": [
+        "Reports, filters or migrations may need explicit parameter and identifier handling."
+      ],
+      "securityRetest": "Use an owned input containing a quote and SQL metacharacters and verify it remains one bound value, then rerun Opengrep.",
+      "functionalRetest": "Run affected search, filter, reporting and write journeys with ordinary, empty and Unicode values.",
+      "rollback": "Revert the data-access wrapper if valid queries fail, but restrict the affected route until parameter binding works.",
+      "helpUri": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/adapter-protocol.md",
+      "fixtures": {
+        "positive": [
+          {
+            "id": "opengrep-js-sql-positive",
+            "path": "test/fixtures/opengrep-rules/vulnerable.js"
+          }
+        ],
+        "negative": [
+          {
+            "id": "opengrep-js-sql-safe",
+            "path": "test/fixtures/opengrep-rules/safe.js"
+          }
+        ]
+      }
+    },
+    {
+      "adapter": {
+        "id": "opengrep",
+        "version": "1.27.0",
+        "maturity": "stable",
+        "type": "external"
+      },
+      "maturity": "stable",
+      "revision": "1-6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
+      "frameworks": [
+        "Express"
+      ],
+      "alternatives": [
+        "Map a small user-visible destination name to fixed server-owned URLs."
+      ],
+      "userDecisions": [
+        "Confirm required schemes, destination hosts, redirect behavior and whether private networks are ever legitimate."
+      ],
+      "id": "opengrep-js-request-ssrf-flow",
+      "kind": "risk_detection",
+      "family": "injection_execution",
+      "languages": [
+        "javascript",
+        "typescript"
+      ],
+      "domain": "security_exposure",
+      "severity": "high",
+      "defaultState": "suspected",
+      "rationale": "request_data_reaches_ssrf_sink",
+      "technicalTerm": "Request-to-outbound-URL data-flow lead (CWE-918)",
+      "plainLanguage": "Opengrep followed a request value in one file into an outbound HTTP request URL.",
+      "consequence": "If the server accepts arbitrary destinations, an attacker may reach internal services, cloud metadata or addresses that users cannot reach directly.",
+      "confidenceBoundary": "The pinned local taint rule observed a same-file JavaScript and TypeScript request-source-to-ssrf sink path. It did not prove framework routing, validation bypass, runtime reachability, exploitability or a deployed endpoint.",
+      "applicability": "JavaScript and TypeScript scanned by caller-installed Opengrep 1.27.0 with the bundled local ruleset.",
+      "detection": {
+        "type": "external_taint_adapter",
+        "engine": "opengrep",
+        "rulesetSha256": "6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
+        "externalRuleId": "webapp-security.javascript.request-to-url",
+        "interfile": false
+      },
+      "standards": [
+        {
+          "id": "CWE-918",
+          "url": "https://cwe.mitre.org/data/definitions/918.html"
+        },
+        {
+          "id": "OWASP-TOP10-2025-A01",
+          "url": "https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/"
+        }
+      ],
+      "falsePositiveCauses": [
+        "The route is unreachable or the request value is replaced by a strict fixed allowlist before the sink.",
+        "A wrapper or earlier validator may restrict the final destination to an approved host and protocol."
+      ],
+      "proposal": {
+        "status": "review_required",
+        "summary": "Parse the destination, allow only required schemes and exact hosts, resolve and recheck addresses, and block private or metadata ranges where they are not required."
+      },
+      "proposalRisks": [
+        "Strict destination policy can block redirects, proxies, IPv6 endpoints or customer-specific integrations."
+      ],
+      "sideEffects": [
+        "Webhook, import and preview features may need an explicit destination allowlist and redirect policy."
+      ],
+      "securityRetest": "Use owned private-range, metadata and redirect-chain destinations and verify policy rejection, then rerun Opengrep.",
+      "functionalRetest": "Run every approved webhook, import, preview or callback destination including redirects and IPv6 where supported.",
+      "rollback": "Add reviewed exact destinations if integrations fail; do not restore arbitrary server-side URL fetching.",
+      "helpUri": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/adapter-protocol.md",
+      "fixtures": {
+        "positive": [
+          {
+            "id": "opengrep-js-ssrf-positive",
+            "path": "test/fixtures/opengrep-rules/vulnerable.js"
+          }
+        ],
+        "negative": [
+          {
+            "id": "opengrep-js-ssrf-safe",
+            "path": "test/fixtures/opengrep-rules/safe.js"
+          }
+        ]
+      }
+    },
+    {
+      "adapter": {
+        "id": "opengrep",
+        "version": "1.27.0",
+        "maturity": "stable",
+        "type": "external"
+      },
+      "maturity": "stable",
+      "revision": "1-6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
       "frameworks": [
         "Flask"
       ],
@@ -1299,7 +1827,7 @@
       "detection": {
         "type": "external_taint_adapter",
         "engine": "opengrep",
-        "rulesetSha256": "3a3a28549f516b50e716449d9e80ee6f855d912f9bb41371d514f2e324667979",
+        "rulesetSha256": "6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
         "externalRuleId": "webapp-security.python.request-to-command",
         "interfile": false
       },
@@ -1341,6 +1869,338 @@
         "negative": [
           {
             "id": "opengrep-python-flow-safe",
+            "path": "test/fixtures/opengrep-rules/safe.py"
+          }
+        ]
+      }
+    },
+    {
+      "adapter": {
+        "id": "opengrep",
+        "version": "1.27.0",
+        "maturity": "stable",
+        "type": "external"
+      },
+      "maturity": "stable",
+      "revision": "1-6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
+      "frameworks": [
+        "Flask"
+      ],
+      "alternatives": [
+        "Store an allowlisted ID-to-file mapping and never accept filesystem paths from requests."
+      ],
+      "userDecisions": [
+        "Confirm the intended base directory, symlink policy, supported platforms and whether users need nested paths."
+      ],
+      "id": "opengrep-python-request-path-flow",
+      "kind": "risk_detection",
+      "family": "file_path",
+      "languages": [
+        "python"
+      ],
+      "domain": "security_exposure",
+      "severity": "high",
+      "defaultState": "suspected",
+      "rationale": "request_data_reaches_path_sink",
+      "technicalTerm": "Request-to-file-path data-flow lead (CWE-22)",
+      "plainLanguage": "Opengrep followed a request value in one file into a filesystem read or write path.",
+      "consequence": "If path traversal is possible, an attacker may read private files or overwrite data outside the intended directory.",
+      "confidenceBoundary": "The pinned local taint rule observed a same-file Python request-source-to-path sink path. It did not prove framework routing, validation bypass, runtime reachability, exploitability or a deployed endpoint.",
+      "applicability": "Python scanned by caller-installed Opengrep 1.27.0 with the bundled local ruleset.",
+      "detection": {
+        "type": "external_taint_adapter",
+        "engine": "opengrep",
+        "rulesetSha256": "6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
+        "externalRuleId": "webapp-security.python.request-to-file-path",
+        "interfile": false
+      },
+      "standards": [
+        {
+          "id": "CWE-22",
+          "url": "https://cwe.mitre.org/data/definitions/22.html"
+        },
+        {
+          "id": "OWASP-TOP10-2025-A01",
+          "url": "https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/"
+        }
+      ],
+      "falsePositiveCauses": [
+        "The route is unreachable or the request value is replaced by a strict fixed allowlist before the sink.",
+        "A wrapper or earlier canonicalization check may confine the final path to an owned base directory."
+      ],
+      "proposal": {
+        "status": "review_required",
+        "summary": "Resolve the requested identifier under a fixed base directory, reject escapes after canonicalization and prefer server-generated identifiers over paths."
+      },
+      "proposalRisks": [
+        "Canonical path enforcement can reject symlinks, legacy relative paths or platform-specific path forms."
+      ],
+      "sideEffects": [
+        "Download, upload, export or template features may need identifier and storage-layout migration."
+      ],
+      "securityRetest": "Use owned traversal and encoded-separator cases and verify no access outside the intended base directory, then rerun Opengrep.",
+      "functionalRetest": "Run valid download, upload, export and template journeys across supported platforms and storage layouts.",
+      "rollback": "Restore only a fixed reviewed mapping if valid files become unreachable; do not accept arbitrary relative or absolute paths.",
+      "helpUri": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/adapter-protocol.md",
+      "fixtures": {
+        "positive": [
+          {
+            "id": "opengrep-python-path-positive",
+            "path": "test/fixtures/opengrep-rules/vulnerable.py"
+          }
+        ],
+        "negative": [
+          {
+            "id": "opengrep-python-path-safe",
+            "path": "test/fixtures/opengrep-rules/safe.py"
+          }
+        ]
+      }
+    },
+    {
+      "adapter": {
+        "id": "opengrep",
+        "version": "1.27.0",
+        "maturity": "stable",
+        "type": "external"
+      },
+      "maturity": "stable",
+      "revision": "1-6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
+      "frameworks": [
+        "Flask"
+      ],
+      "alternatives": [
+        "Remove caller-selected redirects and use a fixed post-action destination."
+      ],
+      "userDecisions": [
+        "Confirm every legitimate external return origin and whether local paths alone satisfy the product flow."
+      ],
+      "id": "opengrep-python-request-redirect-flow",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "languages": [
+        "python"
+      ],
+      "domain": "security_exposure",
+      "severity": "medium",
+      "defaultState": "suspected",
+      "rationale": "request_data_reaches_redirect_sink",
+      "technicalTerm": "Request-to-redirect data-flow lead (CWE-601)",
+      "plainLanguage": "Opengrep followed a request value in one file into a browser redirect target.",
+      "consequence": "An attacker may create a trusted-looking link that sends users to a phishing or malware site after it reaches the application.",
+      "confidenceBoundary": "The pinned local taint rule observed a same-file Python request-source-to-redirect sink path. It did not prove framework routing, validation bypass, runtime reachability, exploitability or a deployed endpoint.",
+      "applicability": "Python scanned by caller-installed Opengrep 1.27.0 with the bundled local ruleset.",
+      "detection": {
+        "type": "external_taint_adapter",
+        "engine": "opengrep",
+        "rulesetSha256": "6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
+        "externalRuleId": "webapp-security.python.request-to-redirect",
+        "interfile": false
+      },
+      "standards": [
+        {
+          "id": "CWE-601",
+          "url": "https://cwe.mitre.org/data/definitions/601.html"
+        },
+        {
+          "id": "OWASP-TOP10-2025-A01",
+          "url": "https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/"
+        }
+      ],
+      "falsePositiveCauses": [
+        "The route is unreachable or the request value is replaced by a strict fixed allowlist before the sink.",
+        "The framework or an earlier validator may limit the target to a local path or approved origin."
+      ],
+      "proposal": {
+        "status": "review_required",
+        "summary": "Accept only local relative paths or map approved destination names to fixed URLs; reject protocol-relative and unapproved absolute targets."
+      },
+      "proposalRisks": [
+        "External identity, payment or tenant-specific return journeys can stop working if their destinations are omitted."
+      ],
+      "sideEffects": [
+        "Login, checkout and invitation flows may need an explicit return-target registry."
+      ],
+      "securityRetest": "Use owned absolute, protocol-relative and encoded redirect targets and verify rejection while approved local paths work, then rerun Opengrep.",
+      "functionalRetest": "Run login, logout, checkout, invitation and external identity return journeys for every approved destination.",
+      "rollback": "Add a reviewed exact destination if a valid journey fails; do not restore arbitrary redirect targets.",
+      "helpUri": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/adapter-protocol.md",
+      "fixtures": {
+        "positive": [
+          {
+            "id": "opengrep-python-redirect-positive",
+            "path": "test/fixtures/opengrep-rules/vulnerable.py"
+          }
+        ],
+        "negative": [
+          {
+            "id": "opengrep-python-redirect-safe",
+            "path": "test/fixtures/opengrep-rules/safe.py"
+          }
+        ]
+      }
+    },
+    {
+      "adapter": {
+        "id": "opengrep",
+        "version": "1.27.0",
+        "maturity": "stable",
+        "type": "external"
+      },
+      "maturity": "stable",
+      "revision": "1-6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
+      "frameworks": [
+        "Flask"
+      ],
+      "alternatives": [
+        "Map user choices to fixed reviewed query templates without accepting SQL text."
+      ],
+      "userDecisions": [
+        "Confirm the database driver, allowed dynamic identifiers and affected read/write journeys."
+      ],
+      "id": "opengrep-python-request-sql-flow",
+      "kind": "risk_detection",
+      "family": "injection_execution",
+      "languages": [
+        "python"
+      ],
+      "domain": "security_exposure",
+      "severity": "high",
+      "defaultState": "suspected",
+      "rationale": "request_data_reaches_sql_sink",
+      "technicalTerm": "Request-to-SQL data-flow lead (CWE-89)",
+      "plainLanguage": "Opengrep followed a request value in one file into the query-text argument of a database execution call.",
+      "consequence": "If the value changes SQL structure instead of being passed as data, an attacker may read, alter or delete database records.",
+      "confidenceBoundary": "The pinned local taint rule observed a same-file Python request-source-to-sql sink path. It did not prove framework routing, validation bypass, runtime reachability, exploitability or a deployed endpoint.",
+      "applicability": "Python scanned by caller-installed Opengrep 1.27.0 with the bundled local ruleset.",
+      "detection": {
+        "type": "external_taint_adapter",
+        "engine": "opengrep",
+        "rulesetSha256": "6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
+        "externalRuleId": "webapp-security.python.request-to-sql",
+        "interfile": false
+      },
+      "standards": [
+        {
+          "id": "CWE-89",
+          "url": "https://cwe.mitre.org/data/definitions/89.html"
+        },
+        {
+          "id": "OWASP-TOP10-2025-A05",
+          "url": "https://owasp.org/Top10/2025/A05_2025-Injection/"
+        }
+      ],
+      "falsePositiveCauses": [
+        "The route is unreachable or the request value is replaced by a strict fixed allowlist before the sink.",
+        "The matched database wrapper may parameterize or reject the value before execution."
+      ],
+      "proposal": {
+        "status": "review_required",
+        "summary": "Replace query-string construction with the driver or ORM parameter-binding API and allowlist any unavoidable identifier choices."
+      },
+      "proposalRisks": [
+        "Query behavior, placeholder syntax and result typing can change across database drivers."
+      ],
+      "sideEffects": [
+        "Reports, filters or migrations may need explicit parameter and identifier handling."
+      ],
+      "securityRetest": "Use an owned input containing a quote and SQL metacharacters and verify it remains one bound value, then rerun Opengrep.",
+      "functionalRetest": "Run affected search, filter, reporting and write journeys with ordinary, empty and Unicode values.",
+      "rollback": "Revert the data-access wrapper if valid queries fail, but restrict the affected route until parameter binding works.",
+      "helpUri": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/adapter-protocol.md",
+      "fixtures": {
+        "positive": [
+          {
+            "id": "opengrep-python-sql-positive",
+            "path": "test/fixtures/opengrep-rules/vulnerable.py"
+          }
+        ],
+        "negative": [
+          {
+            "id": "opengrep-python-sql-safe",
+            "path": "test/fixtures/opengrep-rules/safe.py"
+          }
+        ]
+      }
+    },
+    {
+      "adapter": {
+        "id": "opengrep",
+        "version": "1.27.0",
+        "maturity": "stable",
+        "type": "external"
+      },
+      "maturity": "stable",
+      "revision": "1-6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
+      "frameworks": [
+        "Flask"
+      ],
+      "alternatives": [
+        "Map a small user-visible destination name to fixed server-owned URLs."
+      ],
+      "userDecisions": [
+        "Confirm required schemes, destination hosts, redirect behavior and whether private networks are ever legitimate."
+      ],
+      "id": "opengrep-python-request-ssrf-flow",
+      "kind": "risk_detection",
+      "family": "injection_execution",
+      "languages": [
+        "python"
+      ],
+      "domain": "security_exposure",
+      "severity": "high",
+      "defaultState": "suspected",
+      "rationale": "request_data_reaches_ssrf_sink",
+      "technicalTerm": "Request-to-outbound-URL data-flow lead (CWE-918)",
+      "plainLanguage": "Opengrep followed a request value in one file into an outbound HTTP request URL.",
+      "consequence": "If the server accepts arbitrary destinations, an attacker may reach internal services, cloud metadata or addresses that users cannot reach directly.",
+      "confidenceBoundary": "The pinned local taint rule observed a same-file Python request-source-to-ssrf sink path. It did not prove framework routing, validation bypass, runtime reachability, exploitability or a deployed endpoint.",
+      "applicability": "Python scanned by caller-installed Opengrep 1.27.0 with the bundled local ruleset.",
+      "detection": {
+        "type": "external_taint_adapter",
+        "engine": "opengrep",
+        "rulesetSha256": "6e4582c6579597a5b4a62fb2f7360609bb295bd14baa450317ae9b579a65ed4d",
+        "externalRuleId": "webapp-security.python.request-to-url",
+        "interfile": false
+      },
+      "standards": [
+        {
+          "id": "CWE-918",
+          "url": "https://cwe.mitre.org/data/definitions/918.html"
+        },
+        {
+          "id": "OWASP-TOP10-2025-A01",
+          "url": "https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/"
+        }
+      ],
+      "falsePositiveCauses": [
+        "The route is unreachable or the request value is replaced by a strict fixed allowlist before the sink.",
+        "A wrapper or earlier validator may restrict the final destination to an approved host and protocol."
+      ],
+      "proposal": {
+        "status": "review_required",
+        "summary": "Parse the destination, allow only required schemes and exact hosts, resolve and recheck addresses, and block private or metadata ranges where they are not required."
+      },
+      "proposalRisks": [
+        "Strict destination policy can block redirects, proxies, IPv6 endpoints or customer-specific integrations."
+      ],
+      "sideEffects": [
+        "Webhook, import and preview features may need an explicit destination allowlist and redirect policy."
+      ],
+      "securityRetest": "Use owned private-range, metadata and redirect-chain destinations and verify policy rejection, then rerun Opengrep.",
+      "functionalRetest": "Run every approved webhook, import, preview or callback destination including redirects and IPv6 where supported.",
+      "rollback": "Add reviewed exact destinations if integrations fail; do not restore arbitrary server-side URL fetching.",
+      "helpUri": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/adapter-protocol.md",
+      "fixtures": {
+        "positive": [
+          {
+            "id": "opengrep-python-ssrf-positive",
+            "path": "test/fixtures/opengrep-rules/vulnerable.py"
+          }
+        ],
+        "negative": [
+          {
+            "id": "opengrep-python-ssrf-safe",
             "path": "test/fixtures/opengrep-rules/safe.py"
           }
         ]
@@ -1608,6 +2468,96 @@
       },
       "maturity": "stable",
       "revision": "1",
+      "frameworks": [
+        "Django",
+        "Flask-WTF",
+        "Flask-SeaSurf"
+      ],
+      "alternatives": [
+        "For a token-authenticated API with no ambient browser credentials, separate it from cookie-authenticated routes and enforce its authentication and content-type contract."
+      ],
+      "userDecisions": [
+        "Confirm whether each affected route uses browser cookies, which non-browser clients call it and what alternate control is intended."
+      ],
+      "id": "python-csrf-protection-disabled",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "languages": [
+        "python"
+      ],
+      "domain": "security_exposure",
+      "severity": "high",
+      "defaultState": "suspected",
+      "rationale": "explicit_csrf_protection_disable",
+      "technicalTerm": "Cross-site request forgery protection disabled (CWE-352)",
+      "plainLanguage": "A supported framework setting or exemption explicitly stops its normal check that a state-changing browser request came from the intended site.",
+      "consequence": "If the affected route uses browser cookies for authentication, another site may be able to make a signed-in user perform an unwanted action.",
+      "confidenceBoundary": "The rule observes an exact CSRF-disabled setting or recognized exemption. It does not prove route exposure, cookie authentication, missing alternate controls or exploitability.",
+      "applicability": "Django csrf_exempt decorators and resolved Flask-WTF or Flask-SeaSurf disabled settings/exemptions in non-test Python.",
+      "detection": {
+        "type": "bounded_python_tokens",
+        "settings": [
+          "WTF_CSRF_ENABLED",
+          "WTF_CSRF_CHECK_DEFAULT"
+        ],
+        "decorators": [
+          "django.csrf_exempt",
+          "flask.csrf.exempt"
+        ],
+        "explicitValue": false
+      },
+      "standards": [
+        {
+          "id": "CWE-352",
+          "url": "https://cwe.mitre.org/data/definitions/352.html"
+        },
+        {
+          "id": "OWASP-TOP10-2025-A01",
+          "url": "https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/"
+        }
+      ],
+      "falsePositiveCauses": [
+        "The exempt route uses no browser cookie authentication.",
+        "An independently verified origin/token check protects the exact state-changing operation."
+      ],
+      "proposal": {
+        "status": "review_required",
+        "summary": "Map the affected route and restore framework CSRF protection or document and test an equivalent route-specific control."
+      },
+      "proposalRisks": [
+        "Existing forms, API clients, webhooks or cross-origin integrations may fail until they send the expected token or use the correct route."
+      ],
+      "sideEffects": [
+        "Frontend forms and clients may need token retrieval, header or cookie changes."
+      ],
+      "securityRetest": "Send an owned state-changing request without the required CSRF proof and verify rejection while a valid request succeeds, then rerun the audit.",
+      "functionalRetest": "Run every affected form, authenticated API client, webhook and cross-origin integration with valid credentials and CSRF data.",
+      "rollback": "Temporarily restrict the route or authentication method if clients regress; do not restore an unbounded cookie-authenticated exemption.",
+      "helpUri": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/stable-source-rules.json",
+      "fixtures": {
+        "positive": [
+          {
+            "id": "python-csrf-disabled-positive",
+            "path": "test/fixtures/python-rules/vulnerable.py"
+          }
+        ],
+        "negative": [
+          {
+            "id": "python-csrf-enabled-safe",
+            "path": "test/fixtures/python-rules/safe.py"
+          }
+        ]
+      }
+    },
+    {
+      "adapter": {
+        "id": "builtin-source",
+        "version": "1.1.0",
+        "maturity": "stable",
+        "type": "built_in"
+      },
+      "maturity": "stable",
+      "revision": "1",
       "frameworks": [],
       "alternatives": [
         "Use ast.literal_eval only for supported Python literal data, with input size limits."
@@ -1849,6 +2799,97 @@
         "negative": [
           {
             "id": "python-framework-secret-safe",
+            "path": "test/fixtures/python-rules/safe.py"
+          }
+        ]
+      }
+    },
+    {
+      "adapter": {
+        "id": "builtin-source",
+        "version": "1.1.0",
+        "maturity": "stable",
+        "type": "built_in"
+      },
+      "maturity": "stable",
+      "revision": "1",
+      "frameworks": [
+        "Django",
+        "Flask"
+      ],
+      "alternatives": [
+        "Use local HTTPS so development exercises the same Secure-cookie behavior as production."
+      ],
+      "userDecisions": [
+        "Confirm cookie purpose, browser-read requirements, HTTPS termination and environment-specific settings ownership."
+      ],
+      "id": "python-insecure-session-cookie-settings",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "languages": [
+        "python"
+      ],
+      "domain": "security_exposure",
+      "severity": "medium",
+      "defaultState": "suspected",
+      "rationale": "explicit_insecure_python_session_cookie_setting",
+      "technicalTerm": "Explicitly insecure Python session-cookie setting (CWE-614/CWE-1004)",
+      "plainLanguage": "A supported Django or Flask setting explicitly turns off HTTPS-only or JavaScript-blocking protection for a session-related cookie.",
+      "consequence": "The affected cookie may travel over an unencrypted connection or become easier to steal through browser script injection.",
+      "confidenceBoundary": "The rule observes an exact supported setting assigned False. It does not infer missing settings, production selection, proxy TLS behavior or cookie contents.",
+      "applicability": "Django settings.py and resolved Flask app.config assignments or update/from_mapping calls.",
+      "detection": {
+        "type": "bounded_python_tokens",
+        "settings": [
+          "SESSION_COOKIE_SECURE",
+          "SESSION_COOKIE_HTTPONLY",
+          "CSRF_COOKIE_SECURE"
+        ],
+        "explicitValue": false,
+        "inferMissing": false
+      },
+      "standards": [
+        {
+          "id": "CWE-614",
+          "url": "https://cwe.mitre.org/data/definitions/614.html"
+        },
+        {
+          "id": "CWE-1004",
+          "url": "https://cwe.mitre.org/data/definitions/1004.html"
+        },
+        {
+          "id": "OWASP-TOP10-2025-A07",
+          "url": "https://owasp.org/Top10/2025/A07_2025-Authentication_Failures/"
+        }
+      ],
+      "falsePositiveCauses": [
+        "A development-only configuration is overridden by an immutable production setting.",
+        "The cookie is non-sensitive or HTTPS is unavailable only in an isolated local environment."
+      ],
+      "proposal": {
+        "status": "review_required",
+        "summary": "Enable the required cookie flags in the production configuration and keep any local HTTP exception isolated to development."
+      },
+      "proposalRisks": [
+        "Secure cookies stop working over plain HTTP and HttpOnly cookies cannot be read by browser JavaScript."
+      ],
+      "sideEffects": [
+        "Local development, frontend cookie access or proxy configuration may need changes."
+      ],
+      "securityRetest": "Inspect an owned production-like response and verify the authentication cookie carries the required attributes, then rerun the audit.",
+      "functionalRetest": "Run login, session continuity, logout, CSRF submission and local development flows through the configured proxy.",
+      "rollback": "Isolate a development-only exception if local workflows fail; do not globally disable production cookie protections.",
+      "helpUri": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/stable-source-rules.json",
+      "fixtures": {
+        "positive": [
+          {
+            "id": "python-insecure-cookie-positive",
+            "path": "test/fixtures/python-rules/vulnerable.py"
+          }
+        ],
+        "negative": [
+          {
+            "id": "python-insecure-cookie-safe",
             "path": "test/fixtures/python-rules/safe.py"
           }
         ]
@@ -2493,6 +3534,88 @@
         "negative": [
           {
             "id": "supported-node-stack",
+            "path": "test/fixtures/next-app/package.json"
+          }
+        ]
+      }
+    },
+    {
+      "adapter": {
+        "id": "builtin-source",
+        "version": "1.1.0",
+        "maturity": "stable",
+        "type": "built_in"
+      },
+      "maturity": "stable",
+      "revision": "1",
+      "frameworks": [],
+      "alternatives": [
+        "Use the deployment platform secret store or protected environment injection and document only required variable names."
+      ],
+      "userDecisions": [
+        "Confirm whether the file contains live values, which credentials require rotation and whether history rewriting is required."
+      ],
+      "id": "tracked-sensitive-env-file",
+      "kind": "risk_detection",
+      "family": "secret_management",
+      "languages": [
+        "javascript",
+        "typescript",
+        "python"
+      ],
+      "domain": "security_exposure",
+      "severity": "medium",
+      "defaultState": "confirmed",
+      "rationale": "sensitive_environment_file_tracked_fact",
+      "technicalTerm": "Git-tracked sensitive environment file (CWE-798)",
+      "plainLanguage": "Git records a file whose name is normally used for real environment configuration.",
+      "consequence": "If the file contains live credentials, anyone with repository or source-archive access may be able to reuse them against services or data.",
+      "confidenceBoundary": "Git confirms only that the sensitive filename is present in the current index. File contents are not read; credential presence, validity, history and artifact publication are not established.",
+      "applicability": "Git working trees containing tracked .env or .env.<environment> paths; example, sample, template, dist and defaults names are excluded.",
+      "detection": {
+        "type": "git_index_filename_policy",
+        "command": "git ls-files --cached",
+        "contentRead": false,
+        "templateExclusions": true
+      },
+      "standards": [
+        {
+          "id": "CWE-798",
+          "url": "https://cwe.mitre.org/data/definitions/798.html"
+        },
+        {
+          "id": "OWASP-TOP10-2025-A02",
+          "url": "https://owasp.org/Top10/2025/A02_2025-Security_Misconfiguration/"
+        }
+      ],
+      "falsePositiveCauses": [
+        "The tracked file contains only public or placeholder configuration.",
+        "The current index contains a staged deletion that has not yet been committed."
+      ],
+      "proposal": {
+        "status": "review_required",
+        "summary": "Inspect values privately, rotate any live credential, remove sensitive files from current and relevant historical source, and keep a placeholder example."
+      },
+      "proposalRisks": [
+        "Removing the file before replacing its configuration source can break development, CI or deployment startup."
+      ],
+      "sideEffects": [
+        "Developers and deployment jobs may need a new secret-injection path; credential rotation can interrupt dependent services."
+      ],
+      "securityRetest": "Verify the path is absent from the current Git index and relevant history without printing values, then rerun the source audit.",
+      "functionalRetest": "Start, build and test every environment that previously loaded the file using the replacement secret source.",
+      "rollback": "Restore configuration through a private untracked file or secret store if startup fails; do not recommit a live credential.",
+      "helpUri": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/stable-source-rules.json",
+      "fixtures": {
+        "positive": [
+          {
+            "id": "tracked-env-positive",
+            "path": "test/fixtures/audit-app/.env.production"
+          }
+        ],
+        "negative": [
+          {
+            "id": "tracked-env-safe-neighbor",
             "path": "test/fixtures/next-app/package.json"
           }
         ]

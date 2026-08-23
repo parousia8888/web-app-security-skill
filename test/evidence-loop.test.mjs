@@ -60,7 +60,10 @@ try {
   assert.equal(baseline.summary.byState.confirmed, 1);
   assert.equal(baseline.summary.byState.suspected, 3);
   assert.equal(baseline.coverage.length, SOURCE_RULES.length);
-  assert.ok(baseline.coverage.every((entry) => entry.status === 'completed'));
+  assert.equal(baseline.coverage.find((entry) => entry.ruleId === 'tracked-sensitive-env-file').status,
+    'not_applicable');
+  assert.ok(baseline.coverage.filter((entry) => entry.ruleId !== 'tracked-sensitive-env-file')
+    .every((entry) => entry.status === 'completed'));
   assert.ok(baseline.findings.every((finding) => finding.baseline.coverageRef));
   assert.equal(baseline.policy.thresholds.find((entry) => entry.domain === 'security_exposure').failOn, 'high');
   assert.equal(baseline.policy.thresholds.find((entry) => entry.domain === 'supply_chain').failOn, 'high');

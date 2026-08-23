@@ -7,28 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.5.4] — 2026-08-16
+## [0.5.4] — 2026-08-23
+
+### Added
+- Five bounded built-in risk rules detect exact Git tracking of sensitive `.env` names,
+  JavaScript session secrets and insecure cookie options, plus Python insecure session-cookie and
+  disabled-CSRF settings. Source-pattern matches remain `suspected`; the narrow Git index fact is
+  `confirmed` without reading file contents.
+- Eight project-owned Opengrep rules add same-file request-to-SQL, outbound-URL, file-path and
+  redirect flows for JavaScript/TypeScript and Python. The digest-pinned local ruleset now contains
+  ten rules including the existing command-execution pair.
+- `audit --profile deep` expands to built-in, Checkov, Gitleaks, Opengrep and OSV-Scanner. It never
+  downloads a tool; unavailable prerequisites produce per-rule `unknown` evidence and doctor
+  guidance.
+- A deterministic historical real-world regression corpus executes four minimized v0.5.2
+  correctness failures against product code and retains one numeric SVG `innerHTML` result as an
+  `expected_benign_match` requiring manual input-boundary review.
 
 ### Changed
 - The self-authored planted fixture suite is now named rule-contract conformance. Its generated
   summary reports literal positive/negative/state pass and failure counts instead of TP/FP/FN
-  language that could be mistaken for production vulnerability accuracy.
+  language that could be mistaken for production vulnerability accuracy. It now covers all 25
+  built-in risk and two evidence-integrity rules.
 - The main-branch first-trial command follows the latest npm release without a version suffix.
   Reusable CI, signed release verification and the trusted installer remain version- or
   commit-pinned.
 
-### Added
-- A deterministic historical real-world regression corpus executes four minimized v0.5.2
-  correctness failures against product code: v3 report summaries, pnpm workspace lock inheritance,
-  nested JS/TS template coverage and path-equivalent retest conditions.
-- The corpus also retains one numeric SVG `innerHTML` result as an
-  `expected_benign_match` requiring manual input-boundary review; it does not suppress the source
-  rule or claim that arbitrary DOM sinks are safe.
-
 ### Security boundary
-- Stable detector reach is unchanged: 20 built-in risk rules, two evidence-integrity rules and
-  eight opt-in external-adapter rules. Rule-contract and historical regression results are not
-  precision/recall measurements.
+- Stable detector reach is 25 built-in risk rules, two evidence-integrity rules and 16 opt-in
+  external-adapter rules: 43 total. Built-in pattern and Opengrep matches remain bounded leads;
+  rule-contract and historical regression results are not precision/recall measurements.
 
 ## [0.5.3] — 2026-08-16
 

@@ -1,6 +1,6 @@
 # Python built-in rule decisions
 
-Status: v0.5.0 M4 implementation record
+Status: v0.5.0 M4 implementation record with v0.5.4 additions
 
 This record separates stable detectors from Python candidates that need data flow, deployment
 state or framework execution. The built-in engine tokenizes source only: it never imports a project
@@ -27,11 +27,21 @@ has a vulnerable fixture, safe near-neighbour, sanitized structural evidence, pr
 plain-language explanation, security and functional retests, side effects, rollback and user
 decisions.
 
+## Added in v0.5.4
+
+| Rule | Promoted signal | Evidence limit |
+|---|---|---|
+| `python-insecure-session-cookie-settings` | Exact Django/Flask session-cookie security settings explicitly disabled or assigned an unsafe SameSite value | No proof of resolved production configuration, HTTPS termination, cookie purpose or effective overrides. |
+| `python-csrf-protection-disabled` | Recognized Django/Flask-WTF/Flask-SeaSurf CSRF disable setting or exemption | No proof that the route uses browser cookies, is state changing, is deployed or lacks an equivalent independent control. |
+
+Both rules remain `suspected`. The matcher requires exact settings or recognized constructs and
+retains the same test/generated/vendor exclusions as the v0.5.0 rules.
+
 ## Deferred from the built-in engine
 
 | Candidate | Reason |
 |---|---|
-| Cookie security defaults | Correct flags depend on cookie purpose, framework defaults, HTTPS termination, proxies and cross-site flows. |
+| Generic or dynamically resolved cookie settings outside the recognized Django/Flask contract | Correct flags depend on cookie purpose, framework defaults, HTTPS termination, proxies and cross-site flows. |
 | Weak hashes and `random` | These APIs are often valid for caches, sampling or non-security identifiers; security purpose must be established. |
 | Logging credential-named values | A name does not prove runtime contents, production logging or the absence of downstream redaction. |
 | Generic paths and temporary files | Useful conclusions require input trust, filesystem permissions, lifecycle and deployment context. |

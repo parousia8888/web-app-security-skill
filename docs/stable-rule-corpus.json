@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "rulesetSemanticDigest": "7e5d8a25b5377afbc4aa2c9e1125ab06135bca837c2b8361cc8a3cac582b5b58",
+  "rulesetSemanticDigest": "1caf2d86f0db08aa88e19731bca00013730a23c40e4bda56d8ecd11e86748c43",
   "counts": {
-    "stableTotal": 30,
-    "builtInRisk": 20,
+    "stableTotal": 43,
+    "builtInRisk": 25,
     "builtInIntegrity": 2,
-    "externalRisk": 8
+    "externalRisk": 16
   },
   "rules": [
     {
@@ -242,6 +242,52 @@
       "adapterId": "builtin-source",
       "adapterVersion": "1.1.0",
       "adapterType": "built_in",
+      "ruleId": "js-inline-session-secret",
+      "kind": "risk_detection",
+      "family": "secret_management",
+      "expectedPositiveState": "suspected",
+      "evidenceBoundary": "The bounded rule resolves a supported framework configuration and records only the literal length band. It does not retain the value or prove validity, deployment use or exposure.",
+      "positiveFixtures": [
+        {
+          "id": "js-inline-session-secret-positive",
+          "path": "test/fixtures/js-ts-rules/vulnerable.tsx"
+        }
+      ],
+      "negativeFixtures": [
+        {
+          "id": "js-inline-session-secret-safe",
+          "path": "test/fixtures/js-ts-rules/safe.tsx"
+        }
+      ],
+      "testEntry": "test/js-ts-source-audit.test.mjs"
+    },
+    {
+      "adapterId": "builtin-source",
+      "adapterVersion": "1.1.0",
+      "adapterType": "built_in",
+      "ruleId": "js-insecure-cookie-options",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "expectedPositiveState": "suspected",
+      "evidenceBoundary": "The rule observes httpOnly:false or secure:false in a supported API option object. It does not infer missing flags, cookie purpose, effective proxy TLS or deployed middleware behavior.",
+      "positiveFixtures": [
+        {
+          "id": "js-insecure-cookie-positive",
+          "path": "test/fixtures/js-ts-rules/vulnerable.tsx"
+        }
+      ],
+      "negativeFixtures": [
+        {
+          "id": "js-insecure-cookie-safe",
+          "path": "test/fixtures/js-ts-rules/safe.tsx"
+        }
+      ],
+      "testEntry": "test/js-ts-source-audit.test.mjs"
+    },
+    {
+      "adapterId": "builtin-source",
+      "adapterVersion": "1.1.0",
+      "adapterType": "built_in",
       "ruleId": "jwt-unsafe-verification-options",
       "kind": "risk_detection",
       "family": "authentication_session",
@@ -357,6 +403,98 @@
       "adapterId": "opengrep",
       "adapterVersion": "1.27.0",
       "adapterType": "external",
+      "ruleId": "opengrep-js-request-path-flow",
+      "kind": "risk_detection",
+      "family": "file_path",
+      "expectedPositiveState": "suspected",
+      "evidenceBoundary": "The pinned local taint rule observed a same-file JavaScript and TypeScript request-source-to-path sink path. It did not prove framework routing, validation bypass, runtime reachability, exploitability or a deployed endpoint.",
+      "positiveFixtures": [
+        {
+          "id": "opengrep-js-path-positive",
+          "path": "test/fixtures/opengrep-rules/vulnerable.js"
+        }
+      ],
+      "negativeFixtures": [
+        {
+          "id": "opengrep-js-path-safe",
+          "path": "test/fixtures/opengrep-rules/safe.js"
+        }
+      ],
+      "testEntry": "test/real-adapters.test.mjs"
+    },
+    {
+      "adapterId": "opengrep",
+      "adapterVersion": "1.27.0",
+      "adapterType": "external",
+      "ruleId": "opengrep-js-request-redirect-flow",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "expectedPositiveState": "suspected",
+      "evidenceBoundary": "The pinned local taint rule observed a same-file JavaScript and TypeScript request-source-to-redirect sink path. It did not prove framework routing, validation bypass, runtime reachability, exploitability or a deployed endpoint.",
+      "positiveFixtures": [
+        {
+          "id": "opengrep-js-redirect-positive",
+          "path": "test/fixtures/opengrep-rules/vulnerable.js"
+        }
+      ],
+      "negativeFixtures": [
+        {
+          "id": "opengrep-js-redirect-safe",
+          "path": "test/fixtures/opengrep-rules/safe.js"
+        }
+      ],
+      "testEntry": "test/real-adapters.test.mjs"
+    },
+    {
+      "adapterId": "opengrep",
+      "adapterVersion": "1.27.0",
+      "adapterType": "external",
+      "ruleId": "opengrep-js-request-sql-flow",
+      "kind": "risk_detection",
+      "family": "injection_execution",
+      "expectedPositiveState": "suspected",
+      "evidenceBoundary": "The pinned local taint rule observed a same-file JavaScript and TypeScript request-source-to-sql sink path. It did not prove framework routing, validation bypass, runtime reachability, exploitability or a deployed endpoint.",
+      "positiveFixtures": [
+        {
+          "id": "opengrep-js-sql-positive",
+          "path": "test/fixtures/opengrep-rules/vulnerable.js"
+        }
+      ],
+      "negativeFixtures": [
+        {
+          "id": "opengrep-js-sql-safe",
+          "path": "test/fixtures/opengrep-rules/safe.js"
+        }
+      ],
+      "testEntry": "test/real-adapters.test.mjs"
+    },
+    {
+      "adapterId": "opengrep",
+      "adapterVersion": "1.27.0",
+      "adapterType": "external",
+      "ruleId": "opengrep-js-request-ssrf-flow",
+      "kind": "risk_detection",
+      "family": "injection_execution",
+      "expectedPositiveState": "suspected",
+      "evidenceBoundary": "The pinned local taint rule observed a same-file JavaScript and TypeScript request-source-to-ssrf sink path. It did not prove framework routing, validation bypass, runtime reachability, exploitability or a deployed endpoint.",
+      "positiveFixtures": [
+        {
+          "id": "opengrep-js-ssrf-positive",
+          "path": "test/fixtures/opengrep-rules/vulnerable.js"
+        }
+      ],
+      "negativeFixtures": [
+        {
+          "id": "opengrep-js-ssrf-safe",
+          "path": "test/fixtures/opengrep-rules/safe.js"
+        }
+      ],
+      "testEntry": "test/real-adapters.test.mjs"
+    },
+    {
+      "adapterId": "opengrep",
+      "adapterVersion": "1.27.0",
+      "adapterType": "external",
       "ruleId": "opengrep-python-request-command-flow",
       "kind": "risk_detection",
       "family": "injection_execution",
@@ -371,6 +509,98 @@
       "negativeFixtures": [
         {
           "id": "opengrep-python-flow-safe",
+          "path": "test/fixtures/opengrep-rules/safe.py"
+        }
+      ],
+      "testEntry": "test/real-adapters.test.mjs"
+    },
+    {
+      "adapterId": "opengrep",
+      "adapterVersion": "1.27.0",
+      "adapterType": "external",
+      "ruleId": "opengrep-python-request-path-flow",
+      "kind": "risk_detection",
+      "family": "file_path",
+      "expectedPositiveState": "suspected",
+      "evidenceBoundary": "The pinned local taint rule observed a same-file Python request-source-to-path sink path. It did not prove framework routing, validation bypass, runtime reachability, exploitability or a deployed endpoint.",
+      "positiveFixtures": [
+        {
+          "id": "opengrep-python-path-positive",
+          "path": "test/fixtures/opengrep-rules/vulnerable.py"
+        }
+      ],
+      "negativeFixtures": [
+        {
+          "id": "opengrep-python-path-safe",
+          "path": "test/fixtures/opengrep-rules/safe.py"
+        }
+      ],
+      "testEntry": "test/real-adapters.test.mjs"
+    },
+    {
+      "adapterId": "opengrep",
+      "adapterVersion": "1.27.0",
+      "adapterType": "external",
+      "ruleId": "opengrep-python-request-redirect-flow",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "expectedPositiveState": "suspected",
+      "evidenceBoundary": "The pinned local taint rule observed a same-file Python request-source-to-redirect sink path. It did not prove framework routing, validation bypass, runtime reachability, exploitability or a deployed endpoint.",
+      "positiveFixtures": [
+        {
+          "id": "opengrep-python-redirect-positive",
+          "path": "test/fixtures/opengrep-rules/vulnerable.py"
+        }
+      ],
+      "negativeFixtures": [
+        {
+          "id": "opengrep-python-redirect-safe",
+          "path": "test/fixtures/opengrep-rules/safe.py"
+        }
+      ],
+      "testEntry": "test/real-adapters.test.mjs"
+    },
+    {
+      "adapterId": "opengrep",
+      "adapterVersion": "1.27.0",
+      "adapterType": "external",
+      "ruleId": "opengrep-python-request-sql-flow",
+      "kind": "risk_detection",
+      "family": "injection_execution",
+      "expectedPositiveState": "suspected",
+      "evidenceBoundary": "The pinned local taint rule observed a same-file Python request-source-to-sql sink path. It did not prove framework routing, validation bypass, runtime reachability, exploitability or a deployed endpoint.",
+      "positiveFixtures": [
+        {
+          "id": "opengrep-python-sql-positive",
+          "path": "test/fixtures/opengrep-rules/vulnerable.py"
+        }
+      ],
+      "negativeFixtures": [
+        {
+          "id": "opengrep-python-sql-safe",
+          "path": "test/fixtures/opengrep-rules/safe.py"
+        }
+      ],
+      "testEntry": "test/real-adapters.test.mjs"
+    },
+    {
+      "adapterId": "opengrep",
+      "adapterVersion": "1.27.0",
+      "adapterType": "external",
+      "ruleId": "opengrep-python-request-ssrf-flow",
+      "kind": "risk_detection",
+      "family": "injection_execution",
+      "expectedPositiveState": "suspected",
+      "evidenceBoundary": "The pinned local taint rule observed a same-file Python request-source-to-ssrf sink path. It did not prove framework routing, validation bypass, runtime reachability, exploitability or a deployed endpoint.",
+      "positiveFixtures": [
+        {
+          "id": "opengrep-python-ssrf-positive",
+          "path": "test/fixtures/opengrep-rules/vulnerable.py"
+        }
+      ],
+      "negativeFixtures": [
+        {
+          "id": "opengrep-python-ssrf-safe",
           "path": "test/fixtures/opengrep-rules/safe.py"
         }
       ],
@@ -449,6 +679,29 @@
       "adapterId": "builtin-source",
       "adapterVersion": "1.1.0",
       "adapterType": "built_in",
+      "ruleId": "python-csrf-protection-disabled",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "expectedPositiveState": "suspected",
+      "evidenceBoundary": "The rule observes an exact CSRF-disabled setting or recognized exemption. It does not prove route exposure, cookie authentication, missing alternate controls or exploitability.",
+      "positiveFixtures": [
+        {
+          "id": "python-csrf-disabled-positive",
+          "path": "test/fixtures/python-rules/vulnerable.py"
+        }
+      ],
+      "negativeFixtures": [
+        {
+          "id": "python-csrf-enabled-safe",
+          "path": "test/fixtures/python-rules/safe.py"
+        }
+      ],
+      "testEntry": "test/python-source-audit.test.mjs"
+    },
+    {
+      "adapterId": "builtin-source",
+      "adapterVersion": "1.1.0",
+      "adapterType": "built_in",
       "ruleId": "python-dynamic-code-execution",
       "kind": "risk_detection",
       "family": "injection_execution",
@@ -509,6 +762,29 @@
       "negativeFixtures": [
         {
           "id": "python-framework-secret-safe",
+          "path": "test/fixtures/python-rules/safe.py"
+        }
+      ],
+      "testEntry": "test/python-source-audit.test.mjs"
+    },
+    {
+      "adapterId": "builtin-source",
+      "adapterVersion": "1.1.0",
+      "adapterType": "built_in",
+      "ruleId": "python-insecure-session-cookie-settings",
+      "kind": "risk_detection",
+      "family": "authentication_session",
+      "expectedPositiveState": "suspected",
+      "evidenceBoundary": "The rule observes an exact supported setting assigned False. It does not infer missing settings, production selection, proxy TLS behavior or cookie contents.",
+      "positiveFixtures": [
+        {
+          "id": "python-insecure-cookie-positive",
+          "path": "test/fixtures/python-rules/vulnerable.py"
+        }
+      ],
+      "negativeFixtures": [
+        {
+          "id": "python-insecure-cookie-safe",
           "path": "test/fixtures/python-rules/safe.py"
         }
       ],
@@ -697,6 +973,29 @@
         }
       ],
       "testEntry": "test/source-coverage-ledger.test.mjs"
+    },
+    {
+      "adapterId": "builtin-source",
+      "adapterVersion": "1.1.0",
+      "adapterType": "built_in",
+      "ruleId": "tracked-sensitive-env-file",
+      "kind": "risk_detection",
+      "family": "secret_management",
+      "expectedPositiveState": "confirmed",
+      "evidenceBoundary": "Git confirms only that the sensitive filename is present in the current index. File contents are not read; credential presence, validity, history and artifact publication are not established.",
+      "positiveFixtures": [
+        {
+          "id": "tracked-env-positive",
+          "path": "test/fixtures/audit-app/.env.production"
+        }
+      ],
+      "negativeFixtures": [
+        {
+          "id": "tracked-env-safe-neighbor",
+          "path": "test/fixtures/next-app/package.json"
+        }
+      ],
+      "testEntry": "test/evidence-loop.test.mjs"
     }
   ]
 }
