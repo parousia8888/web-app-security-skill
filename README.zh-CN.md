@@ -343,8 +343,8 @@ Composite Action 保持 v0.3 crawl 输入与输出兼容。Crawl mode 默认被�
     fail-on: high
 ```
 
-需要可重复 CI 时使用上面的 v0.6.0 不可变 commit。在 v0.6.0 不可变 consumer 与提升门禁通过前，
-签名的稳定大版本别名仍指向上一稳定源码：
+需要可重复 CI 时使用上面的 v0.6.0 不可变 commit。签名的稳定大版本别名现已指向同一份
+v0.6.0 源码，并通过公开 consumer 的被动边界与授权拒绝验证：
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
@@ -364,8 +364,8 @@ Source mode 默认只用内置 adapter。v0.6.0 不可变 Action 运行 v3 源�
     fail-on: high
 ```
 
-移动的 `v1` tag 只在版本化源码与安装门禁通过后用 guarded lease 提升，并必须再通过公开 consumer
-才记录为完成。以后接受更新前应检查 release note；工作流不能随版本移动时使用上面的完整 commit。
+移动的 `v1` tag 在版本化源码、安装与不可变 Action 门禁通过后才用 guarded lease 提升；公开
+consumer 随后也已通过。以后接受更新前应检查 release note；工作流不能随版本移动时使用上面的完整 commit。
 
 ## 信任与 release 证据
 

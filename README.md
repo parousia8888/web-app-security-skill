@@ -373,8 +373,8 @@ requires deployment authorization acknowledgement:
     fail-on: high
 ```
 
-For repeatable CI, use the immutable v0.6.0 commit above. Until the v0.6.0 immutable consumer and
-promotion gate pass, the signed stable major-version alias remains on the previous stable source:
+For repeatable CI, use the immutable v0.6.0 commit above. The signed stable major-version alias now
+resolves to the same v0.6.0 source after its public passive and authorization consumer passed:
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
@@ -395,9 +395,9 @@ installed and pinned by the caller; the Action never downloads them:
     fail-on: high
 ```
 
-The moving `v1` tag is promoted with a guarded lease only after the versioned source and installation
-gates pass, then the public consumer must pass before promotion is recorded complete. Review release
-notes before accepting a future update; use the full commit above when the workflow must not move.
+The moving `v1` tag was promoted with a guarded lease only after the versioned source, installation
+and immutable Action gates passed; the public consumer then passed. Review release notes before
+accepting a future update; use the full commit above when the workflow must not move.
 
 ## Trust and release evidence
 
