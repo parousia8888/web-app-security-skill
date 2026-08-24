@@ -138,6 +138,12 @@ assert.deepEqual(classifyPythonSource('README.md'),
   { eligible: false, reason: 'unsupported_python_extension' });
 assert.equal(tokenizePython('value = "unterminated').error.code, 'unterminated_python_string');
 assert.equal(tokenizePython('run(\n').error.code, 'unbalanced_python_delimiter');
+const operationLimited = inspectPythonSource('src/operation_limit.py',
+  'import requests\nrequests.get("https://example.test", verify=False)\n', {
+    analysisLimits: { maxOperationsPerFile: 12 },
+  });
+assert.equal(operationLimited.error.code, 'source_operation_limit');
+assert.deepEqual(operationLimited.findings, []);
 const rawRegex = String.raw`import re
 _FM_TITLE = re.compile(r'^title:\s*["\']?(.+?)["\']?\s*$', re.MULTILINE)
 `;

@@ -9,7 +9,8 @@ the published v0.7.0 release it runs 25 built-in risk rules and 3 evidence-integ
 deeper JavaScript/TypeScript and Python coverage. Supported Express, NestJS and Next.js App Router
 projects also receive a separate route-security review with bounded access-control chains and
 separate Next.js Server Actions. It remains a bounded first pass, not a general SAST scan,
-automatic BOLA proof or proof that a project is secure.
+automatic BOLA proof or proof that a project is secure. Effective lexical token and operation
+budgets are recorded in the report; exhaustion is incomplete evidence with exit `3`, not a pass.
 
 ## Prerequisites
 
@@ -95,9 +96,12 @@ The output includes `report.json`, `report.sha256`, `report.md`, `report.html`, 
 `report.junit.xml` and `proposed.patch`. Use JSON for automation, the sidecar for local integrity
 checking, Markdown/HTML for review, SARIF/JUnit for CI, and the patch file only as a proposal.
 
-The default policy gates confirmed HIGH security and supply-chain findings. Reports summarize by
-domain, evidence state and severity. Keep `--fail-on` for the compatible security/supply-chain
-threshold, and add a repeatable domain override only when that domain belongs in the CI gate:
+The default policy gates HIGH confirmed and suspected security or supply-chain findings. Suspected
+evidence is not promoted: exit `1` means the lead needs review before CI passes, while the report
+continues to state what was not proved. Use `--fail-on never` for a non-blocking first report.
+Reports summarize by domain, evidence state and severity. Keep `--fail-on` for the compatible
+security/supply-chain threshold, and add a repeatable domain override only when that domain belongs
+in the CI gate:
 
 ```bash
 webapp-security audit .webapp-security/runs/first-review \
@@ -216,7 +220,7 @@ appears, production health degrades or evidence would expose a secret.
 | `webapp-security: command not found` | Add `~/.local/bin` to `PATH`, or invoke the checkout's `node scripts/webapp-security.mjs` |
 | Exit code `1` | Findings met `--fail-on`; evidence was still written |
 | Exit code `2` | Usage, scope, authorization or evidence setup failed; do not treat it as a pass |
-| Exit code `3` | Required evidence was unknown, partial or unavailable and no configured confirmed threshold breach took precedence |
+| Exit code `3` | Required evidence was unknown, partial or unavailable and no configured actionable threshold breach took precedence |
 | `refusing to overwrite existing evidence` | Choose a new `--out` directory or report name; retain the baseline |
 | Unsupported or ambiguous stack | Keep `unknown` and use the agent-guided methodology |
 | Remote check blocked | Supply recorded authorization and acknowledgement only for an owned target |

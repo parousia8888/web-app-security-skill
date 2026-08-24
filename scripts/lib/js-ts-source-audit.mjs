@@ -1,3 +1,8 @@
+import {
+  bindAnalysisBudget, chargeAnalysisOperations,
+  createSourceAnalysisSession, isSourceAnalysisLimitError,
+} from './source-analysis-budget.mjs';
+
 export const JS_TS_SOURCE_RULE_IDS = [
   'js-dynamic-code-execution',
   'node-child-process-shell-execution',
@@ -25,6 +30,8 @@ const SOURCE_EXTENSION = /\.(?:[cm]?[jt]sx?)$/i;
 const GENERATED_FILE = /(?:^|\/)(?:generated|vendor)(?:\/|$)|(?:\.min|\.bundle|\.generated)\.[cm]?[jt]sx?$/i;
 const TEST_FILE = /(?:^|\/)(?:__tests__|test|tests|fixtures)(?:\/|$)|\.(?:test|spec|stories)\.[cm]?[jt]sx?$/i;
 const PLACEHOLDER = /^(?:change[-_ ]?me|replace[-_ ]?me|example|placeholder|test|development|dev|secret|your[-_ ].*|<.*>|\$\{.*\})$/i;
+const IDENTIFIER_AT = /[A-Za-z_$][\w$]*/y;
+const NUMBER_AT = /(?:0[xob][0-9a-f]+|\d+(?:\.\d+)?)/iy;
 
 export function classifyJsTsSource(path) {
   if (!SOURCE_EXTENSION.test(path)) return { eligible: false, reason: 'unsupported_js_ts_extension' };
@@ -50,8 +57,8 @@ function jsxTagMayStart(text, index, previous, fromText) {
   return regexMayStart(previous) && (next === '>' || /[A-Za-z_$]/.test(next));
 }
 
-export function tokenizeJsTs(text, { jsx = false } = {}) {
-  const tokens = [];
+function tokenizeJsTsWithBudget(text, jsx, budget) {
+  const tokens = bindAnalysisBudget([], budget);
   let index = 0;
   let line = 1;
   const templateStack = [];
@@ -61,8 +68,12 @@ export function tokenizeJsTs(text, { jsx = false } = {}) {
   const jsxElements = [];
   let jsxExpressionDepth = 0;
   let jsxExpressionReturnMode = 'text';
-  const push = (type, value, start, startLine) => tokens.push({ type, value, start, line: startLine });
+  const push = (type, value, start, startLine) => {
+    budget.token();
+    tokens.push({ type, value, start, line: startLine });
+  };
   while (index < text.length) {
+    budget.operation();
     const character = text[index];
     const template = templateStack.at(-1);
     if (template && !template.inExpression) {
@@ -133,7 +144,10 @@ export function tokenizeJsTs(text, { jsx = false } = {}) {
     }
     if (character === '/' && text[index + 1] === '/') {
       index += 2;
-      while (index < text.length && text[index] !== '\n') index += 1;
+      while (index < text.length && text[index] !== '\n') {
+        budget.operation();
+        index += 1;
+      }
       continue;
     }
     if (character === '/' && text[index + 1] === '*') {
@@ -141,6 +155,7 @@ export function tokenizeJsTs(text, { jsx = false } = {}) {
       index += 2;
       let closed = false;
       while (index < text.length) {
+        budget.operation();
         if (text[index] === '\n') line += 1;
         if (text[index] === '*' && text[index + 1] === '/') {
           index += 2;
@@ -166,6 +181,7 @@ export function tokenizeJsTs(text, { jsx = false } = {}) {
       let value = '';
       let closed = false;
       while (index < text.length) {
+        budget.operation();
         const current = text[index];
         if (current === '\n') line += 1;
         if (current === '\\') {
@@ -196,6 +212,7 @@ export function tokenizeJsTs(text, { jsx = false } = {}) {
       let inClass = false;
       let closed = false;
       while (index < text.length) {
+        budget.operation();
         const current = text[index];
         if (current === '\n') break;
         if (current === '\\') {
@@ -206,7 +223,10 @@ export function tokenizeJsTs(text, { jsx = false } = {}) {
         if (current === ']') inClass = false;
         if (current === '/' && !inClass) {
           index += 1;
-          while (/[a-z]/i.test(text[index] || '')) index += 1;
+          while (/[a-z]/i.test(text[index] || '')) {
+            budget.operation();
+            index += 1;
+          }
           closed = true;
           break;
         }
@@ -218,13 +238,15 @@ export function tokenizeJsTs(text, { jsx = false } = {}) {
       }
       index = start;
     }
-    const identifier = /^[A-Za-z_$][\w$]*/.exec(text.slice(index));
+    IDENTIFIER_AT.lastIndex = index;
+    const identifier = IDENTIFIER_AT.exec(text);
     if (identifier) {
       push('identifier', identifier[0], index, line);
       index += identifier[0].length;
       continue;
     }
-    const number = /^(?:0[xob][0-9a-f]+|\d+(?:\.\d+)?)/i.exec(text.slice(index));
+    NUMBER_AT.lastIndex = index;
+    const number = NUMBER_AT.exec(text);
     if (number) {
       push('number', number[0], index, line);
       index += number[0].length;
@@ -270,11 +292,28 @@ export function tokenizeJsTs(text, { jsx = false } = {}) {
   return { tokens, error: null };
 }
 
+export function tokenizeJsTs(text, { jsx = false, analysisBudget = null, analysisLimits = {} } = {}) {
+  const localSession = analysisBudget ? null : createSourceAnalysisSession(analysisLimits);
+  const budget = analysisBudget || localSession.startFile();
+  let completed = false;
+  try {
+    const result = tokenizeJsTsWithBudget(text, jsx, budget);
+    completed = result.error === null;
+    return result;
+  } catch (error) {
+    if (isSourceAnalysisLimitError(error)) return { tokens: [], error: { code: error.code, line: null } };
+    throw error;
+  } finally {
+    if (localSession) budget.finish(completed);
+  }
+}
+
 const valueAt = (tokens, index) => tokens[index]?.value;
 
 function matchingToken(tokens, start, open = '(', close = ')') {
   let depth = 0;
   for (let index = start; index < tokens.length; index += 1) {
+    chargeAnalysisOperations(tokens);
     if (tokens[index].value === open) depth += 1;
     if (tokens[index].value === close) {
       depth -= 1;
@@ -288,14 +327,19 @@ function moduleBindings(tokens, moduleNames) {
   const namespaces = new Set();
   const named = new Map();
   for (let index = 0; index < tokens.length; index += 1) {
+    chargeAnalysisOperations(tokens);
     if (tokens[index].type !== 'string' || !moduleNames.has(tokens[index].value)) continue;
     if (valueAt(tokens, index - 1) === '(' && valueAt(tokens, index - 2) === 'require') {
       if (valueAt(tokens, index + 1) !== ')') continue;
       if (valueAt(tokens, index - 3) === '=') namespaces.add(valueAt(tokens, index - 4));
       if (valueAt(tokens, index - 3) === '=' && valueAt(tokens, index - 4) === '}') {
         let cursor = index - 5;
-        while (cursor >= 0 && valueAt(tokens, cursor) !== '{') cursor -= 1;
+        while (cursor >= 0 && valueAt(tokens, cursor) !== '{') {
+          chargeAnalysisOperations(tokens);
+          cursor -= 1;
+        }
         for (let item = cursor + 1; item < index - 4; item += 1) {
+          chargeAnalysisOperations(tokens);
           const imported = valueAt(tokens, item);
           if (tokens[item]?.type !== 'identifier') continue;
           if (valueAt(tokens, item + 1) === ':') {
@@ -308,11 +352,15 @@ function moduleBindings(tokens, moduleNames) {
     }
     if (valueAt(tokens, index - 1) !== 'from') continue;
     let cursor = index - 2;
-    while (cursor >= 0 && valueAt(tokens, cursor) !== 'import' && index - cursor < 40) cursor -= 1;
+    while (cursor >= 0 && valueAt(tokens, cursor) !== 'import' && index - cursor < 40) {
+      chargeAnalysisOperations(tokens);
+      cursor -= 1;
+    }
     if (cursor < 0 || valueAt(tokens, cursor) !== 'import') continue;
     if (valueAt(tokens, cursor + 1) === '*') namespaces.add(valueAt(tokens, cursor + 3));
     else if (valueAt(tokens, cursor + 1) === '{') {
       for (let item = cursor + 2; item < index - 1; item += 1) {
+        chargeAnalysisOperations(tokens);
         const imported = valueAt(tokens, item);
         if (tokens[item]?.type !== 'identifier') continue;
         if (valueAt(tokens, item + 1) === 'as') {
@@ -327,7 +375,10 @@ function moduleBindings(tokens, moduleNames) {
 
 function callOperation(tokens, index, bindings) {
   if (valueAt(tokens, index + 1) === '(') {
-    for (const [operation, local] of bindings.named) if (tokens[index].value === local) return operation;
+    for (const [operation, local] of bindings.named) {
+      chargeAnalysisOperations(tokens);
+      if (tokens[index].value === local) return operation;
+    }
   }
   if (valueAt(tokens, index + 1) === '.' && valueAt(tokens, index + 3) === '('
       && bindings.namespaces.has(tokens[index].value)) return valueAt(tokens, index + 2);
@@ -337,6 +388,7 @@ function callOperation(tokens, index, bindings) {
 function objectBounds(tokens, propertyIndex) {
   let depth = 0;
   for (let start = propertyIndex - 1; start >= 0; start -= 1) {
+    chargeAnalysisOperations(tokens);
     if (valueAt(tokens, start) === '}') depth += 1;
     if (valueAt(tokens, start) === '{') {
       if (depth === 0) {
@@ -352,6 +404,7 @@ function objectBounds(tokens, propertyIndex) {
 function propertyHas(tokens, start, end, name, expected, type = null, targetDepth = 0) {
   let depth = 0;
   for (let index = start + 1; index < end - 1; index += 1) {
+    chargeAnalysisOperations(tokens);
     if (['{', '[', '('].includes(valueAt(tokens, index))) depth += 1;
     if (['}', ']', ')'].includes(valueAt(tokens, index))) depth -= 1;
     if (depth === targetDepth && valueAt(tokens, index) === name && valueAt(tokens, index + 1) === ':'
@@ -366,6 +419,7 @@ function argumentRanges(tokens, open, close) {
   let start = open + 1;
   const stack = [];
   for (let index = open + 1; index < close; index += 1) {
+    chargeAnalysisOperations(tokens);
     const value = valueAt(tokens, index);
     if (['(', '[', '{'].includes(value)) stack.push(value);
     if ([')', ']', '}'].includes(value)) stack.pop();
@@ -388,6 +442,7 @@ function objectArgument(tokens, open, close, position) {
 function propertyToken(tokens, start, end, name, targetDepth = 0) {
   let depth = 0;
   for (let index = start + 1; index < end; index += 1) {
+    chargeAnalysisOperations(tokens);
     const value = valueAt(tokens, index);
     if (depth === targetDepth && value === name && valueAt(tokens, index + 1) === ':') return index;
     if (['{', '[', '('].includes(value)) depth += 1;
@@ -475,8 +530,10 @@ const OUTPUT = {
   },
 };
 
-export function inspectJsTsSource(path, text) {
-  const parsed = tokenizeJsTs(text, { jsx: /\.[cm]?[jt]sx$/i.test(path) });
+function inspectJsTsSourceWithBudget(path, text, budget) {
+  const parsed = tokenizeJsTs(text, {
+    jsx: /\.[cm]?[jt]sx$/i.test(path), analysisBudget: budget,
+  });
   if (parsed.error) return { findings: [], error: parsed.error };
   const { tokens } = parsed;
   const findings = [];
@@ -500,6 +557,7 @@ export function inspectJsTsSource(path, text) {
   const cookieModule = moduleBindings(tokens, new Set(['cookie']));
   const cookiesNext = moduleBindings(tokens, new Set(['cookies-next']));
   for (let index = 0; index < tokens.length; index += 1) {
+    chargeAnalysisOperations(tokens);
     const token = tokens[index];
     if ((token.value === 'eval' && valueAt(tokens, index + 1) === '(')
         || (token.value === 'Function' && valueAt(tokens, index + 1) === '('
@@ -558,11 +616,19 @@ export function inspectJsTsSource(path, text) {
         const unsafeExpiry = propertyHas(tokens, open, close, 'ignoreExpiration', 'true', null, 1);
         let unsafeNone = false;
         for (let cursor = open; cursor < close - 3; cursor += 1) {
+          chargeAnalysisOperations(tokens);
           if (valueAt(tokens, cursor) !== 'algorithms' || valueAt(tokens, cursor + 1) !== ':') continue;
           const arrayStart = cursor + 2;
           const arrayEnd = valueAt(tokens, arrayStart) === '[' ? matchingToken(tokens, arrayStart, '[', ']') : -1;
-          unsafeNone ||= arrayEnd > arrayStart && tokens.slice(arrayStart + 1, arrayEnd)
-            .some((item) => item.type === 'string' && item.value.toLowerCase() === 'none');
+          if (arrayEnd > arrayStart) {
+            for (let item = arrayStart + 1; item < arrayEnd; item += 1) {
+              chargeAnalysisOperations(tokens);
+              if (tokens[item].type === 'string' && tokens[item].value.toLowerCase() === 'none') {
+                unsafeNone = true;
+                break;
+              }
+            }
+          }
         }
         if (unsafeExpiry || unsafeNone) add('jwt-unsafe-verification-options', token,
           unsafeNone ? 'jwt_none_algorithm' : 'jwt_ignore_expiration');
@@ -619,6 +685,7 @@ export function inspectJsTsSource(path, text) {
         const cookies = nestedObject(tokens, frameworkOptions[0], frameworkOptions[1], 'cookies');
         if (cookies) {
           for (let cursor = cookies[0] + 1; cursor < cookies[1]; cursor += 1) {
+            chargeAnalysisOperations(tokens);
             if (!['httpOnly', 'secure'].includes(valueAt(tokens, cursor))
                 || valueAt(tokens, cursor + 1) !== ':' || valueAt(tokens, cursor + 2) !== 'false') continue;
             add('js-insecure-cookie-options', tokens[cursor],
@@ -652,4 +719,20 @@ export function inspectJsTsSource(path, text) {
       `${cookieKind}_${unsafeCookie.name}_false`);
   }
   return { findings, error: null };
+}
+
+export function inspectJsTsSource(path, text, { analysisSession = null, analysisLimits = {} } = {}) {
+  const session = analysisSession || createSourceAnalysisSession(analysisLimits);
+  const budget = session.startFile();
+  let completed = false;
+  try {
+    const result = inspectJsTsSourceWithBudget(path, text, budget);
+    completed = result.error === null;
+    return result;
+  } catch (error) {
+    if (isSourceAnalysisLimitError(error)) return { findings: [], error: { code: error.code, line: null } };
+    throw error;
+  } finally {
+    budget.finish(completed);
+  }
 }

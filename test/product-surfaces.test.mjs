@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const CLI = join(ROOT, 'scripts', 'webapp-security.mjs');
@@ -210,6 +210,11 @@ try {
     assert.ok(existsSync(join(installed, 'docs', 'rule-taxonomy.md')));
     assert.ok(existsSync(join(installed, 'docs', 'stable-source-rules.json')));
     assert.ok(existsSync(join(installed, 'docs', 'stable-rule-corpus.json')));
+    assert.ok(existsSync(join(installed, '.claude-plugin', 'plugin.json')));
+    assert.ok(existsSync(join(installed, '.claude-plugin', 'marketplace.json')));
+    assert.ok(existsSync(join(installed, 'rules', 'opengrep-source.yml')));
+    assert.ok(existsSync(join(installed, 'docs', 'regressions', 'v0.7.0-access-control-real-world-regressions.json')));
+    assert.ok(existsSync(join(installed, 'docs', 'reviews', 'v0.7.0-access-control-review.json')));
     assert.match(readFileSync(join(installed, 'SKILL.md'), 'utf8'), /^name: web-app-security$/m);
   }
   const codexSkills = join(fakeHome, '.codex', 'skills');
@@ -229,8 +234,16 @@ try {
     const marker = JSON.parse(readFileSync(join(installed, '.web-app-security-install.json'), 'utf8'));
     assert.equal(marker.product, 'Web App Security Skill');
     assert.equal(marker.version, readFileSync(join(ROOT, 'VERSION'), 'utf8').trim());
-    assert.equal(marker.surface, surface);
+  assert.equal(marker.surface, surface);
   }
+  const installedCliRoot = join(allHome, '.local', 'share', 'web-app-security');
+  const adapterModule = pathToFileURL(join(installedCliRoot, 'scripts', 'lib', 'external-adapters.mjs')).href;
+  result = await run(process.execPath, ['--input-type=module', '--eval', [
+    `import { verifyOpengrepRuleset } from ${JSON.stringify(adapterModule)};`,
+    'const result = verifyOpengrepRuleset();',
+    "if (result.status !== 'available') throw new Error(`installed ruleset is ${result.status}`);",
+  ].join('\n')], { cwd: installedCliRoot, env: { ...process.env, HOME: allHome } });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
   const launcher = join(allHome, '.local', 'bin', 'webapp-security');
   assert.ok(existsSync(launcher));
   result = await run(launcher, ['--help'], { env: { ...process.env, HOME: allHome } });

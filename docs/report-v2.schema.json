@@ -72,8 +72,23 @@
             }
           }
         },
-        "precedence": { "const": "confirmed_threshold_before_incomplete" }
-      }
+        "gateStates": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "confirmed" },
+            { "const": "suspected" }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "precedence": { "enum": ["confirmed_threshold_before_incomplete", "actionable_threshold_before_incomplete"] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "precedence": { "const": "actionable_threshold_before_incomplete" } } },
+          "then": { "required": ["gateStates"] }
+        }
+      ]
     },
     "coverage": {
       "type": "array",

@@ -42,7 +42,7 @@ try {
 
   const baselineDir = start('baseline');
   let result = run(['audit', baselineDir, '--name', 'baseline', '--fail-on', 'high']);
-  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.status, 1, result.stderr);
   assert.match(result.stdout, /network:\s+none/);
   for (const extension of ['json', 'md', 'html', 'sarif', 'junit.xml', 'sha256']) {
     const path = join(baselineDir, `baseline.${extension}`);
@@ -98,7 +98,7 @@ try {
 
   const unchangedDir = start('unchanged');
   result = run(['retest', unchangedDir, '--name', 'unchanged', '--baseline', baselinePath, '--fail-on', 'high']);
-  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.status, 1, result.stderr);
   const unchanged = report(join(unchangedDir, 'unchanged.json'));
   assert.equal(unchanged.summary.byBaseline.unchanged, 4);
   assert.ok(unchanged.findings.every((finding) => finding.baseline.state === 'unchanged'));
@@ -125,7 +125,7 @@ try {
   writeFileSync(join(project, 'next.config.mjs'), originalConfig);
   const regressedDir = start('regressed');
   result = run(['retest', regressedDir, '--name', 'regressed', '--baseline', fixedPath, '--fail-on', 'medium']);
-  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.status, 1, result.stderr);
   const regressed = report(join(regressedDir, 'regressed.json'));
   const regression = regressed.findings.find((finding) => finding.rule.id === 'production-source-map-enabled');
   assert.equal(regression.baseline.state, 'regressed');

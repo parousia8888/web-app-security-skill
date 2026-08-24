@@ -46,7 +46,20 @@ function aggregateReasons(items) {
   return [...grouped.values()].sort((left, right) => left.code.localeCompare(right.code));
 }
 
-function normalizeFrameworkCoverage(coverage, hinted, inputCount) {
+function mergeReasonGroups(...groups) {
+  const merged = new Map();
+  for (const reason of groups.flat()) {
+    const entry = merged.get(reason.code) || { code: reason.code, count: 0, samplePaths: [] };
+    entry.count = Math.max(entry.count, reason.count);
+    for (const path of reason.samplePaths) {
+      if (entry.samplePaths.length < 10 && !entry.samplePaths.includes(path)) entry.samplePaths.push(path);
+    }
+    merged.set(reason.code, entry);
+  }
+  return [...merged.values()].sort((left, right) => left.code.localeCompare(right.code));
+}
+
+function normalizeFrameworkCoverage(coverage, hinted, inputCount, inputIssues = []) {
   const applicable = hinted || coverage.counts.eligible > 0;
   if (!applicable) return {
     framework: coverage.framework,
@@ -54,6 +67,20 @@ function normalizeFrameworkCoverage(coverage, hinted, inputCount) {
     counts: { discovered: inputCount, eligible: 0, parsed: 0, incomplete: 0 },
     reasons: [],
   };
+  if (inputIssues.length) {
+    const reasons = mergeReasonGroups(coverage.reasons, aggregateReasons(inputIssues));
+    return {
+      ...coverage,
+      status: 'partial',
+      counts: {
+        discovered: inputCount,
+        eligible: Math.min(inputCount, coverage.counts.eligible + inputIssues.length),
+        parsed: coverage.counts.parsed,
+        incomplete: Math.max(coverage.counts.incomplete, inputIssues.length),
+      },
+      reasons,
+    };
+  }
   if (coverage.status !== 'partial') return { ...coverage, status: 'completed' };
   return coverage;
 }
@@ -149,6 +176,7 @@ export function analyzeRouteSecurity(sourceFiles, options = {}) {
   const actionAnalysis = extractNextServerActions(graph);
   const frameworkCoverage = extracted.map((result) => normalizeFrameworkCoverage(
     result.coverage, hints.has(result.coverage.framework), sourceFiles.length + inputIssues.length,
+    inputIssues,
   ));
   const nextIndex = frameworkCoverage.findIndex((item) => item.framework === 'next-app');
   if (nextIndex >= 0) frameworkCoverage[nextIndex] = mergeFrameworkCoverage(

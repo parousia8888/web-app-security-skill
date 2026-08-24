@@ -268,8 +268,10 @@ condition. The patch is never applied by this command. None of these commands gr
 probe a deployment.
 
 Reports summarize by risk domain, then evidence state, then severity. The default CI policy gates
-confirmed HIGH `security_exposure` and `supply_chain` findings only. Existing `--fail-on` behavior
-continues to set those two domains; opt into another domain explicitly, for example:
+HIGH `confirmed` and `suspected` findings in `security_exposure` and `supply_chain`. A suspected
+lead remains suspected in every artifact; the gate means it needs review before CI can pass, not
+that exploitability was proved. Use `--fail-on never` for a non-blocking first report. Existing
+`--fail-on` behavior continues to set those two domains; opt into another domain explicitly, for example:
 
 ```bash
 webapp-security crawl --site https://example.com --out ./security-report \
@@ -288,7 +290,10 @@ settings and deserialization; five shared checks cover repository and project co
 exact detection and false-positive boundaries are recorded in the
 [JS/TS](docs/js-ts-rule-decisions.md) and [Python](docs/python-rule-decisions.md) decisions. Pattern
 matches do not prove input flow or runtime reachability and remain `suspected` until independently
-reproduced; only a narrow rule-specific observable fact can be `confirmed`.
+reproduced; only a narrow rule-specific observable fact can be `confirmed`. Per-file token and
+operation budgets plus a whole-run operation budget bound the built-in lexical analysis. A limit
+produces `source-evidence-incomplete / unknown`, partial or unavailable coverage, and recorded
+effective limits; it is never reported as a clean scan.
 
 ## Capability boundary
 

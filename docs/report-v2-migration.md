@@ -69,8 +69,8 @@ default. The default policy is:
 
 | Domain | Default threshold |
 |---|---|
-| `security_exposure` | confirmed `high` or `critical` |
-| `supply_chain` | confirmed `high` or `critical` |
+| `security_exposure` | confirmed or suspected `high` or `critical` |
+| `supply_chain` | confirmed or suspected `high` or `critical` |
 | `search_discoverability` | `never` |
 | `reliability` | `never` |
 | `evidence_integrity` | handled by incomplete-evidence exit `3`, not severity inflation |
@@ -81,9 +81,11 @@ The compatible `--fail-on` option sets `security_exposure` and `supply_chain` to
 `--fail-on-domain <domain=threshold>` for explicit overrides; duplicate domains and malformed
 thresholds are rejected. Every report stores the resulting five-domain policy.
 
-When a run contains both a confirmed configured threshold breach and unrelated incomplete evidence,
-exit `1` takes precedence and the report retains both. When there is no confirmed threshold breach
-but required evidence is incomplete, exit `3` applies.
+New reports record `gateStates: [confirmed, suspected]` with
+`actionable_threshold_before_incomplete`. Historical reports without `gateStates` retain their
+confirmed-only interpretation. When a run contains both a configured actionable threshold breach
+and unrelated incomplete evidence, exit `1` takes precedence and the report retains both. When
+there is no actionable threshold breach but required evidence is incomplete, exit `3` applies.
 
 ## Failure behavior
 

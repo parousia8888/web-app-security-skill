@@ -163,6 +163,48 @@ try {
   assert.ok(result.report.coverage.find((entry) => entry.ruleId === 'production-source-map-enabled')
     .reasons.some((reason) => reason.code === 'unsupported_encoding'));
 
+  const hostileSource = join(temp, 'hostile-source');
+  supported(hostileSource);
+  write(join(hostileSource, 'package.json'),
+    '{"private":true,"dependencies":{"express":"fixture"}}\n');
+  write(join(hostileSource, 'src', 'hostile.js'),
+    `const options = {\n${'origin: "*",\n'.repeat(4000)}};\n`);
+  const hostileStarted = performance.now();
+  result = run(hostileSource, 'hostile-source');
+  const hostileElapsed = performance.now() - hostileStarted;
+  assert.equal(result.status, 3, result.stderr);
+  assert.ok(hostileElapsed < 3000, `source operation budget took ${hostileElapsed.toFixed(1)}ms`);
+  assert.equal(result.report.scope.traversal.analysis.effectiveLimits.maxOperationsPerFile, 2000000);
+  assert.ok(result.report.coverage.find((entry) => entry.ruleId === 'cors-wildcard-with-credentials')
+    .reasons.some((reason) => reason.code === 'source_operation_limit'));
+  assert.ok(result.report.findings.some((finding) =>
+    finding.rule.id === 'source-evidence-incomplete' && finding.state === 'unknown'));
+  assert.ok(result.report.findings.some((finding) =>
+    finding.rule.id === 'js-route-security-evidence-incomplete' && finding.state === 'unknown'));
+
+  const normalSource = join(temp, 'normal-source');
+  supported(normalSource);
+  write(join(normalSource, 'src', 'client.js'),
+    'const client = { rejectUnauthorized: false };\n');
+  const normalAudit = auditSource(normalSource);
+  assert.ok(normalAudit.findings.some((finding) => finding.ruleId === 'node-tls-verification-disabled'));
+  assert.equal(normalAudit.coverage['node-tls-verification-disabled'].status, 'completed');
+
+  const globalBudget = join(temp, 'global-source-budget');
+  supported(globalBudget);
+  write(join(globalBudget, 'src', 'a.js'), 'const first = 1;\n');
+  write(join(globalBudget, 'src', 'b.js'), 'const second = 2;\n');
+  const globalAudit = auditSource(globalBudget, undefined, {
+    analysisLimits: {
+      maxTokensPerFile: 1000,
+      maxOperationsPerFile: 10000,
+      maxOperationsTotal: 60,
+    },
+  });
+  assert.ok(globalAudit.integrityIssues.some((issue) =>
+    issue.code === 'source_global_operation_limit'));
+  assert.equal(globalAudit.traversal.analysis.usage.globalLimitReached, true);
+
   const unreadable = join(temp, 'unreadable');
   supported(unreadable);
   const unreadableConfig = join(unreadable, 'astro.config.mjs');

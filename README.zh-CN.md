@@ -246,8 +246,10 @@ Action 都不会自动下载。Checkov 只运行三条固定的根目录 Dockerf
 使用 ephemeral identity，不能作为复测 baseline。`fixed` 必须同时满足 persisted subject/scope
 相同、rule 兼容、本次 coverage 已完成且条件明确不存在。命令不会应用补丁，也不授予部署探测权限。
 
-报告先按风险 domain，再按 evidence state，最后按 severity 汇总。默认 CI policy 只 gate 已确认的
-HIGH `security_exposure` 与 `supply_chain` finding。现有 `--fail-on` 继续同时设置这两个 domain；
+报告先按风险 domain，再按 evidence state，最后按 severity 汇总。默认 CI policy 会 gate
+`security_exposure` 与 `supply_chain` 中 HIGH 级的 `confirmed` 和 `suspected` finding。
+`suspected` 在所有产物中仍是待复核线索；CI 阻断表示必须先处理或审查，并不表示已证明可利用。
+第一次非阻断式检查可使用 `--fail-on never`。现有 `--fail-on` 继续同时设置这两个 domain；
 如需 gate 其他 domain，必须显式指定，例如：
 
 ```bash
@@ -263,6 +265,9 @@ severity、默认证据状态与标准引用分开记录。精确 stable source 
 JavaScript/TypeScript 与 Python 各有 10 条 built-in 风险规则，覆盖危险执行、浏览器或框架配置、
 传输、认证/session 设置与反序列化；另有 5 条共享的仓库和项目配置检查。模式命中不能证明输入流
 或运行时可达性，未经独立复现保持 `suspected`；只有规则明确限定的可观察事实才会是 `confirmed`。
+内置词法分析同时受单文件 token、单文件 operation 与全局 operation 预算约束。触顶会生成
+`source-evidence-incomplete / unknown`，coverage 降为 partial 或 unavailable，并记录实际生效的
+limit；不会被写成干净结果。
 
 ## 能力边界
 

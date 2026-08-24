@@ -242,9 +242,27 @@ export function validateReportV2(report) {
       errors.push(`report.findings[${index}] references missing coverage`);
     }
   }
-  if (!object(report?.policy) || report.policy.precedence !== 'confirmed_threshold_before_incomplete') {
+  const policyPrecedences = [
+    'confirmed_threshold_before_incomplete',
+    'actionable_threshold_before_incomplete',
+  ];
+  if (!object(report?.policy) || !policyPrecedences.includes(report.policy.precedence)) {
     errors.push('report.policy precedence is invalid');
   } else {
+    const gateStates = report.policy.gateStates;
+    if (report.policy.precedence === 'actionable_threshold_before_incomplete') {
+      if (!Array.isArray(gateStates)
+          || gateStates.length !== 2
+          || gateStates[0] !== 'confirmed'
+          || gateStates[1] !== 'suspected') {
+        errors.push('report.policy.gateStates must be [confirmed, suspected] for actionable precedence');
+      }
+    } else if (gateStates !== undefined
+        && (!Array.isArray(gateStates)
+          || gateStates.length !== 1
+          || gateStates[0] !== 'confirmed')) {
+      errors.push('legacy report.policy.gateStates must be omitted or [confirmed]');
+    }
     const policyDomains = new Set();
     if (!Array.isArray(report.policy.thresholds)) {
       errors.push('report.policy.thresholds must be an array');

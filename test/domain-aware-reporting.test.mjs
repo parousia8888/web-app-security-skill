@@ -76,7 +76,8 @@ const defaultReport = report();
 assert.equal(defaultReport.summary.byDomain.security_exposure.byState.confirmed.bySeverity.high, 1);
 assert.equal(defaultReport.summary.byDomain.supply_chain.byState.suspected.bySeverity.medium, 1);
 assert.equal(defaultReport.summary.byDomain.evidence_integrity.byState.unknown.bySeverity.high, 1);
-assert.equal(exitCodeV2(defaultReport), 1, 'default policy gates confirmed security HIGH');
+assert.deepEqual(defaultReport.policy.gateStates, ['confirmed', 'suspected']);
+assert.equal(exitCodeV2(defaultReport), 1, 'default policy gates actionable security HIGH');
 
 const discoverabilityOnly = report(policyForFailOn('never', ['search_discoverability=high']));
 assert.equal(exitCodeV2(discoverabilityOnly), 1, 'explicit discoverability gate is enforced');

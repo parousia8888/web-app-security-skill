@@ -72,7 +72,8 @@ try {
   const observations = JSON.parse(readFileSync(join(out, 'aws-fixture.observations.json'), 'utf8'));
   assert.equal(report.schemaVersion, 2);
   assert.equal(report.ruleset.adapters[0].id, 'builtin-aws-exposure');
-  assert.equal(report.policy.precedence, 'confirmed_threshold_before_incomplete');
+  assert.equal(report.policy.precedence, 'actionable_threshold_before_incomplete');
+  assert.deepEqual(report.policy.gateStates, ['confirmed', 'suspected']);
   assert.ok(report.coverage.some((entry) => entry.status === 'unavailable'));
   assert.ok(report.findings.some((finding) => finding.state === 'unknown'));
   assert.equal(observations.accountDigest.length, 64);

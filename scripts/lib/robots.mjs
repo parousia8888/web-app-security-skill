@@ -36,15 +36,60 @@ export function parseRobots(text) {
   return { groups, sitemaps };
 }
 
-export function ruleToRegex(pattern) {
+const matcherCache = new WeakMap();
+
+function compileRule(pattern) {
   if (pattern === '') return null;
-  let re = '^';
-  for (const ch of pattern) {
-    if (ch === '*') re += '.*';
-    else if (ch === '$') re += '$';
-    else re += ch.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+  const anchored = pattern.endsWith('$');
+  const body = anchored ? pattern.slice(0, -1) : pattern;
+  return {
+    anchored,
+    onlyWildcards: body.length > 0 && /^\*+$/.test(body),
+    leadingWildcard: body.startsWith('*'),
+    trailingWildcard: body.endsWith('*'),
+    segments: body.split('*').filter(Boolean),
+  };
+}
+
+function compiledRuleMatches(compiled, path) {
+  if (!compiled) return false;
+  const { anchored, leadingWildcard, onlyWildcards, trailingWildcard, segments } = compiled;
+  if (!segments.length) return onlyWildcards || path.length === 0;
+
+  let cursor = 0;
+  let segmentIndex = 0;
+  if (!leadingWildcard) {
+    if (!path.startsWith(segments[0])) return false;
+    cursor = segments[0].length;
+    segmentIndex = 1;
   }
-  return new RegExp(re);
+
+  for (; segmentIndex < segments.length; segmentIndex += 1) {
+    const segment = segments[segmentIndex];
+    const isLast = segmentIndex === segments.length - 1;
+    if (isLast && anchored && !trailingWildcard) {
+      const start = path.length - segment.length;
+      return start >= cursor && path.endsWith(segment);
+    }
+    const found = path.indexOf(segment, cursor);
+    if (found === -1) return false;
+    cursor = found + segment.length;
+  }
+
+  return !anchored || trailingWildcard || cursor === path.length;
+}
+
+export function ruleMatches(pattern, path) {
+  return compiledRuleMatches(compileRule(pattern), String(path));
+}
+
+function cachedRuleMatches(rule, path) {
+  let compiled = matcherCache.get(rule);
+  if (compiled === undefined) {
+    compiled = compileRule(rule.path);
+    matcherCache.set(rule, compiled);
+  }
+  return compiledRuleMatches(compiled, path);
 }
 
 /** Most-specific group wins (no merging with `*`), longest match wins, Allow breaks ties. */
@@ -59,8 +104,7 @@ export function robotsVerdict(robots, uaToken, path) {
 
   let best = null;
   for (const rule of group.rules) {
-    const re = ruleToRegex(rule.path);
-    if (!re || !re.test(path)) continue;
+    if (!cachedRuleMatches(rule, path)) continue;
     const len = rule.path.length;
     if (!best || len > best.len || (len === best.len && rule.type === 'allow')) best = { ...rule, len };
   }

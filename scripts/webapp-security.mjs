@@ -142,7 +142,7 @@ function launcherTargetsInstall(launcher, destinations) {
 
 const include = [
   'SKILL.md', 'VERSION', 'LICENSE', 'KNOWN_LIMITATIONS.md', 'THIRD_PARTY_NOTICES.md',
-  'agents', 'assets', 'examples', 'references', 'scripts',
+  '.claude-plugin', 'agents', 'assets', 'examples', 'references', 'rules', 'scripts',
   'docs/capabilities.json', 'docs/capabilities.md', 'docs/security-scope.schema.json',
   'docs/finding.schema.json', 'docs/report.schema.json', 'docs/finding-v2.schema.json',
   'docs/report-v2.schema.json', 'docs/report-v2-migration.md', 'docs/finding-v3.schema.json',
@@ -156,8 +156,12 @@ const include = [
   'docs/regressions/v0.5.4-real-world-regressions.md',
   'docs/regressions/v0.6.0-route-real-world-regressions.json',
   'docs/regressions/v0.6.0-route-real-world-regressions.md',
+  'docs/regressions/v0.7.0-access-control-real-world-regressions.json',
+  'docs/regressions/v0.7.0-access-control-real-world-regressions.md',
   'docs/reviews/v0.6.0-route-review.json',
   'docs/reviews/v0.6.0-route-review.md',
+  'docs/reviews/v0.7.0-access-control-review.json',
+  'docs/reviews/v0.7.0-access-control-review.md',
   'docs/route-security-v1.schema.json',
   'docs/route-security-v2.schema.json',
 ];

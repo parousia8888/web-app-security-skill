@@ -9,6 +9,7 @@ const MAX_ARRAY = 200;
 const MAX_KEYS = 200;
 const SECRET_KEY = /^(authorization|cookie|set-cookie|password|passwd|secret|token|api[-_]?key|access[-_]?key|private[-_]?key)$/i;
 const SENSITIVE_ID_KEY = /^(account|accountId|user|userName|bucket|bucketName|securityGroup|groupId|arn)$/i;
+const PRIVATE_PATH = /(?:\/(?:Users|home|private)\/[^\s"'<>),;\]}]+|[A-Za-z]:\\Users\\[^\s"'<>),;\]}]+)/g;
 
 const digest = (value) => createHash('sha256').update(String(value)).digest('hex').slice(0, 16);
 
@@ -24,15 +25,21 @@ function cleanString(input) {
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
     .replace(/-----BEGIN [^-]*PRIVATE KEY-----[\s\S]*?-----END [^-]*PRIVATE KEY-----/gi, '[REDACTED_PRIVATE_KEY]')
     .replace(/\b(authorization|cookie|set-cookie)\s*:\s*[^\r\n]+/gi, '$1: [REDACTED]')
+    .replace(/\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]+/gi, '$1 [REDACTED]')
     .replace(/\b(password|passwd|secret|token|api[-_]?key|access[-_]?key)\s*[=:]\s*([^\s,;]+)/gi, '$1=[REDACTED]')
     .replace(/([?&](?:access_token|token|secret|password|api_key|key|code)=)[^&#\s]*/gi, '$1[REDACTED]')
     .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[REDACTED_EMAIL]')
     .replace(/\b\d{12}\b/g, '[REDACTED_AWS_ACCOUNT]');
-  if (/^(?:\/Users\/|\/home\/|\/private\/|[A-Za-z]:\\Users\\)/.test(value)) {
-    value = `[REDACTED_PRIVATE_PATH:${digest(value)}]`;
-  }
+  value = value.replace(PRIVATE_PATH, (path) => `[REDACTED_PRIVATE_PATH:${digest(path)}]`);
   if (value.length > MAX_STRING) value = `${value.slice(0, MAX_STRING)}...[TRUNCATED]`;
   return value;
+}
+
+function isAuthorizationEvidenceModel(key, entries) {
+  if (!/^authorization$/i.test(key)) return false;
+  const names = new Set(entries.map(([itemKey]) => itemKey));
+  return ['state', 'signals', 'boundary'].every((name) => names.has(name))
+    || ['status', 'basis', 'proof', 'note'].every((name) => names.has(name));
 }
 
 export function sanitizeEvidence(value, key = '') {
@@ -43,10 +50,15 @@ export function sanitizeEvidence(value, key = '') {
     }
     return cleanString(value);
   }
-  if (Array.isArray(value)) return value.slice(0, MAX_ARRAY).map((item) => sanitizeEvidence(item));
+  if (Array.isArray(value)) return value.slice(0, MAX_ARRAY).map((item) => sanitizeEvidence(item, key));
   if (value && typeof value === 'object') {
-    return Object.fromEntries(Object.entries(value).slice(0, MAX_KEYS)
-      .map(([itemKey, item]) => [cleanString(itemKey), sanitizeEvidence(item, itemKey)]));
+    const entries = Object.entries(value).slice(0, MAX_KEYS);
+    const inheritSensitiveKey = SECRET_KEY.test(key) && !isAuthorizationEvidenceModel(key, entries);
+    return Object.fromEntries(entries
+      .map(([itemKey, item]) => [
+        cleanString(itemKey),
+        sanitizeEvidence(item, inheritSensitiveKey ? key : itemKey),
+      ]));
   }
   return value;
 }

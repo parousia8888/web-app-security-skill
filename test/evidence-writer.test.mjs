@@ -24,6 +24,18 @@ try {
     accountId: '123456789012',
     message: `token=${secret}\u0000<script>alert(1)</script>${'x'.repeat(5000)}`,
     privateKey,
+    nestedHeaders: { authorization: { value: `Bearer ${secret}` } },
+    credentialObjects: {
+      authorization: { scheme: 'Bearer', credentials: secret },
+      cookie: { name: 'session', value: secret },
+    },
+    nestedTokens: [{ token: [secret, { value: secret }] }],
+    diagnostic: `scanner failed while reading /Users/${secret}/project/src/app.js`,
+    route: {
+      authorization: {
+        state: 'candidate_observed', signals: ['route-guard'], boundary: 'Static evidence only.',
+      },
+    },
     list: Array.from({ length: 250 }, (_, index) => `${index}`),
   });
   const files = writeAtomicEvidenceBundle(output, [
@@ -36,7 +48,10 @@ try {
   const serialized = Object.values(files).map((path) => readFileSync(path, 'utf8')).join('\n');
   assert.doesNotMatch(serialized, new RegExp(secret));
   assert.doesNotMatch(serialized, /BEGIN PRIVATE KEY|owner-/);
+  assert.doesNotMatch(serialized, /\/Users\//);
   assert.match(serialized, /REDACTED/);
+  assert.equal(sanitized.route.authorization.state, 'candidate_observed',
+    'authorization evidence models must not be mistaken for credential values');
   assert.equal(sanitized.list.length, 200);
   assert.ok(sanitized.message.length < 4200);
   assert.doesNotMatch(sanitized.message, /\u0000/);
@@ -53,7 +68,12 @@ try {
     severity: 'low',
     state: 'confirmed',
     summary: `Authorization: Bearer ${secret}\n<script>alert(1)</script>`,
-    evidence: { subject: 'lockfile', token: secret, email: `${secret}@example.invalid` },
+    evidence: {
+      subject: 'lockfile', token: secret, email: `${secret}@example.invalid`,
+      headers: { authorization: { value: `Bearer ${secret}` } },
+      nested: [{ token: [secret, { value: secret }] }],
+      diagnostic: `failed at /home/${secret}/project/src/server.js`,
+    },
     remediation: `Remove cookie: session=${secret}`,
     retest: `password=${secret}`,
   });
@@ -78,6 +98,7 @@ try {
   }] });
   const rendered = Object.values(renderedFiles).map((path) => readFileSync(path, 'utf8')).join('\n');
   assert.doesNotMatch(rendered, new RegExp(secret));
+  assert.doesNotMatch(rendered, /\/(?:Users|home|private)\//);
   JSON.parse(readFileSync(renderedFiles.json, 'utf8'));
   JSON.parse(readFileSync(renderedFiles.sarif, 'utf8'));
   JSON.parse(readFileSync(renderedFiles['report.observations.json'], 'utf8'));

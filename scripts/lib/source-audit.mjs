@@ -9,6 +9,7 @@ import {
   classifyPythonSource, inspectPythonSource, PYTHON_SOURCE_RULE_IDS,
 } from './python-source-audit.mjs';
 import { DEFAULT_SOURCE_TRAVERSAL_LIMITS, sourceTraversalLimits } from './project-identity.mjs';
+import { createSourceAnalysisSession, sourceAnalysisLimits } from './source-analysis-budget.mjs';
 import { analyzeRouteSecurity, ROUTE_INTEGRITY_RULE_ID } from './route-security-audit.mjs';
 import { SOURCE_RULES } from './source-rules.mjs';
 
@@ -21,6 +22,9 @@ const ENV_FILE = /^\.env(?:\.[a-z0-9_-]+)?$/i;
 const ENV_TEMPLATE = /^\.env\.(?:example|sample|template|dist|defaults)$/i;
 const MAX_REASON_SAMPLES = 10;
 const SOURCE_RULE_IDS = SOURCE_RULES.map((rule) => rule.id);
+const ANALYSIS_LIMIT_CODES = new Set([
+  'source_token_limit', 'source_operation_limit', 'source_global_operation_limit',
+]);
 
 const posix = (value) => value.split(sep).join('/');
 
@@ -294,6 +298,9 @@ export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMIT
   const root = resolve(projectRoot);
   if (!existsSync(root) || !statSync(root).isDirectory()) throw new Error(`project root is invalid: ${projectRoot}`);
   const effectiveLimits = sourceTraversalLimits(limits);
+  const effectiveAnalysisLimits = sourceAnalysisLimits(evidenceOptions.analysisLimits);
+  const analysisSession = createSourceAnalysisSession(effectiveAnalysisLimits);
+  const recordedLimits = { ...effectiveLimits, sourceAnalysis: effectiveAnalysisLimits };
   const traversal = walk(root, effectiveLimits);
   const { files } = traversal;
   const findings = [];
@@ -406,15 +413,17 @@ export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMIT
       noteIntegrity(loaded.outcome, loaded.code, file.path);
       continue;
     }
-    routeSources.push({ path: file.path, text: loaded.text });
-    const inspected = inspectJsTsSource(file.path, loaded.text);
+    const inspected = inspectJsTsSource(file.path, loaded.text, { analysisSession });
     if (inspected.error) {
+      const outcome = ANALYSIS_LIMIT_CODES.has(inspected.error.code) ? 'truncated' : 'errors';
+      routeInputIssues.push({ code: inspected.error.code, path: file.path });
       for (const ruleId of JS_TS_SOURCE_RULE_IDS) {
-        account(trackers[ruleId], 'errors', inspected.error.code, file.path);
+        account(trackers[ruleId], outcome, inspected.error.code, file.path);
       }
-      noteIntegrity('errors', inspected.error.code, file.path);
+      noteIntegrity(outcome, inspected.error.code, file.path);
       continue;
     }
+    routeSources.push({ path: file.path, text: loaded.text });
     for (const ruleId of JS_TS_SOURCE_RULE_IDS) account(trackers[ruleId], 'scanned', null, file.path);
     for (const finding of inspected.findings) findings.push(createFinding(finding));
   }
@@ -460,12 +469,13 @@ export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMIT
       noteIntegrity(loaded.outcome, loaded.code, file.path);
       continue;
     }
-    const inspected = inspectPythonSource(file.path, loaded.text);
+    const inspected = inspectPythonSource(file.path, loaded.text, { analysisSession });
     if (inspected.error) {
+      const outcome = ANALYSIS_LIMIT_CODES.has(inspected.error.code) ? 'truncated' : 'errors';
       for (const ruleId of PYTHON_SOURCE_RULE_IDS) {
-        account(trackers[ruleId], 'errors', inspected.error.code, file.path);
+        account(trackers[ruleId], outcome, inspected.error.code, file.path);
       }
-      noteIntegrity('errors', inspected.error.code, file.path);
+      noteIntegrity(outcome, inspected.error.code, file.path);
       continue;
     }
     for (const ruleId of PYTHON_SOURCE_RULE_IDS) account(trackers[ruleId], 'scanned', null, file.path);
@@ -615,8 +625,8 @@ export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMIT
       severity: 'high',
       state: 'unknown',
       summary: 'One or more eligible source inputs could not be traversed or inspected, so the absence of other findings is not a complete result.',
-      evidence: { subject: 'source-traversal', reasons, effectiveLimits },
-      remediation: 'Review the bounded coverage reasons, restore readable supported inputs or raise a limit within its allowed range, then rerun the audit.',
+      evidence: { subject: 'source-traversal', reasons, effectiveLimits: recordedLimits },
+      remediation: 'Review the bounded coverage reasons, restore readable supported inputs, reduce pathological or generated input, or adjust a documented traversal boundary before rerunning.',
       retest: 'Rerun with the same subject and scope until every required source rule has completed coverage.',
     }));
   }
@@ -630,7 +640,8 @@ export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMIT
     coverage,
     routeAnalysis,
     traversal: {
-      effectiveLimits,
+      effectiveLimits: recordedLimits,
+      analysis: analysisSession.snapshot(),
       entriesSeen: traversal.entriesSeen,
       filesDiscovered: files.length,
       stopped: traversal.stopped,

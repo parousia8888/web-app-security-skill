@@ -142,6 +142,11 @@ assert.deepEqual(classifyJsTsSource('README.md'),
 assert.equal(tokenizeJsTs('const x = "unterminated').error.code, 'unterminated_string_literal');
 assert.equal(tokenizeJsTs('const x = `unterminated').error.code, 'unterminated_string_literal');
 assert.equal(tokenizeJsTs('/* unterminated').error.code, 'unterminated_block_comment');
+const tokenLimited = inspectJsTsSource('src/token-limit.ts', 'const first = 1; const second = 2;\n', {
+  analysisLimits: { maxTokensPerFile: 4 },
+});
+assert.equal(tokenLimited.error.code, 'source_token_limit');
+assert.deepEqual(tokenLimited.findings, []);
 
 const temp = mkdtempSync(join(tmpdir(), 'webapp-security-js-ts-'));
 const write = (path, contents) => {

@@ -23,7 +23,8 @@ export const DEFAULT_POLICY = {
     { domain: 'reliability', failOn: 'never' },
     { domain: 'evidence_integrity', failOn: 'never' },
   ],
-  precedence: 'confirmed_threshold_before_incomplete',
+  gateStates: ['confirmed', 'suspected'],
+  precedence: 'actionable_threshold_before_incomplete',
 };
 
 export function policyForFailOn(failOn, domainOverrides = []) {
@@ -48,6 +49,7 @@ export function policyForFailOn(failOn, domainOverrides = []) {
           ? failOn
           : threshold.failOn),
     })),
+    gateStates: [...DEFAULT_POLICY.gateStates],
     precedence: DEFAULT_POLICY.precedence,
   };
 }
@@ -611,9 +613,12 @@ export function readBaselineV2(path) {
 
 export function failsThresholdV2(report) {
   const thresholds = new Map(report.policy.thresholds.map((entry) => [entry.domain, entry.failOn]));
+  const gateStates = new Set(Array.isArray(report.policy.gateStates)
+    ? report.policy.gateStates
+    : ['confirmed']);
   return report.findings.some((finding) => {
     const failOn = thresholds.get(finding.domain) || 'never';
-    if (failOn === 'never' || finding.state !== 'confirmed' || finding.baseline.state === 'fixed') return false;
+    if (failOn === 'never' || !gateStates.has(finding.state) || finding.baseline.state === 'fixed') return false;
     return severityRank.get(finding.severity) <= severityRank.get(failOn);
   });
 }

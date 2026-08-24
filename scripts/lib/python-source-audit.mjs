@@ -1,3 +1,8 @@
+import {
+  analysisBudgetFor, bindAnalysisBudget, chargeAnalysisOperations,
+  createSourceAnalysisSession, isSourceAnalysisLimitError,
+} from './source-analysis-budget.mjs';
+
 export const PYTHON_SOURCE_RULE_IDS = [
   'python-dynamic-code-execution',
   'python-shell-command-execution',
@@ -23,6 +28,9 @@ const SOURCE_EXTENSION = /\.py$/i;
 const GENERATED_FILE = /(?:^|\/)(?:generated|vendor|migrations)(?:\/|$)|(?:_pb2|\.generated)\.py$/i;
 const TEST_FILE = /(?:^|\/)(?:test|tests|fixtures)(?:\/|$)|(?:^|\/)(?:test_.*|.*_test)\.py$/i;
 const PLACEHOLDER = /^(?:change[-_ ]?me|replace[-_ ]?me|example|placeholder|test|testing|development|dev|secret|your[-_ ].*|<.*>|\$\{.*\})$/i;
+const STRING_START_AT = /(?:[rRuUbBfF]{0,2})(?:'''|"""|'|")/y;
+const IDENTIFIER_AT = /[A-Za-z_]\w*/y;
+const NUMBER_AT = /(?:0[xob][0-9a-f_]+|\d+(?:\.\d+)?)/iy;
 
 export function classifyPythonSource(path) {
   if (!SOURCE_EXTENSION.test(path)) return { eligible: false, reason: 'unsupported_python_extension' };
@@ -32,7 +40,8 @@ export function classifyPythonSource(path) {
 }
 
 function stringStart(text, index) {
-  const match = /^(?:[rRuUbBfF]{0,2})(?:'''|"""|'|")/.exec(text.slice(index));
+  STRING_START_AT.lastIndex = index;
+  const match = STRING_START_AT.exec(text);
   if (!match) return null;
   const quote = /'''|"""|'|"/.exec(match[0])?.[0];
   if (!quote) return null;
@@ -41,15 +50,17 @@ function stringStart(text, index) {
   return { prefix, quote, length: match[0].length };
 }
 
-export function tokenizePython(text) {
-  const tokens = [];
+function tokenizePythonWithBudget(text, budget) {
+  const tokens = bindAnalysisBudget([], budget);
   const delimiters = [];
   let index = 0;
   let line = 1;
   const push = (type, value, start, startLine, extra = {}) => {
+    budget.token();
     tokens.push({ type, value, start, line: startLine, ...extra });
   };
   while (index < text.length) {
+    budget.operation();
     const character = text[index];
     if (/\s/.test(character)) {
       if (character === '\n') line += 1;
@@ -57,7 +68,10 @@ export function tokenizePython(text) {
       continue;
     }
     if (character === '#') {
-      while (index < text.length && text[index] !== '\n') index += 1;
+      while (index < text.length && text[index] !== '\n') {
+        budget.operation();
+        index += 1;
+      }
       continue;
     }
     const string = stringStart(text, index);
@@ -68,6 +82,7 @@ export function tokenizePython(text) {
       let value = '';
       let closed = false;
       while (index < text.length) {
+        budget.operation();
         if (text.startsWith(string.quote, index)) {
           index += string.quote.length;
           closed = true;
@@ -93,13 +108,15 @@ export function tokenizePython(text) {
       });
       continue;
     }
-    const identifier = /^[A-Za-z_]\w*/.exec(text.slice(index));
+    IDENTIFIER_AT.lastIndex = index;
+    const identifier = IDENTIFIER_AT.exec(text);
     if (identifier) {
       push('identifier', identifier[0], index, line);
       index += identifier[0].length;
       continue;
     }
-    const number = /^(?:0[xob][0-9a-f_]+|\d+(?:\.\d+)?)/i.exec(text.slice(index));
+    NUMBER_AT.lastIndex = index;
+    const number = NUMBER_AT.exec(text);
     if (number) {
       push('number', number[0], index, line);
       index += number[0].length;
@@ -126,11 +143,28 @@ export function tokenizePython(text) {
   return { tokens, error: null };
 }
 
+export function tokenizePython(text, { analysisBudget = null, analysisLimits = {} } = {}) {
+  const localSession = analysisBudget ? null : createSourceAnalysisSession(analysisLimits);
+  const budget = analysisBudget || localSession.startFile();
+  let completed = false;
+  try {
+    const result = tokenizePythonWithBudget(text, budget);
+    completed = result.error === null;
+    return result;
+  } catch (error) {
+    if (isSourceAnalysisLimitError(error)) return { tokens: [], error: { code: error.code, line: null } };
+    throw error;
+  } finally {
+    if (localSession) budget.finish(completed);
+  }
+}
+
 const valueAt = (tokens, index) => tokens[index]?.value;
 
 function matchingToken(tokens, start, open = '(', close = ')') {
   let depth = 0;
   for (let index = start; index < tokens.length; index += 1) {
+    chargeAnalysisOperations(tokens);
     if (valueAt(tokens, index) === open) depth += 1;
     if (valueAt(tokens, index) === close) {
       depth -= 1;
@@ -143,6 +177,7 @@ function matchingToken(tokens, start, open = '(', close = ')') {
 function dottedName(tokens, start, end) {
   let value = '';
   for (let index = start; index < end; index += 1) {
+    chargeAnalysisOperations(tokens);
     if (tokens[index]?.type === 'identifier' || valueAt(tokens, index) === '.') value += valueAt(tokens, index);
     else break;
   }
@@ -153,17 +188,22 @@ function pythonBindings(tokens) {
   const namespaces = new Map();
   const named = new Map();
   for (let index = 0; index < tokens.length; index += 1) {
+    chargeAnalysisOperations(tokens);
     if (valueAt(tokens, index) === 'import' && valueAt(tokens, index - 1) !== 'from') {
       let cursor = index + 1;
       const statementLine = tokens[index].line;
       while (cursor < tokens.length && (tokens[cursor].line === statementLine
         || [',', 'as', '.'].includes(valueAt(tokens, cursor)))) {
+        chargeAnalysisOperations(tokens);
         if (tokens[cursor]?.type !== 'identifier') {
           cursor += 1;
           continue;
         }
         const moduleStart = cursor;
-        while (valueAt(tokens, cursor + 1) === '.' && tokens[cursor + 2]?.type === 'identifier') cursor += 2;
+        while (valueAt(tokens, cursor + 1) === '.' && tokens[cursor + 2]?.type === 'identifier') {
+          chargeAnalysisOperations(tokens);
+          cursor += 2;
+        }
         const moduleName = dottedName(tokens, moduleStart, cursor + 1);
         let local = moduleName.split('.')[0];
         if (valueAt(tokens, cursor + 1) === 'as' && tokens[cursor + 2]?.type === 'identifier') {
@@ -180,7 +220,10 @@ function pythonBindings(tokens) {
     if (valueAt(tokens, index) !== 'from') continue;
     let importIndex = index + 1;
     while (importIndex < tokens.length && valueAt(tokens, importIndex) !== 'import'
-      && importIndex - index < 20) importIndex += 1;
+      && importIndex - index < 20) {
+      chargeAnalysisOperations(tokens);
+      importIndex += 1;
+    }
     if (valueAt(tokens, importIndex) !== 'import') continue;
     const moduleName = dottedName(tokens, index + 1, importIndex);
     let cursor = importIndex + 1;
@@ -188,6 +231,7 @@ function pythonBindings(tokens) {
     const end = wrapped ? matchingToken(tokens, cursor) : -1;
     if (wrapped) cursor += 1;
     while (cursor < tokens.length && (wrapped ? cursor < end : tokens[cursor].line === tokens[importIndex].line)) {
+      chargeAnalysisOperations(tokens);
       if (tokens[cursor]?.type !== 'identifier') {
         cursor += 1;
         continue;
@@ -221,36 +265,52 @@ function resolvedCall(tokens, index, bindings) {
 }
 
 function splitArguments(tokens, open, close) {
-  const result = [];
+  const budget = analysisBudgetFor(tokens);
+  const result = bindAnalysisBudget([], budget);
   let start = open + 1;
   const stack = [];
   for (let index = open + 1; index < close; index += 1) {
+    chargeAnalysisOperations(tokens);
     const value = valueAt(tokens, index);
     if (['(', '[', '{'].includes(value)) stack.push(value);
     if ([')', ']', '}'].includes(value)) stack.pop();
     if (value === ',' && !stack.length) {
-      result.push(tokens.slice(start, index));
+      if (start < index) result.push(bindAnalysisBudget(tokens.slice(start, index), budget));
       start = index + 1;
     }
   }
-  if (start < close) result.push(tokens.slice(start, close));
-  return result.filter((argument) => argument.length);
+  if (start < close) result.push(bindAnalysisBudget(tokens.slice(start, close), budget));
+  return result;
 }
 
 function keyword(argumentsList, name) {
-  return argumentsList.find((argument) => valueAt(argument, 0) === name && valueAt(argument, 1) === '=')?.slice(2) || null;
+  for (const argument of argumentsList) {
+    chargeAnalysisOperations(argumentsList);
+    if (valueAt(argument, 0) === name && valueAt(argument, 1) === '=') {
+      return bindAnalysisBudget(argument.slice(2), analysisBudgetFor(argument));
+    }
+  }
+  return null;
 }
 
 function literalIs(argument, expected) {
   if (!argument) return false;
   if (argument.length === 1) return valueAt(argument, 0) === expected;
-  return valueAt(argument, 0) === '[' && valueAt(argument, argument.length - 1) === ']'
-    && argument.slice(1, -1).some((token) => token.type === 'string' && token.value === expected);
+  if (valueAt(argument, 0) !== '[' || valueAt(argument, argument.length - 1) !== ']') return false;
+  for (let index = 1; index < argument.length - 1; index += 1) {
+    chargeAnalysisOperations(argument);
+    if (argument[index].type === 'string' && argument[index].value === expected) return true;
+  }
+  return false;
 }
 
 function qualifiedName(argument) {
-  return (argument || []).filter((token) => token.type === 'identifier' || token.value === '.')
-    .map((token) => token.value).join('');
+  let result = '';
+  for (const token of argument || []) {
+    chargeAnalysisOperations(argument);
+    if (token.type === 'identifier' || token.value === '.') result += token.value;
+  }
+  return result;
 }
 
 function callDetails(tokens, call) {
@@ -317,8 +377,8 @@ const OUTPUT = {
   },
 };
 
-export function inspectPythonSource(path, text) {
-  const parsed = tokenizePython(text);
+function inspectPythonSourceWithBudget(path, text, budget) {
+  const parsed = tokenizePython(text, { analysisBudget: budget });
   if (parsed.error) return { findings: [], error: parsed.error };
   const { tokens } = parsed;
   const bindings = pythonBindings(tokens);
@@ -334,6 +394,7 @@ export function inspectPythonSource(path, text) {
   };
 
   for (let index = 0; index < tokens.length; index += 1) {
+    chargeAnalysisOperations(tokens);
     const call = resolvedCall(tokens, index, bindings);
     if (call?.module === 'flask' && call.operation === 'Flask' && valueAt(tokens, index - 1) === '='
         && tokens[index - 2]?.type === 'identifier') flaskApps.add(valueAt(tokens, index - 2));
@@ -343,6 +404,7 @@ export function inspectPythonSource(path, text) {
   }
 
   for (let index = 0; index < tokens.length; index += 1) {
+    chargeAnalysisOperations(tokens);
     const token = tokens[index];
     if (['eval', 'exec'].includes(token.value) && valueAt(tokens, index + 1) === '('
         && !bindings.named.has(token.value) && valueAt(tokens, index - 1) !== '.') {
@@ -492,13 +554,38 @@ export function inspectPythonSource(path, text) {
   }
 
   if (/(?:^|\/)settings\.py$/i.test(path)) {
-    const allowAll = tokens.find((token, index) => token.value === 'CORS_ALLOW_ALL_ORIGINS'
-      && valueAt(tokens, index + 1) === '=' && valueAt(tokens, index + 2) === 'True');
-    const credentials = tokens.some((token, index) => token.value === 'CORS_ALLOW_CREDENTIALS'
-      && valueAt(tokens, index + 1) === '=' && valueAt(tokens, index + 2) === 'True');
+    let allowAll = null;
+    let credentials = false;
+    for (let index = 0; index < tokens.length; index += 1) {
+      chargeAnalysisOperations(tokens);
+      if (tokens[index].value === 'CORS_ALLOW_ALL_ORIGINS'
+          && valueAt(tokens, index + 1) === '=' && valueAt(tokens, index + 2) === 'True') {
+        allowAll = tokens[index];
+      }
+      if (tokens[index].value === 'CORS_ALLOW_CREDENTIALS'
+          && valueAt(tokens, index + 1) === '=' && valueAt(tokens, index + 2) === 'True') {
+        credentials = true;
+      }
+    }
     if (allowAll && credentials) {
       add('python-cors-wildcard-with-credentials', allowAll, 'django_cors_wildcard_credentials');
     }
   }
   return { findings, error: null };
+}
+
+export function inspectPythonSource(path, text, { analysisSession = null, analysisLimits = {} } = {}) {
+  const session = analysisSession || createSourceAnalysisSession(analysisLimits);
+  const budget = session.startFile();
+  let completed = false;
+  try {
+    const result = inspectPythonSourceWithBudget(path, text, budget);
+    completed = result.error === null;
+    return result;
+  } catch (error) {
+    if (isSourceAnalysisLimitError(error)) return { findings: [], error: { code: error.code, line: null } };
+    throw error;
+  } finally {
+    budget.finish(completed);
+  }
 }

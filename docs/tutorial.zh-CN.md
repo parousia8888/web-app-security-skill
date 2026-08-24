@@ -7,6 +7,7 @@
 3 条证据完整性规则，并加深 JavaScript/TypeScript 和 Python 覆盖。受支持的 Express、NestJS 与
 Next.js App Router 项目还会得到带有边界访问控制链的路由安全审查，并单独列出 Next.js Server
 Action。它仍然是范围明确的首次检查，不是通用 SAST、自动 BOLA 证明，也不证明项目已经安全。
+实际生效的词法 token 与 operation 预算会写入报告；预算触顶属于证据不完整并退出 `3`，不是通过。
 
 ## 环境要求
 
@@ -89,9 +90,11 @@ webapp-security audit .webapp-security/runs/first-review \
 `report.junit.xml` 和 `proposed.patch`。JSON 用于自动化，sidecar 用于本地完整性检查，
 Markdown/HTML 用于审查，SARIF/JUnit 用于 CI；patch 只是提案。
 
-默认 policy gate 已确认的 HIGH security 与 supply-chain finding。报告依次按 domain、evidence state
-和 severity 汇总。`--fail-on` 保持兼容的 security/supply-chain threshold；只有当其他 domain 确实
-属于 CI gate 时，再添加可重复的 domain override：
+默认 policy 会 gate HIGH 级的 confirmed 与 suspected security/supply-chain finding。
+suspected 证据不会被升级；退出码 `1` 表示这条线索必须先审查，并不表示已经证明可利用。
+第一次非阻断式报告可用 `--fail-on never`。报告依次按 domain、evidence state 和 severity 汇总。
+`--fail-on` 保持兼容的 security/supply-chain threshold；只有当其他 domain 确实属于 CI gate 时，
+再添加可重复的 domain override：
 
 ```bash
 webapp-security audit .webapp-security/runs/first-review \
@@ -197,7 +200,7 @@ webapp-security rebind /path/to/moved-project \
 | `webapp-security: command not found` | 把 `~/.local/bin` 加入 `PATH`，或运行 checkout 中的 `node scripts/webapp-security.mjs` |
 | 退出码 `1` | Finding 达到 `--fail-on` 阈值；证据仍会写出 |
 | 退出码 `2` | 用法、范围、授权或证据准备失败；不能当作通过 |
-| 退出码 `3` | 必需证据为 unknown、partial 或 unavailable，且没有优先级更高的已确认阈值 finding |
+| 退出码 `3` | 必需证据为 unknown、partial 或 unavailable，且没有优先级更高的 actionable 阈值 finding |
 | `refusing to overwrite existing evidence` | 使用新的 `--out` 或报告名，并保留原 baseline |
 | Stack 不支持或有歧义 | 保留 `unknown`，转入 agent-guided 方法 |
 | 远程检查被阻止 | 仅对自有目标补充已记录授权和显式确认 |

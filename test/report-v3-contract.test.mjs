@@ -75,7 +75,8 @@ const report = createReportV3({
 
 assert.deepEqual(validateRuntimeReportV3(report), []);
 assert.equal(report.schemaVersion, 3);
-assert.equal(exitCodeV3(report), 3, 'suspected plus unknown evidence remains incomplete, not a confirmed gate breach');
+assert.deepEqual(report.policy.gateStates, ['confirmed', 'suspected']);
+assert.equal(exitCodeV3(report), 1, 'actionable suspected HIGH takes precedence over incomplete evidence');
 assert.equal(validateExplanationV3(cookieExplanation).length, 0);
 
 const changedWords = createFindingV3({
@@ -130,6 +131,14 @@ const v2 = createReportV2({
   ruleset, scope: { checkModes: ['fixture'], networkAccessPerformed: false }, coverage: ledger,
   findings: initializeFindingsV2([v2Finding], ledger), limitations: ['v2 fixture.'],
 });
+const legacyReport = structuredClone(report);
+legacyReport.policy = {
+  thresholds: structuredClone(report.policy.thresholds),
+  precedence: 'confirmed_threshold_before_incomplete',
+};
+assert.deepEqual(validateRuntimeReportV3(legacyReport), [], 'legacy confirmed-only policy remains valid');
+assert.equal(exitCodeV3(legacyReport), 3,
+  'legacy policy without gateStates ignores suspected threshold leads and preserves incomplete evidence');
 const rawV2 = Buffer.from(`${JSON.stringify(v2, null, 2)}\n`);
 const compatible = assertComparableBaselineV3(subject, v2, rawV2);
 assert.equal(compatible.sourceSchemaVersion, 2);
