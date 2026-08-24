@@ -96,8 +96,8 @@ npm run demo -- --out ./demo-output
 ## v0.7.1 新增内容
 
 v0.7.1 是 v0.7.0 路由与访问控制版本的安全边界和执行可靠性补丁，不增加检测器，也不扩大框架
-支持。签名 tag、GitHub Release、npm 包与 provenance 已公开；verified installer 与稳定 Action
-仍按独立门禁晋级：
+支持。签名 tag、GitHub Release、npm 包、provenance 与 verified installer 已公开。不可变 consumer
+和公开别名 consumer 均通过后，签名的 `v1` 已指向不可变 v0.7.1 源码：
 
 - **默认 HIGH 门真正可用：** `suspected` HIGH 源码线索现在会触发默认 `high` policy 失败，但不会被
   改写成 `confirmed`。缺少新 policy 字段的旧报告继续按 confirmed-only 解释。
@@ -362,8 +362,9 @@ Composite Action 保持 v0.3 crawl 输入与输出兼容。Crawl mode 默认被�
     fail-on: high
 ```
 
-需要可重复 CI 时使用上面的 v0.7.1 不可变 commit。签名的稳定大版本别名仍停在 v0.7.0，直到
-v0.7.1 不可变 consumer 和晋级后的读回验证通过：
+需要可重复 CI 时使用上面的 v0.7.1 不可变 commit。签名的稳定大版本别名现在也指向该源码；晋级后
+公开 consumer [`32753263317`](https://github.com/parousia8888/web-app-security-skill/actions/runs/32753263317)
+已经通过：
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1

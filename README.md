@@ -101,8 +101,8 @@ For the complete install-to-uninstall path, follow the tested
 
 v0.7.1 is a security-boundary and execution-reliability patch for the v0.7.0 route and
 access-control release. It does not add detectors or widen framework support. The signed tag,
-GitHub Release, npm package and provenance are public; verified-installer and stable-Action
-promotion remain separately gated:
+GitHub Release, npm package, provenance and verified installer are public. The signed `v1` alias
+now resolves to the immutable v0.7.1 source after both immutable and public-alias consumers passed:
 
 - **Actionable default HIGH gate:** a `suspected` HIGH source lead now fails the default `high`
   policy without being relabelled `confirmed`. Old reports without the new policy field retain
@@ -398,8 +398,10 @@ requires deployment authorization acknowledgement:
     fail-on: high
 ```
 
-For repeatable CI, use the immutable v0.7.1 commit above. The signed stable major-version alias
-remains on v0.7.0 until the immutable v0.7.1 consumer and promotion read-back pass:
+For repeatable CI, use the immutable v0.7.1 commit above. The signed stable major-version alias now
+resolves to that source; its post-promotion public consumer
+[`32753263317`](https://github.com/parousia8888/web-app-security-skill/actions/runs/32753263317)
+passed:
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
