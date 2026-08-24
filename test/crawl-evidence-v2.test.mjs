@@ -19,6 +19,7 @@ function run(site, name, extra = []) {
     const child = spawn(process.execPath, [
       SCRIPT, '--site', site, '--out', out, '--report-name', 'report',
       '--max-urls', '1', '--matrix', '1', '--delay', '0', '--timeout', '100', '--quiet',
+      '--allow-private-network',
       ...extra,
     ], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';

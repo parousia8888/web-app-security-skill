@@ -345,6 +345,10 @@ webapp-security rebind <moved-project> --scope <security-scope.yml> \
 # Passive crawl-boundary and crawler accessibility audit
 webapp-security crawl --site https://example.com --out ./security-report
 
+# Localhost/RFC1918 targets are blocked unless the authorized operator opts in
+webapp-security crawl --site http://127.0.0.1:3000 --out ./security-report \
+  --allow-private-network
+
 # Active sensitive-path probes require both ownership/written authorization and an explicit gate
 webapp-security crawl --site https://example.com --out ./security-report \
   --active-probe --acknowledge-authorization
@@ -361,6 +365,10 @@ webapp-security aws --profile default --region us-east-1 --out ./security-report
 
 Active rate-limit verification also requires `--acknowledge-authorization`. Network or evidence
 failure is `unknown` and exits non-zero; it is never rendered as safe.
+The crawl client stays on the initial origin, validates and pins DNS on every redirect hop, blocks
+local/private/link-local/reserved destinations by default, and enforces request plus compressed and
+decoded response-byte budgets. `--allow-private-network` permits only an explicitly selected
+localhost/private origin; link-local metadata and reserved ranges remain blocked.
 
 Source conclusions use finding/report v3, including the before/after source reports inside the new
 demo. Crawl, crawler identity, edge and AWS remain on v2; the demo's small `demo-result.json` fact

@@ -54,7 +54,7 @@ function run(origin, name) {
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [
       SCRIPT, '--site', origin, '--out', out, '--report-name', 'report', '--max-urls', '10',
-      '--matrix', '0', '--delay', '0', '--fail-on', 'never', '--quiet',
+      '--matrix', '0', '--delay', '0', '--fail-on', 'never', '--quiet', '--allow-private-network',
     ], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
     let stderr = '';

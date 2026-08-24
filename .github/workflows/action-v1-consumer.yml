@@ -134,6 +134,7 @@ jobs:
           site: "http://127.0.0.1:4173"
           acknowledge-authorization: "true"
           active-probe: "false"
+          allow-private-network: "true"
           fail-on: "never"
           output-dir: "action-v1-success"
       - name: "Verify passive success evidence"

@@ -57,16 +57,21 @@ try {
   const origin = `http://127.0.0.1:${server.address().port}`;
 
   let result = await run(process.execPath, [CRAWL, '--site', origin, '--max-urls', '0', '--matrix', '0', '--delay', '0', '--fail-on', 'never', '--quiet']);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /--allow-private-network/);
+  assert.equal(requests.length, 0, 'private-network gate must run before network activity');
+
+  result = await run(process.execPath, [CRAWL, '--site', origin, '--allow-private-network', '--max-urls', '0', '--matrix', '0', '--delay', '0', '--fail-on', 'never', '--quiet']);
   assert.equal(result.status, 0, result.stderr);
   assert.equal(requests.includes('/.env'), false, 'passive crawl must not probe sensitive paths');
 
   requests.length = 0;
-  result = await run(process.execPath, [CRAWL, '--site', origin, '--active-probe', '--max-urls', '0', '--matrix', '0', '--delay', '0', '--fail-on', 'never', '--quiet']);
+  result = await run(process.execPath, [CRAWL, '--site', origin, '--allow-private-network', '--active-probe', '--max-urls', '0', '--matrix', '0', '--delay', '0', '--fail-on', 'never', '--quiet']);
   assert.equal(result.status, 2);
   assert.match(result.stderr, /requires --acknowledge-authorization/);
   assert.equal(requests.length, 0, 'authorization gate must run before network activity');
 
-  result = await run(process.execPath, [CRAWL, '--site', origin, '--active-probe', '--acknowledge-authorization', '--max-urls', '0', '--matrix', '0', '--delay', '0', '--fail-on', 'never', '--quiet']);
+  result = await run(process.execPath, [CRAWL, '--site', origin, '--allow-private-network', '--active-probe', '--acknowledge-authorization', '--max-urls', '0', '--matrix', '0', '--delay', '0', '--fail-on', 'never', '--quiet']);
   assert.equal(result.status, 0, result.stderr);
   assert.equal(requests.includes('/.env'), true, 'active probe flag must enable sensitive-path checks');
 
@@ -85,12 +90,20 @@ try {
       INPUT_OUTPUT_DIR: actionOut,
       INPUT_FAIL_ON: 'never',
       INPUT_ACTIVE_PROBE: 'true',
+      INPUT_ALLOW_PRIVATE_NETWORK: 'true',
     },
   });
   assert.equal(result.status, 0, result.stderr);
   assert.ok(existsSync(join(actionOut, 'report.json')));
   assert.ok(existsSync(join(actionOut, 'report.md')));
   assert.ok(existsSync(join(actionOut, 'report.sarif')));
+  const actionReport = JSON.parse(readFileSync(join(actionOut, 'report.json'), 'utf8'));
+  const actionObservations = JSON.parse(readFileSync(join(actionOut, 'report.observations.json'), 'utf8'));
+  assert.equal(actionReport.scope.auditBoundary.version, 2);
+  assert.equal(actionReport.scope.auditBoundary.networkPolicy.sameOriginOnly, true);
+  assert.equal(actionReport.scope.auditBoundary.networkPolicy.dnsPinnedPerHop, true);
+  assert.equal(actionReport.scope.auditBoundary.networkPolicy.allowPrivateNetwork, true);
+  assert.ok(actionObservations.network.requests <= actionObservations.network.maxRequests);
 
   const failingActionOut = join(temp, 'action-failing-report');
   const stepSummary = join(temp, 'step-summary.md');
@@ -102,6 +115,7 @@ try {
       INPUT_OUTPUT_DIR: failingActionOut,
       INPUT_FAIL_ON: 'high',
       INPUT_ACTIVE_PROBE: 'true',
+      INPUT_ALLOW_PRIVATE_NETWORK: 'true',
       GITHUB_STEP_SUMMARY: stepSummary,
     },
   });

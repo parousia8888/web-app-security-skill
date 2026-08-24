@@ -314,6 +314,10 @@ webapp-security rebind <moved-project> --scope <security-scope.yml> \
 # 默认被动：爬取边界与 crawler 可达性
 webapp-security crawl --site https://example.com --out ./security-report
 
+# localhost/RFC1918 默认拒绝；审计已获授权的本地目标时必须显式开启
+webapp-security crawl --site http://127.0.0.1:3000 --out ./security-report \
+  --allow-private-network
+
 # 敏感路径主动探测：必须同时具备所有权/书面授权并显式确认
 webapp-security crawl --site https://example.com --out ./security-report \
   --active-probe --acknowledge-authorization
@@ -330,6 +334,9 @@ webapp-security aws --profile default --region us-east-1 --out ./security-report
 
 主动限流复测同样要求 `--acknowledge-authorization`。网络或证据源失败会得到 `unknown` 和非零退出，
 不会被描述成安全。
+Crawl 客户端只停留在初始 origin，每一跳 redirect 都重新校验并固定 DNS；默认拒绝 localhost、私网、
+link-local 与保留地址，并同时限制请求总数、压缩前字节和解压后字节。`--allow-private-network` 只允许
+显式选择的 localhost/私网 origin，link-local metadata 与保留地址仍然拒绝。
 
 Source 结论使用 finding/report v3，新 demo 内部的 before/after 源码报告也使用 v3。Crawl、crawler
 identity、edge 与 AWS 仍使用 v2；demo 的小型 `demo-result.json` 事实 schema 与两种 report schema

@@ -12,10 +12,15 @@ INPUT_OUTPUT_DIR="${INPUT_OUTPUT_DIR:-webapp-security-report}"
 INPUT_FAIL_ON="${INPUT_FAIL_ON:-high}"
 INPUT_FAIL_ON_DOMAIN="${INPUT_FAIL_ON_DOMAIN:-}"
 INPUT_ACTIVE_PROBE="${INPUT_ACTIVE_PROBE:-false}"
+INPUT_ALLOW_PRIVATE_NETWORK="${INPUT_ALLOW_PRIVATE_NETWORK:-false}"
 
 ACTION_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 summary_file="$(mktemp "${RUNNER_TEMP:-/tmp}/webapp-security-summary.XXXXXX")"
 trap 'rm -f "$summary_file"' EXIT
+if [ "$INPUT_ALLOW_PRIVATE_NETWORK" != "true" ] && [ "$INPUT_ALLOW_PRIVATE_NETWORK" != "false" ]; then
+  echo "allow-private-network must be true or false" >&2
+  exit 2
+fi
 set +e
 if [ "$INPUT_MODE" = "crawl" ]; then
   if [ -z "$INPUT_SITE" ]; then
@@ -28,6 +33,7 @@ if [ "$INPUT_MODE" = "crawl" ]; then
   fi
   args=(--site "$INPUT_SITE" --out "$INPUT_OUTPUT_DIR" --report-name report --fail-on "$INPUT_FAIL_ON")
   if [ -n "$INPUT_FAIL_ON_DOMAIN" ]; then args+=(--fail-on-domain "$INPUT_FAIL_ON_DOMAIN"); fi
+  if [ "$INPUT_ALLOW_PRIVATE_NETWORK" = "true" ]; then args+=(--allow-private-network); fi
   if [ "$INPUT_ACTIVE_PROBE" = "true" ]; then
     args+=(--active-probe --acknowledge-authorization)
   elif [ "$INPUT_ACTIVE_PROBE" != "false" ]; then
@@ -36,6 +42,10 @@ if [ "$INPUT_MODE" = "crawl" ]; then
   fi
   node "$ACTION_ROOT/scripts/crawl-surface-audit.mjs" "${args[@]}" > "$summary_file"
 elif [ "$INPUT_MODE" = "source" ]; then
+  if [ "$INPUT_ALLOW_PRIVATE_NETWORK" != "false" ]; then
+    echo "allow-private-network is only valid in crawl mode" >&2
+    exit 2
+  fi
   if [ "$INPUT_ACTIVE_PROBE" != "false" ]; then
     echo "active-probe is only valid in crawl mode" >&2
     exit 2

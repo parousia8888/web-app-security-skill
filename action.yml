@@ -38,6 +38,9 @@ inputs:
   active-probe:
     description: "Probe common sensitive paths; disabled by default"
     default: "false"
+  allow-private-network:
+    description: "Allow an explicitly selected localhost or private-network crawl origin"
+    default: "false"
 runs:
   using: "composite"
   steps:
@@ -55,6 +58,7 @@ runs:
         INPUT_FAIL_ON: "${{ inputs.fail-on }}"
         INPUT_FAIL_ON_DOMAIN: "${{ inputs.fail-on-domain }}"
         INPUT_ACTIVE_PROBE: "${{ inputs.active-probe }}"
+        INPUT_ALLOW_PRIVATE_NETWORK: "${{ inputs.allow-private-network }}"
       run: |
         bash "$GITHUB_ACTION_PATH/scripts/run-action.sh"
 outputs:

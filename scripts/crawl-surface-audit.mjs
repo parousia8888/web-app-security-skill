@@ -17,6 +17,14 @@
  *   --concurrency <n>   parallel requests (default 4)
  *   --delay <ms>        delay between request batches (default 200)
  *   --timeout <ms>      per-request timeout (default 15000)
+ *   --max-response-bytes <n>
+ *                       wire and decoded bytes per response (default 4194304)
+ *   --max-total-bytes <n>
+ *                       decoded bytes across the audit (default 33554432)
+ *   --max-requests <n>  HTTP requests including redirect hops (default 256)
+ *   --max-redirects <n> same-origin redirects per request (default 5)
+ *   --allow-private-network
+ *                       explicitly allow localhost/RFC1918 audit origins
  *   --active-probe      probe common private/sensitive paths (requires authorization)
  *   --acknowledge-authorization
  *                       confirm ownership or written authorization for active probes
@@ -41,6 +49,7 @@ import {
 } from './lib/evidence-v2.mjs';
 import { crawlCoverage, CRAWL_ADAPTER, crawlRule, crawlRuleset } from './lib/crawl-rules.mjs';
 import { digestValue } from './lib/project-identity.mjs';
+import { addressAllowed, addressPolicy, createSafeHttpClient } from './lib/safe-http.mjs';
 
 // ---------------------------------------------------------------- args
 
@@ -64,6 +73,10 @@ if (!['http:', 'https:'].includes(parsedSite.protocol)) {
   console.error('error: --site must use http:// or https://');
   process.exit(2);
 }
+if (parsedSite.username || parsedSite.password) {
+  console.error('error: --site must not contain URL credentials');
+  process.exit(2);
+}
 const ORIGIN = parsedSite.origin;
 const OUT_DIR = arg('out');
 const REPORT_NAME = arg('report-name');
@@ -76,6 +89,11 @@ const MATRIX_URLS = Number(arg('matrix', 3));
 const CONCURRENCY = Number(arg('concurrency', 4));
 const DELAY = Number(arg('delay', 200));
 const TIMEOUT = Number(arg('timeout', 15000));
+const MAX_RESPONSE_BYTES = Number(arg('max-response-bytes', 4 * 1024 * 1024));
+const MAX_TOTAL_BYTES = Number(arg('max-total-bytes', 32 * 1024 * 1024));
+const MAX_REQUESTS = Number(arg('max-requests', 256));
+const MAX_REDIRECTS = Number(arg('max-redirects', 5));
+const ALLOW_PRIVATE_NETWORK = flag('allow-private-network');
 const PROBE = flag('active-probe') && !flag('no-probe');
 const ACKNOWLEDGED = flag('acknowledge-authorization');
 const FAIL_ON = arg('fail-on', 'high');
@@ -86,11 +104,28 @@ let EFFECTIVE_POLICY;
 for (const [name, value, min, max] of [
   ['max-urls', MAX_URLS, 0, 1000], ['matrix', MATRIX_URLS, 0, 20],
   ['concurrency', CONCURRENCY, 1, 32], ['delay', DELAY, 0, 60000], ['timeout', TIMEOUT, 100, 120000],
+  ['max-response-bytes', MAX_RESPONSE_BYTES, 1024, 16 * 1024 * 1024],
+  ['max-total-bytes', MAX_TOTAL_BYTES, 1024, 128 * 1024 * 1024],
+  ['max-requests', MAX_REQUESTS, 1, 5000], ['max-redirects', MAX_REDIRECTS, 0, 10],
 ]) {
   if (!Number.isInteger(value) || value < min || value > max) {
     console.error(`error: --${name} must be an integer from ${min} to ${max}`);
     process.exit(2);
   }
+}
+if (MAX_TOTAL_BYTES < MAX_RESPONSE_BYTES) {
+  console.error('error: --max-total-bytes must be greater than or equal to --max-response-bytes');
+  process.exit(2);
+}
+const siteHostname = parsedSite.hostname.replace(/^\[|\]$/g, '');
+const literalPolicy = addressPolicy(siteHostname);
+const localhostName = siteHostname === 'localhost' || siteHostname.endsWith('.localhost');
+if ((literalPolicy.family && !addressAllowed(siteHostname, ALLOW_PRIVATE_NETWORK))
+    || (localhostName && !ALLOW_PRIVATE_NETWORK)) {
+  const reason = localhostName ? 'localhost' : literalPolicy.reason;
+  const hint = addressAllowed(siteHostname, true) || localhostName ? '; pass --allow-private-network only for an explicitly authorized local target' : '';
+  console.error(`error: --site uses a blocked ${reason} address${hint}`);
+  process.exit(2);
 }
 if (!['high', 'medium', 'low', 'never'].includes(FAIL_ON)) {
   console.error('error: --fail-on must be high, medium, low, or never');
@@ -195,28 +230,34 @@ const PRIVATE_PROBES = [
 const signals = [];
 const add = (severity, code, message, detail, state = 'confirmed') =>
   signals.push({ severity, code, state, message, ...(detail ? { detail } : {}) });
+const http = createSafeHttpClient({
+  origin: ORIGIN,
+  allowPrivateNetwork: ALLOW_PRIVATE_NETWORK,
+  timeoutMs: TIMEOUT,
+  maxResponseBytes: MAX_RESPONSE_BYTES,
+  maxTotalBytes: MAX_TOTAL_BYTES,
+  maxRequests: MAX_REQUESTS,
+  maxRedirects: MAX_REDIRECTS,
+});
 
 async function req(url, { method = 'GET', ua = BROWSER_UA, redirect = 'manual' } = {}) {
   try {
-    const res = await fetch(url, {
+    const res = await http.request(url, {
       method,
       redirect,
       headers: { 'user-agent': ua, accept: '*/*', 'accept-language': 'en-US,en;q=0.9' },
-      signal: AbortSignal.timeout(TIMEOUT),
     });
-    let body = '';
-    if (method === 'GET') {
-      const buf = await res.arrayBuffer();
-      body = Buffer.from(buf).toString('utf8');
-    }
     return {
-      url, ok: true, status: res.status,
-      headers: Object.fromEntries(res.headers.entries()),
-      body, bytes: method === 'GET' ? Buffer.byteLength(body) : Number(res.headers.get('content-length') || 0),
-      location: res.headers.get('location') || null,
+      ...res,
+      ok: true,
+      location: res.headers.location || null,
     };
   } catch (e) {
-    return { url, ok: false, status: 0, headers: {}, body: '', bytes: 0, error: String(e.message || e) };
+    const errorCode = e.code || 'request_failed';
+    return {
+      url, ok: false, status: 0, headers: {}, body: '', bytes: 0, errorCode,
+      error: `${errorCode}: ${String(e.message || e)}`,
+    };
   }
 }
 
@@ -772,12 +813,21 @@ const current = signals.map((signal) => createFindingV2({
 }));
 
 const auditBoundary = {
-  version: 1,
+  version: 2,
   surface: 'crawl',
   originBinding: SCOPE_ID || ORIGIN,
   activeProbe: PROBE,
   maxUrls: MAX_URLS,
   matrixUrls: MATRIX_URLS,
+  networkPolicy: {
+    sameOriginOnly: true,
+    dnsPinnedPerHop: true,
+    allowPrivateNetwork: ALLOW_PRIVATE_NETWORK,
+    maxResponseBytes: MAX_RESPONSE_BYTES,
+    maxTotalBytes: MAX_TOTAL_BYTES,
+    maxRequests: MAX_REQUESTS,
+    maxRedirects: MAX_REDIRECTS,
+  },
 };
 const subject = {
   id: SUBJECT_ID || `project-${randomUUID().replaceAll('-', '').slice(0, 32)}`,
@@ -821,11 +871,16 @@ const v2Report = createReportV2({
   limitations: [
     'HTTP observations do not prove application authorization, business logic, identity or data-layer security.',
     'Crawler user-agent replay does not prove that a request originated from a vendor-owned crawler address.',
+    `HTTP requests stayed on the initial origin, pinned each DNS-validated redirect hop, and used per-response (${MAX_RESPONSE_BYTES}) and total decoded-byte (${MAX_TOTAL_BYTES}) budgets.`,
+    ALLOW_PRIVATE_NETWORK
+      ? 'Localhost and private-network origins were explicitly allowed; link-local, multicast and reserved addresses remained blocked.'
+      : 'Localhost, private, link-local, multicast and reserved addresses were blocked.',
     PROBE
       ? 'Active probes were limited to the documented bounded path list.'
       : 'Private paths and production source maps were not probed because active mode was disabled.',
   ],
 });
+observations.network = http.snapshot();
 const md = renderMarkdownV2(v2Report);
 
 if (OUT_DIR) {
