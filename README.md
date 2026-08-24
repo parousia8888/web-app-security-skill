@@ -174,7 +174,7 @@ before execution, then verifies the selected release manifest, checksums, SBOM, 
 archive before installation.
 
 ```bash
-( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/3fa12244dfb70e0588ccf0e645bf5c75b6148b01/scripts/bootstrap-install.sh?immutable=3fa12244dfb70e0588ccf0e645bf5c75b6148b01'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" '22df4c865d01f51b64066c8e53beaa9bb3cb3c29ef431c6b8a3aa56074dab65c'; sh "$p" )
+( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/cb36196fb438fb0ad0e5b5a6a27043bf48ffb018/scripts/bootstrap-install.sh?immutable=cb36196fb438fb0ad0e5b5a6a27043bf48ffb018'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" '544d0ded89ed98467c275c838f033148d944668b0b56842d849ff8ae4abc63d2'; sh "$p" )
 ```
 
 Select a surface when needed:
@@ -379,7 +379,7 @@ requires deployment authorization acknowledgement:
 
 ```yaml
 - name: Audit public crawl boundary
-  uses: parousia8888/web-app-security-skill@7521e0699eefe26d23a7972fbee6fb37b46fdfe2
+  uses: parousia8888/web-app-security-skill@bfed608b5d1abe56b6b34b09f0c6ef59f17eab4a
   with:
     site: https://example.com
     acknowledge-authorization: true
@@ -387,21 +387,21 @@ requires deployment authorization acknowledgement:
     fail-on: high
 ```
 
-For repeatable CI, use the immutable v0.6.0 commit above. The signed stable major-version alias now
-resolves to the same v0.6.0 source after its public passive and authorization consumer passed:
+For repeatable CI, use the immutable v0.7.0 commit above. The signed stable major-version alias
+remains on the previous verified source until the immutable v0.7.0 consumer passes:
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
 ```
 
-Source mode defaults to the bundled adapter. The immutable v0.6.0 Action runs the v3 source
-contract, 25 built-in risk rules, 3 evidence-integrity rules, the bounded Express/NestJS/Next.js
-route-security review, and the opt-in `--profile deep` adapter selection. External binaries must be
+Source mode defaults to the bundled adapter. The immutable v0.7.0 Action runs the v3 source
+contract, 25 built-in risk rules, 3 evidence-integrity rules, bounded Express/NestJS/Next.js route
+and Server Action inventory, and bounded access-control-chain review. External binaries must be
 installed and pinned by the caller; the Action never downloads them:
 
 ```yaml
 - name: Audit source
-  uses: parousia8888/web-app-security-skill@7521e0699eefe26d23a7972fbee6fb37b46fdfe2
+  uses: parousia8888/web-app-security-skill@bfed608b5d1abe56b6b34b09f0c6ef59f17eab4a
   with:
     mode: source
     project: .
@@ -409,9 +409,9 @@ installed and pinned by the caller; the Action never downloads them:
     fail-on: high
 ```
 
-The moving `v1` tag was promoted with a guarded lease only after the versioned source, installation
-and immutable Action gates passed; the public consumer then passed. Review release notes before
-accepting a future update; use the full commit above when the workflow must not move.
+The moving `v1` tag is promoted with a guarded lease only after the versioned source, installation
+and immutable Action gates pass. Review release notes before accepting a future update; use the full
+commit above when the workflow must not move.
 
 ## Trust and release evidence
 

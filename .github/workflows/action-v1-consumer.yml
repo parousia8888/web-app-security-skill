@@ -11,29 +11,55 @@ jobs:
       - uses: "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38" # v6
         with:
           node-version: "22"
-      - name: "Create owned Next.js route fixture"
+      - name: "Create owned NestJS route-control fixture"
         shell: "bash"
         run: |
-          mkdir -p "$RUNNER_TEMP/v060-route-fixture/app/api/orders/[id]"
-          printf '%s\n' '{"private":true}' > "$RUNNER_TEMP/v060-route-fixture/package.json"
-          printf '%s\n' '{"lockfileVersion":3}' > "$RUNNER_TEMP/v060-route-fixture/package-lock.json"
-          cat > "$RUNNER_TEMP/v060-route-fixture/app/api/orders/[id]/route.ts" <<'ROUTE'
-          export async function GET() {
-            return Response.json({ ok: true });
+          mkdir -p "$RUNNER_TEMP/v070-route-fixture/src"
+          printf '%s\n' '{"private":true,"dependencies":{"@nestjs/common":"fixture","@nestjs/core":"fixture","@nestjs/passport":"fixture"}}' > "$RUNNER_TEMP/v070-route-fixture/package.json"
+          printf '%s\n' '{"lockfileVersion":3}' > "$RUNNER_TEMP/v070-route-fixture/package-lock.json"
+          cat > "$RUNNER_TEMP/v070-route-fixture/src/auth.guard.ts" <<'SOURCE'
+          import { AuthGuard } from '@nestjs/passport';
+          export class JwtAuthGuard extends AuthGuard('jwt') {}
+          SOURCE
+          cat > "$RUNNER_TEMP/v070-route-fixture/src/roles.guard.ts" <<'SOURCE'
+          import { Reflector } from '@nestjs/core';
+          export class RolesGuard {
+            constructor(private reflector: Reflector) {}
+            canActivate(context) {
+              return this.reflector.getAllAndOverride('roles', [context.getHandler(), context.getClass()]);
+            }
           }
-          ROUTE
-      - name: "Consume immutable v0.6.0 Action"
-        uses: "parousia8888/web-app-security-skill@7521e0699eefe26d23a7972fbee6fb37b46fdfe2"
+          SOURCE
+          cat > "$RUNNER_TEMP/v070-route-fixture/src/rate-limit.guard.ts" <<'SOURCE'
+          export class RateLimitGuard { canActivate() { return true; } }
+          SOURCE
+          cat > "$RUNNER_TEMP/v070-route-fixture/src/app.module.ts" <<'SOURCE'
+          import { APP_GUARD } from '@nestjs/core';
+          import { RateLimitGuard } from './rate-limit.guard';
+          export const providers = [{ provide: APP_GUARD, useClass: RateLimitGuard }];
+          SOURCE
+          cat > "$RUNNER_TEMP/v070-route-fixture/src/audit.controller.ts" <<'SOURCE'
+          import { Controller, Get, Patch, UseGuards } from '@nestjs/common';
+          import { JwtAuthGuard } from './auth.guard';
+          import { RolesGuard } from './roles.guard';
+          @Controller('admin')
+          export class AuditController {
+            @UseGuards(JwtAuthGuard, RolesGuard) @Get('audit') audit() {}
+            @Patch('projects/:id') unguardedMutation() {}
+          }
+          SOURCE
+      - name: "Consume immutable v0.7.0 Action"
+        uses: "parousia8888/web-app-security-skill@bfed608b5d1abe56b6b34b09f0c6ef59f17eab4a"
         with:
           mode: "source"
-          project: "${{ runner.temp }}/v060-route-fixture"
+          project: "${{ runner.temp }}/v070-route-fixture"
           adapters: "builtin"
           fail-on: "never"
-          output-dir: "${{ runner.temp }}/v060-route-report"
-      - name: "Verify bounded route semantics"
+          output-dir: "${{ runner.temp }}/v070-route-report"
+      - name: "Verify route-security v2 control separation"
         shell: "bash"
         env:
-          ROUTE_REPORT: "${{ runner.temp }}/v060-route-report"
+          ROUTE_REPORT: "${{ runner.temp }}/v070-route-report"
         run: |
           node <<'NODE'
           const fs = require('node:fs');
@@ -41,15 +67,27 @@ jobs:
           const root = process.env.ROUTE_REPORT;
           const routes = JSON.parse(fs.readFileSync(path.join(root, 'route-security.json'), 'utf8'));
           const report = JSON.parse(fs.readFileSync(path.join(root, 'report.json'), 'utf8'));
-          if (routes.routes.length !== 1) throw new Error(`expected one route, got ${routes.routes.length}`);
-          const route = routes.routes[0];
-          if (route.framework !== 'next-app' || route.method !== 'GET' || route.path !== '/api/orders/[id]') {
-            throw new Error(`unexpected route identity: ${route.framework} ${route.method} ${route.path}`);
+          if (routes.schemaVersion !== 2) throw new Error(`expected route schema v2, got ${routes.schemaVersion}`);
+          if (routes.routes.length !== 2) throw new Error(`expected two routes, got ${routes.routes.length}`);
+          if (routes.applicationControls.length !== 1 || routes.applicationControls[0].origin !== 'RateLimitGuard') {
+            throw new Error('global RateLimitGuard must be listed once as an application control');
           }
-          if (route.authentication.state !== 'not_observed' || route.authorization.state !== 'not_observed') {
-            throw new Error('missing visible controls must remain not_observed');
+          const guarded = routes.routes.find((route) => route.method === 'GET');
+          const unguarded = routes.routes.find((route) => route.method === 'PATCH');
+          if (!guarded || !unguarded) throw new Error('expected GET and PATCH route identities');
+          if (guarded.authentication.state !== 'local_observed'
+              || guarded.authorization.state !== 'candidate_observed') {
+            throw new Error('classified authentication and authorization signals were not separated');
           }
-          if (route.priority.level !== 'review_next') throw new Error(`unexpected priority: ${route.priority.level}`);
+          if (guarded.authentication.signals.some((signal) => signal.origin === 'RateLimitGuard')
+              || guarded.authorization.signals.some((signal) => signal.origin === 'RateLimitGuard')) {
+            throw new Error('application rate limit leaked into route authentication or authorization');
+          }
+          if (unguarded.authentication.state !== 'not_observed'
+              || unguarded.authorization.state !== 'not_observed'
+              || unguarded.routeScopedControl.state !== 'no_route_scoped_control_observed') {
+            throw new Error('unguarded state-changing object route was not kept in the review queue');
+          }
           if (report.findings.some((finding) => finding.state === 'confirmed')) {
             throw new Error('route review created a confirmed vulnerability');
           }
