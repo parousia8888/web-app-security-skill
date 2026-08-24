@@ -5,6 +5,39 @@ All notable changes to **Web App Security Skill** are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+## [0.7.1] — 2026-08-25
+
+### Changed
+- The default `high` policy now treats `suspected` HIGH source leads as actionable gate failures
+  without changing their evidence state to `confirmed`. Historical reports without `gateStates`
+  retain the earlier confirmed-only interpretation.
+- JavaScript/TypeScript and Python source analysis now has deterministic per-file token and
+  operation budgets plus a run-wide operation budget. Exhaustion becomes explicit incomplete
+  evidence and exit code `3` instead of an unbounded scan or a clean result.
+- Source files stopped by analysis limits are excluded from route extraction and make relevant
+  framework coverage partial with a stable reason code.
+
+### Fixed
+- All crawl HTTP paths enforce bounded destination, DNS, redirect, request, response-size and
+  timeout rules, including IPv4/IPv6 private and local destinations. Owned local fixtures still
+  require the explicit private-network opt-in.
+- Evidence redaction now propagates through nested objects and arrays, removes embedded private
+  absolute paths and credential schemes, and preserves only the two documented authorization
+  evidence-model shapes.
+- `robots.txt` wildcard evaluation no longer compiles attacker-controlled regular expressions;
+  matching is literal, cached and bounded against repeated-wildcard input.
+- Installed Skill payloads include the Claude plugin metadata, bundled Opengrep rules and v0.7
+  access-control review/regression evidence, with the installed ruleset digest verified.
+
+### Security boundary
+- Pattern matches remain `suspected`; a policy gate does not promote evidence. Resource exhaustion
+  remains `unknown`, never pass. No new detector, framework or whole-program claim is introduced.
+
+Publication status: v0.7.1 candidate only until the signed tag, GitHub Release, npm provenance,
+verified installer, immutable Action and signed `v1` consumers pass.
+
 ## [0.7.0] — 2026-08-24
 
 ### Added

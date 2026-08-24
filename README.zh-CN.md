@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#查看结果">Demo</a> ·
-  <a href="#v070-新增内容">v0.7.0</a> ·
+  <a href="#v071-新增内容">v0.7.1</a> ·
   <a href="#安装">安装</a> ·
   <a href="#执行第一个项目">首个项目</a> ·
   <a href="docs/tutorial.zh-CN.md">完整教程</a> ·
@@ -93,32 +93,29 @@ npm run demo -- --out ./demo-output
 
 完整的安装到卸载流程见经过测试的[第一个项目教程](docs/tutorial.zh-CN.md)。
 
-## v0.7.0 新增内容
+## v0.7.1 新增内容
 
-v0.7.0 把 v0.6.0 的路由清单推进成有边界的访问控制链审查。签名 tag、GitHub Release、npm 包、
-provenance 与 verified installer 已公开。不可变 consumer 和公开别名 consumer 均通过后，签名的
-`v1` 已指向不可变 v0.7.0 源码：
+v0.7.1 是 v0.7.0 路由与访问控制版本的安全边界和执行可靠性补丁，不增加检测器，也不扩大框架
+支持。在签名 tag、GitHub Release、npm provenance、verified installer 与公开 consumer 全部通过前，
+它仍是本地 candidate：
 
-- **修正 Nest 控制范围：** `APP_GUARD` 只在应用级列一次，不再复制到每条路由；认证和授权信号
-  分开，无法分类的控制继续保持无法分类。
-- **可单独找出没看到路由控制的接口：** `no_route_scoped_control_observed` 会列出需要人工分类的
-  改数据/带对象 ID 路由。登录、注册、找回密码、webhook 可能本来就应公开，因此“没看到”不等于漏洞。
-- **有边界的访问控制链：** Auth.js/Nest Passport 身份与 Prisma/Drizzle 操作进入 stable bounded；
-  Clerk、Better Auth、Supabase 身份和 Supabase Query Builder 保持 experimental。Supabase 永远保留
-  `external_policy_required`。
-- **只跟一层本地调用：** 支持同文件、相对 import、可精确确定的 Nest service、静态
-  tsconfig/jsconfig alias 与 workspace export；第二层调用会停止并说明原因。
-- **Server Action 单独列：** 支持的 Next.js Server Action 作为具名可调用面审查，不虚构 HTTP method
-  或 URL。
-- **访问控制退化门：** baseline 可看出认证、授权、路由控制、查询约束或已完成链是否消失。
-  `--fail-on-route-regression` 必须主动开启，也不能把不完整证据变成通过。
+- **默认 HIGH 门真正可用：** `suspected` HIGH 源码线索现在会触发默认 `high` policy 失败，但不会被
+  改写成 `confirmed`。缺少新 policy 字段的旧报告继续按 confirmed-only 解释。
+- **源码分析有资源上限：** JavaScript/TypeScript 与 Python 扫描增加单文件 token/operation 上限和
+  全局 operation 上限。超限会成为明确的 `unknown` 和退出码 `3`，受影响的路由覆盖率会变成 partial。
+- **爬取网络有完整边界：** 每次请求与重定向都会检查目标地址、DNS、私网、响应大小和超时；本地
+  fixture 仍必须明确开启 private-network 选项。
+- **递归证据脱敏：** JSON、Markdown、HTML、SARIF、JUnit 和 observation 输出都会处理嵌套凭据、
+  数组、Bearer/Basic 值和文本中的私有绝对路径，同时保留规定格式的授权证据对象供人阅读。
+- **robots 不再动态编译正则：** 通配规则使用 literal cached matcher，重复大量 `*` 的输入也有边界。
+- **安装 payload 完整：** 安装内容包含 Claude plugin 元数据、内置 Opengrep 规则和 v0.7 审查证据，
+  并验证安装后 ruleset digest。
 
-本次受限的[四项目访问控制审查](docs/reviews/v0.7.0-access-control-review.md)共列出 173 条 HTTP 路由、
-23 个 Server Action，人工查看 32 项，得到 12 条 partial chain、0 条普通项目 completed chain。
-这个 0 是公开能力限制，不是成功率。另有 4 条
-[真实回归](docs/regressions/v0.7.0-access-control-real-world-regressions.md)固定 Nest 聚合、fingerprint、
-Next monorepo root 和 tsconfig alias 问题。具体怎么读报告、怎么做双账号复查，见
-[访问控制链参考](references/access-control-chain.md)。
+stable 清单仍是 25 条 built-in risk、3 条 evidence-integrity 和 16 条 opt-in 外部 adapter risk。
+模式命中继续保持 `suspected`，policy 阻断不会升级证据，不完整分析也不会变成 pass。v0.7.0 的
+[访问控制审查](docs/reviews/v0.7.0-access-control-review.md)、
+[真实回归](docs/regressions/v0.7.0-access-control-real-world-regressions.md)和
+[访问控制链参考](references/access-control-chain.md)继续定义路由审查边界。
 
 原有 finding 解释合同继续生效：每条 v3 源码 finding 都包含专业术语、白话解释、现实后果、证据
 边界、提案、替代方案、副作用、用户决策、安全复测、功能复测和回滚。稳定规则清单现为 25 条

@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#see-the-result">Demo</a> ·
-  <a href="#whats-new-in-v070">v0.7.0</a> ·
+  <a href="#whats-new-in-v071">v0.7.1</a> ·
   <a href="#install">Install</a> ·
   <a href="#run-the-first-project">First project</a> ·
   <a href="docs/tutorial.md">Tutorial</a> ·
@@ -97,40 +97,37 @@ check reruns the fixture and fails if any surface disagrees.
 For the complete install-to-uninstall path, follow the tested
 [first project tutorial](docs/tutorial.md).
 
-## What's new in v0.7.0
+## What's new in v0.7.1
 
-v0.7.0 deepens the v0.6.0 route inventory into a bounded access-control-chain review. The signed
-tag, GitHub Release, npm package, provenance and verified installer are public. The signed `v1`
-alias now resolves to the immutable v0.7.0 source after both immutable and public-alias consumers
-passed:
+v0.7.1 is a security-boundary and execution-reliability patch for the v0.7.0 route and
+access-control release. It does not add detectors or widen framework support. It remains a local
+candidate until the signed tag, GitHub Release, npm provenance, verified installer and public
+consumers pass:
 
-- **Correct Nest control scope:** `APP_GUARD` controls are listed once at application level instead
-  of being copied into every route. Authentication and authorization signals are separated, while
-  unclassified controls remain unclassified.
-- **Missing route control is filterable:** `no_route_scoped_control_observed` isolates
-  state-changing or object-addressed routes that need human classification. Login, registration,
-  recovery and webhook endpoints may be intentionally public, so absence is never a finding by
-  itself.
-- **Bounded access chains:** supported Auth.js/Nest Passport identity and Prisma/Drizzle operations
-  have stable bounded semantics. Clerk, Better Auth, Supabase identity and Supabase Query Builder
-  ship as experimental evidence; every Supabase chain remains `external_policy_required`.
-- **One exact local call:** static same-file, relative import, bounded Nest service, static
-  tsconfig/jsconfig alias and exact workspace-export relationships can be followed once. Analysis
-  stops before a second local call and records the reason.
-- **Server Actions are separate:** supported Next.js Server Actions are reviewed as named callable
-  surfaces without invented HTTP methods or URLs.
-- **Regression gate:** route baselines expose lost authentication, authorization, scoped controls,
-  query constraints and completed-chain coverage. `--fail-on-route-regression` is opt-in and cannot
-  turn incomplete evidence into a pass.
+- **Actionable default HIGH gate:** a `suspected` HIGH source lead now fails the default `high`
+  policy without being relabelled `confirmed`. Old reports without the new policy field retain
+  confirmed-only behavior.
+- **Bounded source analysis:** JavaScript/TypeScript and Python scans have per-file token and
+  operation limits plus a run-wide operation limit. Exhaustion is explicit `unknown` evidence and
+  exit code `3`; affected route coverage becomes partial.
+- **Bounded crawl networking:** every request and redirect is checked against destination, DNS,
+  private-network, response-size and timeout limits. Local fixtures still require an explicit
+  private-network opt-in.
+- **Recursive evidence redaction:** nested credential wrappers, arrays, Bearer/Basic values and
+  embedded private paths are sanitized across JSON, Markdown, HTML, SARIF, JUnit and observation
+  outputs while documented authorization evidence models remain readable.
+- **No dynamic robots regex:** attacker-controlled wildcard rules use a literal cached matcher,
+  including adversarial repeated-wildcard input.
+- **Complete installed payload:** Claude plugin metadata, bundled Opengrep rules and v0.7 review
+  evidence are included, and the installed ruleset digest is checked.
 
-The capped [four-project access-control review](docs/reviews/v0.7.0-access-control-review.md)
-inventoried 173 HTTP routes and 23 Server Actions and manually reviewed 32 entries. It produced 12
-partial chains and zero completed ordinary-project chains. Those zero completions are a visible
-limit, not a success claim. Four named
-[real-world regressions](docs/regressions/v0.7.0-access-control-real-world-regressions.md) protect the
-Nest aggregation, fingerprint, Next monorepo-root and tsconfig-alias failures found during work.
-Detailed use and interpretation are in the
-[access-control-chain reference](references/access-control-chain.md).
+The stable inventory remains 25 built-in risk rules, 3 evidence-integrity rules and 16 opt-in
+external-adapter risk rules. Pattern matches remain `suspected`; policy gating never upgrades
+evidence, and incomplete analysis never becomes pass. The v0.7.0
+[access-control review](docs/reviews/v0.7.0-access-control-review.md),
+[regressions](docs/regressions/v0.7.0-access-control-real-world-regressions.md) and
+[access-control-chain reference](references/access-control-chain.md) continue to define the route
+review boundary.
 
 The existing finding explanation contract remains: every v3 source finding includes the technical
 term, plain-language meaning, realistic consequence, evidence boundary, proposal, alternatives,

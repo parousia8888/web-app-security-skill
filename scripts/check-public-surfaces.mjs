@@ -11,6 +11,7 @@ const demo = JSON.parse(read('docs/assets/demo.json')).result;
 const en = read('README.md');
 const zh = read('README.zh-CN.md');
 const evidence = read('docs/demo-evidence.md');
+const currentVersion = read('VERSION').trim();
 const firstTrial = 'npx --yes web-app-security-skill audit . --fail-on never';
 
 function fail(message) {
@@ -19,16 +20,16 @@ function fail(message) {
 }
 
 if (contract.schemaVersion !== 1) fail('public contract schemaVersion must be 1');
-if (contract.currentSourceRelease?.version !== '0.7.0'
-    || contract.currentSourceRelease?.status !== 'published'
+if (contract.currentSourceRelease?.version !== currentVersion
+    || !['candidate', 'published'].includes(contract.currentSourceRelease?.status)
     || !existsSync(`${ROOT}/${contract.currentSourceRelease?.routeSchema || ''}`)
     || !existsSync(`${ROOT}/${contract.currentSourceRelease?.accessControlReview || ''}`)
     || !existsSync(`${ROOT}/${contract.currentSourceRelease?.accessControlRegressions || ''}`)) {
-  fail('published v0.7.0 access-control contract is missing or invalid');
+  fail(`current v${currentVersion} access-control contract is missing or invalid`);
 }
 if (JSON.stringify(contract.currentSourceRelease?.stableFrameworks) !== JSON.stringify([
   'express', 'nestjs', 'next-app',
-])) fail('published v0.7.0 framework scope changed');
+])) fail(`current v${currentVersion} framework scope changed`);
 for (const path of [...(contract.projectJourneys || []), ...(contract.methodStudies || [])]) {
   if (!existsSync(`${ROOT}/${path}`)) fail(`public evidence document is missing: ${path}`);
 }
@@ -73,9 +74,9 @@ for (const [path, text] of [['README.md', en], ['README.zh-CN.md', zh]]) {
 }
 
 for (const [path, text, releaseHeading, explanationMarkers] of [
-  ['README.md', en, "## What's new in v0.7.0",
+  ['README.md', en, `## What's new in v${currentVersion}`,
     ['plain-language explanation', 'what the evidence proves', 'likely product side effects', 'normal-behavior retests']],
-  ['README.zh-CN.md', zh, '## v0.7.0 新增内容',
+  ['README.zh-CN.md', zh, `## v${currentVersion} 新增内容`,
     ['白话解释', '当前证据证明了什么', '可能影响的正常功能', '功能复测']],
 ]) {
   const trialIndex = text.indexOf(firstTrial);
