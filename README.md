@@ -100,8 +100,9 @@ For the complete install-to-uninstall path, follow the tested
 ## What's new in v0.7.0
 
 v0.7.0 deepens the v0.6.0 route inventory into a bounded access-control-chain review. The signed
-tag, GitHub Release, npm package and provenance are public; verified-installer and `v1` promotion
-remain gated on their immutable consumers:
+tag, GitHub Release, npm package, provenance and verified installer are public. The signed `v1`
+alias now resolves to the immutable v0.7.0 source after both immutable and public-alias consumers
+passed:
 
 - **Correct Nest control scope:** `APP_GUARD` controls are listed once at application level instead
   of being copied into every route. Authentication and authorization signals are separated, while
@@ -387,8 +388,10 @@ requires deployment authorization acknowledgement:
     fail-on: high
 ```
 
-For repeatable CI, use the immutable v0.7.0 commit above. The signed stable major-version alias
-remains on the previous verified source until the immutable v0.7.0 consumer passes:
+For repeatable CI, use the immutable v0.7.0 commit above. The signed stable major-version alias now
+resolves to that source; its post-promotion public consumer
+[`32682179514`](https://github.com/parousia8888/web-app-security-skill/actions/runs/32682179514)
+passed:
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
@@ -409,9 +412,9 @@ installed and pinned by the caller; the Action never downloads them:
     fail-on: high
 ```
 
-The moving `v1` tag is promoted with a guarded lease only after the versioned source, installation
-and immutable Action gates pass. Review release notes before accepting a future update; use the full
-commit above when the workflow must not move.
+The moving `v1` tag was promoted with a guarded lease only after the versioned source, installation
+and immutable Action gates passed. Review release notes before accepting a future update; use the
+full commit above when the workflow must not move.
 
 ## Trust and release evidence
 

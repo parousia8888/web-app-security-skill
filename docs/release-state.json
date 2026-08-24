@@ -10,7 +10,7 @@
   },
   "stableAction": {
     "tag": "v1",
-    "sourceCommit": "7521e0699eefe26d23a7972fbee6fb37b46fdfe2"
+    "sourceCommit": "bfed608b5d1abe56b6b34b09f0c6ef59f17eab4a"
   },
   "npmPackage": {
     "name": "web-app-security-skill",

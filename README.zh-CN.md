@@ -95,8 +95,9 @@ npm run demo -- --out ./demo-output
 
 ## v0.7.0 新增内容
 
-v0.7.0 把 v0.6.0 的路由清单推进成有边界的访问控制链审查。签名 tag、GitHub Release、npm 包和
-provenance 已公开；verified installer 与 `v1` 仍要等各自的不可变 consumer 通过后再推进：
+v0.7.0 把 v0.6.0 的路由清单推进成有边界的访问控制链审查。签名 tag、GitHub Release、npm 包、
+provenance 与 verified installer 已公开。不可变 consumer 和公开别名 consumer 均通过后，签名的
+`v1` 已指向不可变 v0.7.0 源码：
 
 - **修正 Nest 控制范围：** `APP_GUARD` 只在应用级列一次，不再复制到每条路由；认证和授权信号
   分开，无法分类的控制继续保持无法分类。
@@ -352,8 +353,9 @@ Composite Action 保持 v0.3 crawl 输入与输出兼容。Crawl mode 默认被�
     fail-on: high
 ```
 
-需要可重复 CI 时使用上面的 v0.7.0 不可变 commit。签名的稳定大版本别名在不可变 v0.7.0
-consumer 通过前仍保留在上一份已验证源码：
+需要可重复 CI 时使用上面的 v0.7.0 不可变 commit。签名的稳定大版本别名现在也指向该源码；晋级后
+公开 consumer [`32682179514`](https://github.com/parousia8888/web-app-security-skill/actions/runs/32682179514)
+已经通过：
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
@@ -373,7 +375,7 @@ Source mode 默认只用内置 adapter。v0.7.0 不可变 Action 运行 v3 源�
     fail-on: high
 ```
 
-移动的 `v1` tag 只在版本化源码、安装与不可变 Action 门禁通过后用 guarded lease 提升。以后接受
+移动的 `v1` tag 已在版本化源码、安装与不可变 Action 门禁通过后用 guarded lease 提升。以后接受
 更新前应检查 release note；工作流不能随版本移动时使用上面的完整 commit。
 
 ## 信任与 release 证据
