@@ -53,19 +53,27 @@
     },
     {
       "id": "framework-route-security-inventory",
-      "name": "Framework-aware route and control inventory",
+      "name": "Framework-aware route, action and control inventory",
       "category": "detection",
       "maturity": "stable",
-      "scope": "Produces a separate local route-security artifact for bounded Express, NestJS and Next.js App Router syntax. It maps supported authentication and route-authorization signals, keeps object authorization unresolved unless direct evidence exists, and orders review work without calling priority a severity or missing controls a confirmed vulnerability.",
-      "evidence": ["scripts/lib/route-security-audit.mjs", "scripts/lib/frameworks/express-route-extractor.mjs", "scripts/lib/frameworks/nest-route-extractor.mjs", "scripts/lib/frameworks/next-app-route-extractor.mjs", "docs/reviews/v0.6.0-route-review.json", "test/route-security-integration.test.mjs", "test/v060-route-review.test.mjs"]
+      "scope": "Produces route-security v2 artifacts for bounded Express, NestJS and Next.js App Router syntax, with Next.js Server Actions as a separate non-HTTP surface. Application controls are listed once, authentication and authorization signals are separated, and routes with no observed route-scoped control remain review states rather than vulnerability findings.",
+      "evidence": ["scripts/lib/route-security-audit.mjs", "scripts/lib/frameworks/express-route-extractor.mjs", "scripts/lib/frameworks/nest-route-extractor.mjs", "scripts/lib/frameworks/next-app-route-extractor.mjs", "scripts/lib/frameworks/next-server-action-extractor.mjs", "docs/reviews/v0.7.0-access-control-review.json", "test/route-security-integration.test.mjs", "test/next-server-action-extractor.test.mjs"]
     },
     {
-      "id": "direct-prisma-route-authorization-review",
-      "name": "Direct Prisma object-authorization review lead",
+      "id": "bounded-access-control-chain",
+      "name": "Bounded identity-to-data access-control chain",
+      "category": "detection",
+      "maturity": "stable",
+      "scope": "For supported routes and Server Actions, records exact Nest Passport or Auth.js identity evidence and caller-selected object flow into bounded Prisma or Drizzle operations in the same handler or through one exact project-local call. Static module aliases resolve only to one source target and analysis stops before a second call. A missing visible constraint remains review evidence and cannot prove BOLA/IDOR; the capped ordinary-project review produced 12 partial and zero completed chains.",
+      "evidence": ["scripts/lib/js-ts-identity-evidence.mjs", "scripts/lib/js-ts-data-operation-evidence.mjs", "scripts/lib/js-ts-one-hop-access.mjs", "scripts/lib/js-ts-module-graph.mjs", "docs/reviews/v0.7.0-access-control-review.json", "test/access-control-identity.test.mjs", "test/access-control-data-operations.test.mjs", "test/access-control-one-hop.test.mjs"]
+    },
+    {
+      "id": "experimental-access-control-adapters",
+      "name": "Experimental Clerk, Better Auth and Supabase access evidence",
       "category": "detection",
       "maturity": "experimental",
-      "scope": "For supported routes only, observes a route identifier reaching a direct same-handler Prisma operation without a supported same-operation principal constraint. It does not trace services, prove missing authorization, or support a BOLA vulnerability conclusion; the bounded ordinary-project review produced no matches.",
-      "evidence": ["scripts/lib/js-ts-route-authorization-audit.mjs", "docs/reviews/v0.6.0-route-review.json", "test/js-ts-route-authorization-audit.test.mjs", "test/v060-route-review.test.mjs"]
+      "scope": "Recognizes exact bounded Clerk, Better Auth and Supabase identity constructs plus Supabase Query Builder operations. These families lack sufficient ordinary-project evidence for stable promotion; every Supabase operation retains external_policy_required because source analysis cannot evaluate deployed Postgres RLS.",
+      "evidence": ["scripts/lib/js-ts-identity-evidence.mjs", "scripts/lib/js-ts-data-operation-evidence.mjs", "scripts/lib/js-ts-one-hop-access.mjs", "docs/reviews/v0.7.0-access-control-review.json", "test/access-control-identity.test.mjs", "test/access-control-data-operations.test.mjs"]
     },
     {
       "id": "aws-exposure-inventory",

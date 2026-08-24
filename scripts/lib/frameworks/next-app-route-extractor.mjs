@@ -1,10 +1,10 @@
 import { posix } from 'node:path';
 import { routeRecord } from '../route-security-model.mjs';
-import { signalForPrimitive, signalsForRole } from '../route-control-registry.mjs';
+import { signalForPrimitive, signalsForRole, unclassifiedSignals } from '../route-control-registry.mjs';
 import { prioritizeRoute } from '../route-security-priority.mjs';
 import {
   aggregateReasons, controlFromSignals, expressionName, importedBindings, objectAddressedPath,
-  pathKind, sourceLocation, structuralGraphReasons, walkJsTsAst,
+  pathKind, routeScopeFromSignals, sourceLocation, structuralGraphReasons, walkJsTsAst,
 } from './route-extractor-helpers.mjs';
 
 const METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD']);
@@ -14,7 +14,8 @@ function nextRoutePath(modulePath) {
   const routeIndex = parts.length - 1;
   if (!/^route\.[cm]?[jt]sx?$/.test(parts[routeIndex])) return null;
   const appIndex = parts.lastIndexOf('app', routeIndex - 1);
-  if (appIndex < 0 || (appIndex > 0 && parts[appIndex - 1] !== 'src')) return null;
+  const monorepoApp = appIndex >= 2 && ['apps', 'packages'].includes(parts[appIndex - 2]);
+  if (appIndex < 0 || (appIndex > 0 && parts[appIndex - 1] !== 'src' && !monorepoApp)) return null;
   const segments = parts.slice(appIndex + 1, routeIndex);
   if (segments.some((segment) => segment.startsWith('_'))) {
     return { path: null, reason: 'next_private_route_segment' };
@@ -89,11 +90,14 @@ export function extractNextAppRoutes(graph) {
     for (const handler of handlers) {
       const signals = handlerSignals(module, handler.node, imports);
       const authentication = controlFromSignals(signalsForRole(signals, 'authentication'));
-      const authorization = controlFromSignals(signalsForRole(signals, 'authorization'));
+      const authorization = controlFromSignals(signalsForRole(signals, 'authorization'), false, 'authorization');
+      const routeScopedControl = routeScopeFromSignals(
+        signals.filter((item) => item.role !== 'unknown'), unclassifiedSignals(signals),
+      );
       routes.push(prioritizeRoute(routeRecord({ framework: 'next-app', method: handler.method, path: routePath.path,
         pathKind: pathKind(routePath.path), location: sourceLocation(module.path, handler.node),
         handler: handler.method, objectAddressed: objectAddressedPath(routePath.path),
-        authentication, authorization })));
+        authentication, authorization, routeScopedControl })));
     }
   }
   const frameworkReasons = reasons.filter((item) => item.path && graph.modules.has(item.path));

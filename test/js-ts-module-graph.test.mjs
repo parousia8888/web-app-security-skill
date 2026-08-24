@@ -13,6 +13,33 @@ assert.equal(graph.modules.get('src/cjs.js').imports[0].bindings[0].local, 'valu
 assert.equal(graph.modules.get('src/cjs.js').exports[0].exported, 'default');
 assert.equal(graph.completed, true);
 
+const aliases = buildJsTsModuleGraph([
+  { path: 'apps/web/app/route.ts', text: "import { auth } from '@/auth'; import { helper } from '@workspace/security/helper';" },
+  { path: 'apps/web/auth.ts', text: 'export const auth = () => true;' },
+  { path: 'packages/security/src/helper.ts', text: 'export function helper() {}' },
+], {
+  configFiles: [{ path: 'apps/web/tsconfig.json', text: `{
+    // JSONC is valid for TypeScript configuration.
+    "compilerOptions": { "baseUrl": ".", "paths": { "@/*": ["./*"] }, },
+  }` }],
+  packageManifests: [{ path: 'packages/security/package.json', manifest: {
+    name: '@workspace/security', exports: { './*': './src/*.ts' },
+  } }],
+});
+assert.equal(aliases.modules.get('apps/web/app/route.ts').imports[0].resolution.path,
+  'apps/web/auth.ts');
+assert.equal(aliases.modules.get('apps/web/app/route.ts').imports[1].resolution.path,
+  'packages/security/src/helper.ts');
+
+const boundedAliases = buildJsTsModuleGraph([
+  { path: 'src/app.ts', text: "import value from '@/same'; import external from 'external';" },
+  { path: 'src/same.ts', text: 'export default 1;' },
+  { path: 'src/same.js', text: 'export default 2;' },
+], { configFiles: [{ path: 'tsconfig.json', text: '{"compilerOptions":{"paths":{"@/*":["src/*"]}}}' }] });
+assert.equal(boundedAliases.modules.get('src/app.ts').imports[0].resolution.reason,
+  'module_alias_resolution_ambiguous');
+assert.equal(boundedAliases.modules.get('src/app.ts').imports[1].resolution, null);
+
 const broken = buildJsTsModuleGraph([
   { path: 'src/broken.ts', text: 'const value: =' },
   { path: 'src/dynamic.ts', text: 'const module = import(name);' },

@@ -17,7 +17,7 @@ Web application is secure.
 
 ## Route-security review
 
-The v0.6.0 route inventory parses supported JavaScript and TypeScript with a pinned bundled
+The v0.7.0 route and access-control inventory parses supported JavaScript and TypeScript with a pinned bundled
 `@babel/parser`, but framework semantics remain deliberately narrow. The parser understanding a
 file does not mean every framework registration or authorization relationship in that file is
 understood.
@@ -25,15 +25,18 @@ understood.
 | Limitation | What users may observe | Current behavior | Required follow-up |
 |---|---|---|---|
 | Express factory and mount boundary | Routes registered through an aliased app object, a wrapper, a computed mount or an unresolved router relationship can be absent. | Direct `express()`/`Router()` registrations and statically resolved mounts are stable. A route-relevant unresolved relationship produces partial coverage and `js-route-security-evidence-incomplete / unknown`. | Read the route coverage reasons and manually inspect the named files. Do not treat the inventory as exhaustive when Express coverage is partial. |
-| NestJS decorator boundary | Computed controller or method paths, custom decorator composition and runtime global guards may not resolve. | Static controller/method decorators, static controller option paths and supported Passport/custom guard syntax are stable. An unresolved prefix remains path `null`; a method-only path is never guessed. | Review dynamic decorators, global module configuration and custom guards in project context. |
-| Next.js App Router export boundary | A route file that re-exports `GET`, `POST` or another handler through a project alias can be missing from the route list. | Direct named handler exports are stable. An unresolved handler re-export produces `next_route_handler_export_unresolved` and partial coverage. | Inspect the named `route.*` file and its re-export target; record the missing methods manually. |
-| Control signal is not control proof | Passport, a custom `auth` helper, middleware or a guard can be visible while its runtime behavior, order and policy remain unknown. | Authentication, route-level authorization and object-level authorization are separate fields. Supported constructs are `observed`; custom constructs remain `candidate_observed`; absence is `not_observed`, never a confirmed vulnerability. | Verify runtime middleware order, identity binding, role semantics and data-layer owner/tenant constraints. |
+| NestJS decorator and application-control boundary | Computed controller or method paths, custom decorator composition and runtime global guards may not resolve. An `APP_GUARD` can exist without applying the expected policy to every route. | Static controller/method decorators, static controller option paths and supported Passport/custom guard syntax are stable. Application guards are listed once and are never copied into every route as authentication/authorization proof. | Review dynamic decorators, global module configuration, exemptions and runtime guard behavior in project context. |
+| Next.js App Router and Server Action export boundary | Wrapper/re-export patterns can hide route handlers or actions; an action has no static HTTP URL to report. | Direct named route exports and direct static async Server Actions with supported `"use server"` placement are represented separately. Unresolved exports produce partial coverage; the tool never invents an action URL. | Inspect named unresolved files/exports and the framework invocation path; record missing surfaces manually. |
+| Control signal is not control proof | Passport, a custom auth helper, middleware or a guard can be visible while its runtime behavior, order and policy remain unknown. | Authentication, route authorization and unclassified route controls are separate. `no_route_scoped_control_observed` is a review state, not a vulnerability. Application controls stay application-scoped. | Verify runtime middleware order, identity binding, role semantics, intentional public routes and data-layer owner/tenant constraints. |
 | Priority is not severity | Public login, registration, recovery, status and badge routes can be ranked early because they change state or contain an identifier. | `review_first`/`review_next`/`review_later` order human work; it does not assert a vulnerability or CVSS severity. `router.all` is conservatively treated as potentially state-changing. | Close expected-public routes with project evidence and review abuse controls separately. |
-| Experimental direct-Prisma BOLA lead | Delegated services, wrappers, other ORMs and row-level policies are invisible; a direct query match still cannot prove missing authorization. | Only a same-handler route identifier reaching a supported direct Prisma operation without a visible same-operation principal constraint can emit the experimental lead. The v0.6.0 ordinary-project sample produced zero matches, so the rule remains experimental. | Trace the handler through service/data layers and test with two owner-controlled accounts before making a BOLA conclusion. |
+| Bounded identity providers | Custom wrappers, renamed response shapes and runtime provider configuration can hide or change identity semantics. | Auth.js and existing Nest Passport evidence are stable bounded. Clerk, Better Auth and Supabase identity are experimental. Same-name local helpers are not accepted as provider evidence. | Trace the real session/caller binding and verify unauthenticated, owner and lower-role behavior. |
+| One-hop data-operation chain | Query/body-selected IDs, wrappers, dynamic dispatch, argument transformations and a second local call can stop the chain. Workspace exports that point only to unbuilt `dist` files are not guessed back to source. | Same-handler and one exact local call are supported. Relative imports, static tsconfig/jsconfig paths and exact workspace exports resolve only to one discovered source file; ambiguity, escapes and unsupported relationships become partial/incomplete evidence. | Continue the named call path manually. Do not treat no completed chain as a clean result. |
+| Provider and policy boundary | A visible Prisma/Drizzle/Supabase operation does not prove runtime reachability or correct ownership policy. Database RLS is external to source-query evidence. | Prisma and Drizzle operations are stable bounded. Supabase Query Builder is experimental and always retains `external_policy_required`, even when a source constraint is visible. | Review deployed database policy and test with two owner-controlled accounts before making a BOLA/IDOR conclusion. |
 
-The [57-route ordinary-project review](docs/reviews/v0.6.0-route-review.md) records six visible
-extractor misses and separate framework promotion decisions. Its purposive sample is not a
-production precision/recall measurement.
+The [v0.7.0 four-project review](docs/reviews/v0.7.0-access-control-review.md) inventories 173 HTTP
+routes and 23 Server Actions and manually reviews 32 entries. It produced 12 partial chains and zero
+completed ordinary-project chains. This purposive sample exposes current reach and limits; it is not
+a production precision/recall measurement.
 
 ## Incremental audit
 
@@ -63,7 +66,7 @@ neither is a representative accuracy benchmark.
 
 ## MCP and future rule expansion
 
-No MCP server ships in v0.6.0. npm/npx, the ordinary CLI and the Claude plugin invoke the current
+No MCP server ships in v0.7.0. npm/npx, the ordinary CLI and the Claude plugin invoke the current
 runtime. The current count is 25 built-in risk rules, three evidence-integrity rules and 16 external
 adapter risk rules. The documented architecture gates require a permission model and client
 evidence for MCP, and positive/negative fixtures plus false-positive review for every future stable
@@ -111,6 +114,8 @@ The following are historical and covered by machine regressions; they are not cu
 | 0.6.0 | Static NestJS controller option paths could be emitted at false root paths; a dynamic prefix could also be dropped and guessed. | Static option-path/array and dynamic-prefix-null route regressions. |
 | 0.6.0 | Unrelated import gaps could pollute route coverage, while unresolved Next handler re-exports could disappear without route-specific incomplete evidence. | Route-relevance isolation and Next re-export fail-closed regressions. |
 | 0.6.0 | Route reason counts could describe internal relationship events instead of affected inputs, and Express `all` could be ranked as read-only. | Coverage reason-budget and `ALL` state-change priority regressions. |
+| 0.7.0 | A Nest application-level rate-limit guard could be copied onto every route as both authentication and authorization evidence, hiding routes with no route-scoped control. | Application-control-once, split auth/authz and `no_route_scoped_control_observed` regressions. |
+| 0.7.0 | Access-chain fingerprints could collide, standard Next monorepo app roots could be missed, and exact tsconfig aliases could stop one-hop analysis. | Entry/call fingerprint, monorepo-root and bounded alias-resolution regressions. |
 
 Report new false-positive classes or minimized parser failures through
 [GitHub Issues](https://github.com/parousia8888/web-app-security-skill/issues). The handling and

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "release": "0.7.0",
+  "cases": [
+    {
+      "id": "nestjs-global-guard-role-duplication",
+      "observedFailure": "A Nest APP_GUARD RateLimitGuard was copied to every route as both authentication and authorization evidence; 72 routes with no route-scoped control were indistinguishable.",
+      "protectedContract": "Application guards are listed once, auth and authz signals are separated, and no_route_scoped_control_observed remains a review state.",
+      "regressionTest": "test/nest-route-extractor.test.mjs"
+    },
+    {
+      "id": "one-hop-chain-fingerprint-collision",
+      "observedFailure": "Different partial one-hop chains initially shared a fingerprint because entry identity and call edges were absent from the fingerprint input.",
+      "protectedContract": "Distinct entry and call-edge evidence produces distinct access-chain fingerprints.",
+      "regressionTest": "test/access-control-one-hop.test.mjs"
+    },
+    {
+      "id": "next-monorepo-app-root-missed",
+      "observedFailure": "A standard apps/web/app tree produced zero Next.js routes.",
+      "protectedContract": "Root, src/app, apps/<name>/app and packages/<name>/app route roots are recognized without guessing URLs.",
+      "regressionTest": "test/next-app-route-extractor.test.mjs"
+    },
+    {
+      "id": "tsconfig-alias-local-call-missed",
+      "observedFailure": "Exact @/* imports stopped local identity and one-hop resolution; Formbricks exposed only 3 partial chains before bounded alias resolution.",
+      "protectedContract": "Nearest static tsconfig/jsconfig paths and existing workspace exports resolve exactly; ambiguous, missing and escaping targets fail closed.",
+      "regressionTest": "test/js-ts-module-graph.test.mjs"
+    }
+  ]
+}

@@ -9,7 +9,7 @@ artifacts and reproduced local behavior; they do not claim universal scanner cov
 
 | Surface | Reproduced evidence | Source |
 |---|---|---|
-| Detection contract | 10 stable narrow detection families; 0 planned detection capabilities | [Generated matrix](capabilities.md) |
+| Detection contract | 11 stable narrow detection families; 0 planned detection capabilities | [Generated matrix](capabilities.md) |
 | Supporting contract | 10 evidence/reporting, 1 lifecycle/distribution and 6 agent-guided capabilities; none are counted as detection coverage | [Generated matrix](capabilities.md) |
 | Stable source/deployment rule corpus | 25 built-in risk; 3 built-in evidence-integrity; 16 external adapter risk; 44 total | [Labelled corpus](stable-rule-corpus.json) |
 | Local before/after demo | OS command injection lead (CWE-78); SUSPECTED HIGH -> security fixed; functional passed; side effect recorded | [Generated demo evidence](demo-evidence.md) |

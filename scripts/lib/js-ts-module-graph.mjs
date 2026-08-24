@@ -2,6 +2,7 @@ import { posix } from 'node:path';
 import { parseJsTsAst, walkJsTsAst } from './js-ts-ast-parser.mjs';
 
 const EXTENSIONS = ['.js', '.jsx', '.mjs', '.cjs', '.ts', '.tsx', '.mts', '.cts'];
+const CONFIG_NAMES = new Set(['tsconfig.json', 'jsconfig.json']);
 
 export function literalString(node) {
   if (node?.type === 'StringLiteral') return node.value;
@@ -34,18 +35,293 @@ function safeModulePath(path) {
     ? normalized : null;
 }
 
-function resolveLocal(fromPath, specifier, files) {
-  if (!specifier.startsWith('.')) return null;
-  const base = safeModulePath(posix.join(posix.dirname(fromPath), specifier));
-  if (!base) return { path: null, reason: 'module_path_escape' };
+function resolveBase(base, files, reasons = {}) {
+  if (!base) return { path: null, reason: reasons.escape || 'module_path_escape' };
   const candidates = [base];
   if (!EXTENSIONS.some((extension) => base.endsWith(extension))) {
     for (const extension of EXTENSIONS) candidates.push(`${base}${extension}`);
     for (const extension of EXTENSIONS) candidates.push(posix.join(base, `index${extension}`));
   }
-  const matches = candidates.filter((candidate) => files.has(candidate));
+  const matches = [...new Set(candidates.filter((candidate) => files.has(candidate)))];
   if (matches.length === 1) return { path: matches[0], reason: null };
-  return { path: null, reason: matches.length ? 'module_resolution_ambiguous' : 'module_resolution_missing' };
+  return { path: null, reason: matches.length
+    ? (reasons.ambiguous || 'module_resolution_ambiguous')
+    : (reasons.missing || 'module_resolution_missing') };
+}
+
+function stripJsonComments(text) {
+  let output = '';
+  let string = false;
+  let escaped = false;
+  let lineComment = false;
+  let blockComment = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const current = text[index];
+    const next = text[index + 1];
+    if (lineComment) {
+      if (current === '\n' || current === '\r') {
+        lineComment = false;
+        output += current;
+      } else output += ' ';
+      continue;
+    }
+    if (blockComment) {
+      if (current === '*' && next === '/') {
+        output += '  ';
+        index += 1;
+        blockComment = false;
+      } else output += current === '\n' || current === '\r' ? current : ' ';
+      continue;
+    }
+    if (string) {
+      output += current;
+      if (escaped) escaped = false;
+      else if (current === '\\') escaped = true;
+      else if (current === '"') string = false;
+      continue;
+    }
+    if (current === '"') {
+      string = true;
+      output += current;
+    } else if (current === '/' && next === '/') {
+      output += '  ';
+      index += 1;
+      lineComment = true;
+    } else if (current === '/' && next === '*') {
+      output += '  ';
+      index += 1;
+      blockComment = true;
+    } else output += current;
+  }
+  if (string || blockComment) throw new Error('unterminated JSONC token');
+  return output;
+}
+
+function removeTrailingJsonCommas(text) {
+  let output = '';
+  let string = false;
+  let escaped = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const current = text[index];
+    if (string) {
+      output += current;
+      if (escaped) escaped = false;
+      else if (current === '\\') escaped = true;
+      else if (current === '"') string = false;
+      continue;
+    }
+    if (current === '"') {
+      string = true;
+      output += current;
+      continue;
+    }
+    if (current === ',') {
+      let cursor = index + 1;
+      while (/\s/.test(text[cursor] || '')) cursor += 1;
+      if (text[cursor] === '}' || text[cursor] === ']') continue;
+    }
+    output += current;
+  }
+  return output;
+}
+
+function parseJsonConfig(text) {
+  return JSON.parse(removeTrailingJsonCommas(stripJsonComments(text)));
+}
+
+function aliasPatternMatch(pattern, specifier) {
+  const first = pattern.indexOf('*');
+  if (first < 0) return pattern === specifier ? { wildcard: '', specificity: pattern.length + 10_000 } : null;
+  if (first !== pattern.lastIndexOf('*')) return null;
+  const prefix = pattern.slice(0, first);
+  const suffix = pattern.slice(first + 1);
+  if (!specifier.startsWith(prefix) || !specifier.endsWith(suffix)
+      || specifier.length < prefix.length + suffix.length) return null;
+  return { wildcard: specifier.slice(prefix.length, specifier.length - suffix.length),
+    specificity: prefix.length + suffix.length };
+}
+
+function configRecords(configFiles, reasons, limits) {
+  const records = [];
+  for (const input of (configFiles || []).slice(0, limits.maxResolutionConfigs)) {
+    const path = safeModulePath(input.path);
+    if (!path || !CONFIG_NAMES.has(posix.basename(path))) continue;
+    try {
+      const parsed = parseJsonConfig(input.text);
+      const compiler = parsed?.compilerOptions;
+      if (!compiler || typeof compiler !== 'object' || Array.isArray(compiler)) continue;
+      const configDirectory = posix.dirname(path);
+      const baseUrl = compiler.baseUrl === undefined ? '.' : compiler.baseUrl;
+      if (typeof baseUrl !== 'string') {
+        reasons.push({ code: 'module_config_base_url_invalid', path });
+        continue;
+      }
+      const base = safeModulePath(posix.join(configDirectory, baseUrl));
+      if (!base) {
+        reasons.push({ code: 'module_config_path_escape', path });
+        continue;
+      }
+      const aliases = [];
+      if (compiler.paths !== undefined && (!compiler.paths || typeof compiler.paths !== 'object'
+          || Array.isArray(compiler.paths))) {
+        reasons.push({ code: 'module_config_paths_invalid', path });
+        continue;
+      }
+      for (const [pattern, targets] of Object.entries(compiler.paths || {})) {
+        if (typeof pattern !== 'string' || !Array.isArray(targets)
+            || targets.some((target) => typeof target !== 'string')
+            || (pattern.match(/\*/g) || []).length > 1
+            || targets.some((target) => (target.match(/\*/g) || []).length > 1)) {
+          reasons.push({ code: 'module_config_alias_invalid', path });
+          continue;
+        }
+        aliases.push({ pattern, targets });
+      }
+      records.push({ path, directory: configDirectory, base, aliases });
+    } catch {
+      reasons.push({ code: 'module_config_parse_error', path });
+    }
+  }
+  if ((configFiles || []).length > limits.maxResolutionConfigs) {
+    reasons.push({ code: 'module_config_limit', path: '<module-configs>' });
+  }
+  return records;
+}
+
+function nearestConfig(fromPath, configs) {
+  const directory = posix.dirname(fromPath);
+  const applicable = configs.filter((config) => config.directory === '.'
+    || directory === config.directory || directory.startsWith(`${config.directory}/`));
+  applicable.sort((left, right) => right.directory.length - left.directory.length
+    || (posix.basename(left.path) === 'tsconfig.json' ? -1 : 1));
+  return applicable[0] || null;
+}
+
+function resolveAlias(fromPath, specifier, files, configs) {
+  const config = nearestConfig(fromPath, configs);
+  if (!config) return null;
+  const matches = config.aliases.map((alias) => ({ alias,
+    match: aliasPatternMatch(alias.pattern, specifier) })).filter((item) => item.match)
+    .sort((left, right) => right.match.specificity - left.match.specificity);
+  if (!matches.length) return null;
+  const selected = matches[0];
+  const resolved = [];
+  let escaped = false;
+  for (const target of selected.alias.targets) {
+    const value = target.includes('*') ? target.replace('*', selected.match.wildcard) : target;
+    const base = safeModulePath(posix.join(config.base, value));
+    if (!base) {
+      escaped = true;
+      continue;
+    }
+    const candidate = resolveBase(base, files, {
+      missing: 'module_alias_resolution_missing', ambiguous: 'module_alias_resolution_ambiguous',
+      escape: 'module_alias_path_escape',
+    });
+    if (candidate.path) resolved.push(candidate.path);
+    else if (candidate.reason === 'module_alias_resolution_ambiguous') {
+      return { path: null, reason: candidate.reason };
+    }
+  }
+  const unique = [...new Set(resolved)];
+  if (unique.length === 1) return { path: unique[0], reason: null };
+  if (unique.length > 1) return { path: null, reason: 'module_alias_resolution_ambiguous' };
+  return { path: null, reason: escaped ? 'module_alias_path_escape' : 'module_alias_resolution_missing' };
+}
+
+function packageNameFor(specifier) {
+  if (!specifier || specifier.startsWith('.') || specifier.startsWith('/') || specifier.startsWith('#')) return null;
+  const parts = specifier.split('/');
+  return specifier.startsWith('@') ? parts.length >= 2 ? `${parts[0]}/${parts[1]}` : null : parts[0];
+}
+
+function stringTargets(value) {
+  if (typeof value === 'string') return [value];
+  if (Array.isArray(value)) return value.flatMap(stringTargets);
+  if (!value || typeof value !== 'object') return [];
+  return ['import', 'default', 'require', 'types'].flatMap((key) => stringTargets(value[key]));
+}
+
+function exportTargets(exportsField, subpath) {
+  if (typeof exportsField === 'string' || Array.isArray(exportsField)) {
+    return subpath === '.' ? stringTargets(exportsField) : [];
+  }
+  if (!exportsField || typeof exportsField !== 'object') return [];
+  const entries = Object.entries(exportsField);
+  if (!entries.some(([key]) => key.startsWith('.'))) return subpath === '.' ? stringTargets(exportsField) : [];
+  if (Object.hasOwn(exportsField, subpath)) return stringTargets(exportsField[subpath]);
+  const matches = entries.flatMap(([pattern, value]) => {
+    const matched = aliasPatternMatch(pattern, subpath);
+    if (!matched || !pattern.includes('*')) return [];
+    return stringTargets(value).map((target) => target.includes('*')
+      ? target.replace('*', matched.wildcard) : target);
+  });
+  return matches;
+}
+
+function workspaceRecords(packageManifests, reasons, limits) {
+  const byName = new Map();
+  for (const input of (packageManifests || []).slice(0, limits.maxResolutionPackages)) {
+    const path = safeModulePath(input.path);
+    const manifest = input.manifest;
+    if (!path || posix.basename(path) !== 'package.json' || !manifest
+        || typeof manifest.name !== 'string') continue;
+    const record = { path, directory: posix.dirname(path), manifest };
+    if (!byName.has(manifest.name)) byName.set(manifest.name, []);
+    byName.get(manifest.name).push(record);
+  }
+  if ((packageManifests || []).length > limits.maxResolutionPackages) {
+    reasons.push({ code: 'workspace_package_limit', path: '<package-manifests>' });
+  }
+  return byName;
+}
+
+function resolveWorkspace(specifier, files, packages) {
+  const name = packageNameFor(specifier);
+  const records = name ? packages.get(name) : null;
+  if (!records) return null;
+  if (records.length !== 1) return { path: null, reason: 'workspace_package_ambiguous' };
+  const record = records[0];
+  const suffix = specifier.slice(name.length);
+  const subpath = suffix ? `.${suffix}` : '.';
+  let targets = exportTargets(record.manifest.exports, subpath);
+  if (!targets.length && record.manifest.exports === undefined) {
+    if (subpath === '.') targets = [record.manifest.module, record.manifest.main, './index']
+      .filter((value) => typeof value === 'string');
+    else targets = [subpath.slice(1)];
+  }
+  const resolved = [];
+  let escaped = false;
+  for (const target of targets) {
+    const clean = target.replace(/^\.\//, '');
+    const base = safeModulePath(posix.join(record.directory, clean));
+    if (!base) {
+      escaped = true;
+      continue;
+    }
+    const candidate = resolveBase(base, files, {
+      missing: 'workspace_export_resolution_missing', ambiguous: 'workspace_export_resolution_ambiguous',
+      escape: 'workspace_export_path_escape',
+    });
+    if (candidate.path) resolved.push(candidate.path);
+    else if (candidate.reason === 'workspace_export_resolution_ambiguous') {
+      return { path: null, reason: candidate.reason };
+    }
+  }
+  const unique = [...new Set(resolved)];
+  if (unique.length === 1) return { path: unique[0], reason: null };
+  if (unique.length > 1) return { path: null, reason: 'workspace_export_resolution_ambiguous' };
+  return { path: null, reason: escaped ? 'workspace_export_path_escape'
+    : 'workspace_export_resolution_missing' };
+}
+
+function resolveLocal(fromPath, specifier, files, context) {
+  if (!specifier.startsWith('.')) {
+    return resolveAlias(fromPath, specifier, files, context.configs)
+      || resolveWorkspace(specifier, files, context.packages);
+  }
+  const base = safeModulePath(posix.join(posix.dirname(fromPath), specifier));
+  return resolveBase(base, files);
 }
 
 function patternBindings(pattern) {
@@ -59,7 +335,7 @@ function patternBindings(pattern) {
   });
 }
 
-function collectModule(path, text, files, limits) {
+function collectModule(path, text, files, limits, context) {
   const parsed = parseJsTsAst(path, text);
   if (parsed.error) return { path, text, ast: null, imports: [], exports: [], reasons: [parsed.error.code] };
   const imports = [];
@@ -75,7 +351,7 @@ function collectModule(path, text, files, limits) {
             : expressionName(specifier.imported),
         kind: specifier.type,
       }));
-      const resolution = source ? resolveLocal(path, source, files) : null;
+      const resolution = source ? resolveLocal(path, source, files, context) : null;
       imports.push({ source, bindings, resolution });
       if (resolution?.reason) reasons.push(resolution.reason);
     }
@@ -84,7 +360,7 @@ function collectModule(path, text, files, limits) {
       const source = literalString(node.arguments[0]);
       if (source) {
         const bindings = parent?.type === 'VariableDeclarator' ? patternBindings(parent.id) : [];
-        const resolution = resolveLocal(path, source, files);
+        const resolution = resolveLocal(path, source, files, context);
         imports.push({ source, bindings, resolution });
         if (resolution?.reason) reasons.push(resolution.reason);
       }
@@ -100,7 +376,7 @@ function collectModule(path, text, files, limits) {
           local: expressionName(specifier.exported), imported: expressionName(specifier.local),
           kind: 'ExportNamedReexport',
         }));
-        const resolution = source ? resolveLocal(path, source, files) : null;
+        const resolution = source ? resolveLocal(path, source, files, context) : null;
         imports.push({ source, bindings, resolution });
         if (resolution?.reason) reasons.push(resolution.reason);
       }
@@ -127,6 +403,8 @@ export function buildJsTsModuleGraph(sourceFiles, options = {}) {
     maxModules: options.maxModules ?? 5_000,
     maxEdges: options.maxEdges ?? 20_000,
     maxNodesPerFile: options.maxNodesPerFile ?? 250_000,
+    maxResolutionConfigs: options.maxResolutionConfigs ?? 250,
+    maxResolutionPackages: options.maxResolutionPackages ?? 1_000,
   };
   const fileMap = new Map();
   const reasons = [];
@@ -141,12 +419,16 @@ export function buildJsTsModuleGraph(sourceFiles, options = {}) {
   }
   const modules = new Map();
   let edgeCount = 0;
+  const context = {
+    configs: configRecords(options.configFiles || [], reasons, limits),
+    packages: workspaceRecords(options.packageManifests || [], reasons, limits),
+  };
   for (const [path, text] of fileMap) {
     if (modules.size >= limits.maxModules) {
       reasons.push({ code: 'module_graph_module_limit', path });
       break;
     }
-    const module = collectModule(path, text, fileMap, limits);
+    const module = collectModule(path, text, fileMap, limits, context);
     edgeCount += module.imports.length;
     if (edgeCount > limits.maxEdges) {
       module.reasons.push('module_graph_edge_limit');

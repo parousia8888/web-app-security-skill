@@ -26,7 +26,7 @@ remain explicit in `security-scope.yml`.
 
 Built-in language depth is intentionally narrower than project discovery:
 
-| Source surface | Stable v0.6.0 built-in boundary | Explicit limit |
+| Source surface | Stable v0.7.0 built-in boundary | Explicit limit |
 |---|---|---|
 | JavaScript / TypeScript | `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx`; direct lexical constructs for dynamic execution, child-process shell use, React/browser HTML sinks, wildcard credentialed CORS, disabled TLS verification, unsafe JWT options, hardcoded auth/session secrets and recognized insecure cookie options | No whole-program data flow, alias-complete symbol resolution, runtime reachability or sanitizer proof |
 | Python | `.py`; tokenizer-backed constructs for dynamic execution, shell subprocess use, pickle and YAML deserialization, disabled TLS verification, framework debug, hardcoded framework secrets, wildcard credentialed CORS, recognized insecure session cookies and explicit CSRF disable/exempt constructs | A tokenizer failure becomes `unknown`; no interprocedural data flow or deployment-state proof |
@@ -38,8 +38,18 @@ Framework-aware route review has its own narrower contract:
 | Framework | Stable syntax | Explicit limit |
 |---|---|---|
 | Express | Direct `express()`/`Router()` registrations, route chains and statically resolved router mounts | Aliased app objects, wrappers, computed mounts and unresolved route relationships become partial coverage. |
-| NestJS | Static controller/method decorators, static controller option paths/arrays, supported Passport guards and visible custom guard candidates | Dynamic decorator values remain path unknown; custom/global policy behavior and service authorization are not proved. |
-| Next.js App Router | Direct named HTTP handler exports from `route.js`/`route.ts` variants | Handler re-exports and unresolved project aliases become partial coverage; Pages Router is not supported. |
+| NestJS | Static controller/method decorators, static controller option paths/arrays, exact Passport inheritance, bounded structural route controls and one exact constructor-injected local service call | Application guards are inventoried once; dynamic decorators, runtime order, exemptions, dependency-container behavior and a second service call are not proved. |
+| Next.js App Router | Direct named HTTP handler exports from `route.js`/`route.ts` variants under root, `src/app`, `apps/<name>/app` and `packages/<name>/app` | Wrapper/re-export relationships become partial coverage; Pages Router is not supported. |
+| Next.js Server Actions | Direct static async exports with a module-level or function-level `"use server"`; identity/data analysis shares the route boundary | Actions are separate named surfaces without invented HTTP routes. Re-exports, wrappers, non-static exports and runtime invocation policy can remain unresolved. |
+
+Access-control-chain compatibility is narrower than route extraction:
+
+| Surface | Stable bounded evidence | Experimental or explicit limit |
+|---|---|---|
+| Identity | Existing exact Nest Passport and Auth.js/NextAuth package/factory/export semantics | Clerk, Better Auth and Supabase identity remain experimental; custom wrappers and response transformations are unresolved. |
+| Data operations | Direct Prisma and Drizzle operations, same handler or one exact local call | Supabase Query Builder remains experimental and always requires external RLS-policy review; other ORMs are not supported. |
+| Local module resolution | Relative imports, one unambiguous nearest static tsconfig/jsconfig path target and one exact workspace package source export | Ambiguous, missing, escaping, dynamic and unbuilt-dist-only targets fail closed. Analysis stops before a second local call. |
+| Object selectors | Supported route/path parameters and direct Server Action parameters/form fields | Query-string and JSON-body selectors, transformations and indirect aliases remain outside the v0.7.0 boundary. |
 
 JavaScript/TypeScript parsing uses the pinned bundled `@babel/parser` recorded in the route
 artifact. The bundle is included in npm, Skill and Action payloads; audited projects do not install

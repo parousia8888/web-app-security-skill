@@ -23,6 +23,7 @@ import { createGitDiffScope, selectDiffFindings, selectDiffRoutes } from './lib/
 import { assertRouteSecurityDocument } from './lib/route-security-contract.mjs';
 import {
   compareRouteSecurityDocuments, readRouteSecurityBaseline, routeSecurityDigest, routeSecurityJson,
+  routeSecurityRegressions,
 } from './lib/route-security-baseline.mjs';
 import { createRouteSecurityDocument } from './lib/route-security-model.mjs';
 import { renderRouteSecurityMarkdown } from './lib/route-security-renderer.mjs';
@@ -43,6 +44,8 @@ Options:
   --staged                Audit the Git index and show findings in staged changes
   --fail-on <severity>    critical, high, medium, low, or never (default: high)
   --fail-on-domain <d=t> Override one domain threshold; may be repeated
+  --fail-on-route-regression
+                           Exit 1 for defined route/action control regressions against a baseline
   --max-depth <n>         Maximum directory depth, 1..64 (default: 12)
   --max-files <n>         Maximum discovered files, 1..200000 (default: 20000)
   --max-entries <n>       Maximum directory entries, 1..500000 (default: 50000)
@@ -86,6 +89,8 @@ const adapterValues = takeAll('--adapter');
 const adapterTimeoutArg = take('--adapter-timeout');
 const acknowledgeAlertPolicy = args.includes('--acknowledge-alert-policy');
 if (acknowledgeAlertPolicy) args.splice(args.indexOf('--acknowledge-alert-policy'), 1);
+const failOnRouteRegression = args.includes('--fail-on-route-regression');
+if (failOnRouteRegression) args.splice(args.indexOf('--fail-on-route-regression'), 1);
 const limitArgs = {
   maxDepth: take('--max-depth'),
   maxFiles: take('--max-files'),
@@ -98,6 +103,9 @@ if (args.length) usage(2, `unknown argument ${args[0]}`);
 if (!/^[a-zA-Z0-9._-]+$/.test(name)) usage(2, '--name contains unsupported characters');
 if (!['critical', 'high', 'medium', 'low', 'never'].includes(failOn)) usage(2, '--fail-on is invalid');
 if (mode === 'retest' && !baselinePath) usage(2, 'retest requires --baseline <report>');
+if (failOnRouteRegression && !baselinePath) {
+  usage(2, '--fail-on-route-regression requires --baseline <report>');
+}
 if (sinceRef !== null && staged) usage(2, '--since and --staged are mutually exclusive');
 if ((sinceRef !== null || staged) && mode !== 'audit') usage(2, 'diff scope is only supported by audit');
 if ((sinceRef !== null || staged) && baselinePath) usage(2, 'diff scope cannot be combined with --baseline');
@@ -304,7 +312,9 @@ try {
     ];
     routeDocument = createRouteSecurityDocument({
       version: report.tool.version, generatedAt: now.toISOString(), mode, subject,
-      routes: selectedRoutes, coverage: routeAnalysis.coverage, limitations: routeLimitations,
+      routes: selectedRoutes, coverage: routeAnalysis.coverage,
+      applicationControls: routeAnalysis.applicationControls,
+      serverActions: routeAnalysis.serverActions || [], limitations: routeLimitations,
     });
     if (baselinePath) {
       const routeBaseline = readRouteSecurityBaseline(resolve(baselinePath));
@@ -316,7 +326,8 @@ try {
         routeDocument = createRouteSecurityDocument({
           version: routeDocument.tool.version, generatedAt: routeDocument.generatedAt,
           mode: routeDocument.mode, subject: routeDocument.subject, routes: routeDocument.routes,
-          coverage: routeDocument.coverage,
+          coverage: routeDocument.coverage, applicationControls: routeDocument.applicationControls,
+          serverActions: routeDocument.serverActions,
           limitations: [...routeDocument.limitations,
             'The report baseline has no route-security companion artifact, so route baseline comparison was not attempted.'],
         });
@@ -340,6 +351,9 @@ try {
   console.log(`report:    ${files.json}`);
   if (routeDocument) {
     console.log(`routes:    ${files.routeMarkdown} (${routeDocument.summary.total} records)`);
+    if (routeDocument.baseline) {
+      console.log(`route-regressions: ${routeSecurityRegressions(routeDocument).length}`);
+    }
   }
   console.log(`findings:  ${report.summary.total}`);
   console.log(`subject:   ${report.subject.id} (${report.subject.binding})`);
@@ -348,7 +362,10 @@ try {
   console.log(`network:   ${external.some((result) => result.networkAccessPerformed) ? 'selected adapter metadata/advisory query may occur' : 'none'}`);
   diffScope?.cleanup();
   activeDiffScope = null;
-  process.exit(exitCodeV3(report));
+  const reportExit = exitCodeV3(report);
+  const routeGateFailed = failOnRouteRegression && routeDocument
+    && routeSecurityRegressions(routeDocument).length > 0;
+  process.exit(reportExit || (routeGateFailed ? 1 : 0));
 } catch (error) {
   activeDiffScope?.cleanup();
   usage(2, error.message);

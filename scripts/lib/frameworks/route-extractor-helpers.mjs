@@ -1,7 +1,7 @@
 import { posix } from 'node:path';
 import { walkJsTsAst } from '../js-ts-ast-parser.mjs';
 import { expressionName, literalString } from '../js-ts-module-graph.mjs';
-import { controlEvidence } from '../route-security-model.mjs';
+import { controlEvidence, routeScopedControlEvidence } from '../route-security-model.mjs';
 
 export { expressionName, literalString, walkJsTsAst };
 
@@ -57,15 +57,20 @@ export function objectAddressedPath(path) {
     || /\[(?:\.\.\.)?(?:id|.*Id)\]/i.test(path)));
 }
 
-export function controlFromSignals(signals, inherited = false) {
+export function controlFromSignals(signals, inherited = false, role = 'authentication') {
+  const label = role === 'authorization' ? 'authorization' : 'authentication';
   if (!signals.length) return controlEvidence('not_observed', [],
-    'No supported authentication control signal was observed within this static boundary.');
+    `No supported ${label} control signal was observed within this static boundary.`);
   const exact = signals.filter((signal) => signal.exact);
   const chosen = exact.length ? exact : signals;
   const state = exact.length ? (inherited ? 'inherited_observed' : 'local_observed') : 'candidate_observed';
   return controlEvidence(state, chosen.map(({ exact: _exact, role: _role, ...signal }) => signal), exact.length
-    ? 'A supported static control construct was observed; runtime enforcement and correctness are not proved.'
-    : 'A custom middleware, guard or helper is visible, but its authentication behavior was not resolved.');
+    ? `A supported static ${label} construct was observed; runtime enforcement and correctness are not proved.`
+    : `A structurally relevant ${label} candidate is visible, but runtime behavior was not resolved.`);
+}
+
+export function routeScopeFromSignals(classifiedSignals, unknownSignals) {
+  return routeScopedControlEvidence(classifiedSignals, unknownSignals);
 }
 
 export function aggregateReasons(items) {
@@ -83,6 +88,12 @@ export function aggregateReasons(items) {
 
 const RELATION_ONLY_GRAPH_REASONS = new Set([
   'module_resolution_missing', 'module_resolution_ambiguous', 'dynamic_import_unresolved',
+  'module_alias_resolution_missing', 'module_alias_resolution_ambiguous',
+  'workspace_export_resolution_missing', 'workspace_export_resolution_ambiguous',
+  'module_alias_path_escape', 'module_config_alias_invalid', 'module_config_base_url_invalid',
+  'module_config_limit', 'module_config_parse_error', 'module_config_path_escape',
+  'module_config_paths_invalid', 'workspace_export_path_escape', 'workspace_package_ambiguous',
+  'workspace_package_limit',
 ]);
 
 export function structuralGraphReasons(graph) {

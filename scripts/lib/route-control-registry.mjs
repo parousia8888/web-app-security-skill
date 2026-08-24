@@ -27,7 +27,11 @@ export function signalForPrimitive(source, imported, location) {
 }
 
 export function signalsForRole(signals, role) {
-  return signals.filter((signal) => signal.role === role || signal.role === 'unknown');
+  return signals.filter((signal) => signal.role === role);
+}
+
+export function unclassifiedSignals(signals) {
+  return signals.filter((signal) => signal.role === 'unknown');
 }
 
 export function exactSignalsForRole(signals, role) {

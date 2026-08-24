@@ -1,6 +1,7 @@
 import { extractExpressRoutes } from './frameworks/express-route-extractor.mjs';
 import { extractNestRoutes } from './frameworks/nest-route-extractor.mjs';
 import { extractNextAppRoutes } from './frameworks/next-app-route-extractor.mjs';
+import { extractNextServerActions } from './frameworks/next-server-action-extractor.mjs';
 import { auditJsTsRouteAuthorization } from './js-ts-route-authorization-audit.mjs';
 import { buildJsTsModuleGraph } from './js-ts-module-graph.mjs';
 
@@ -107,23 +108,66 @@ function reportCoverage(frameworkCoverage, inputCount) {
   };
 }
 
+function mergeFrameworkCoverage(left, right) {
+  if (right.status === 'not_applicable') return left;
+  if (left.status === 'not_applicable') return right;
+  const reasons = new Map();
+  for (const reason of [...left.reasons, ...right.reasons]) {
+    const current = reasons.get(reason.code) || { code: reason.code, count: 0, samplePaths: [] };
+    current.count += reason.count;
+    for (const path of reason.samplePaths) {
+      if (current.samplePaths.length < 10 && !current.samplePaths.includes(path)) current.samplePaths.push(path);
+    }
+    reasons.set(reason.code, current);
+  }
+  return {
+    framework: left.framework,
+    status: left.status === 'partial' || right.status === 'partial' ? 'partial' : 'completed',
+    counts: {
+      discovered: Math.max(left.counts.discovered, right.counts.discovered),
+      eligible: left.counts.eligible + right.counts.eligible,
+      parsed: left.counts.parsed + right.counts.parsed,
+      incomplete: left.counts.incomplete + right.counts.incomplete,
+    },
+    reasons: [...reasons.values()].sort((a, b) => a.code.localeCompare(b.code)),
+  };
+}
+
 export function analyzeRouteSecurity(sourceFiles, options = {}) {
   const inputIssues = options.inputIssues || [];
-  const graph = buildJsTsModuleGraph(sourceFiles, options.graphLimits);
+  const graph = buildJsTsModuleGraph(sourceFiles, {
+    ...(options.graphLimits || {}),
+    configFiles: options.configFiles || [],
+    packageManifests: options.packageManifestRecords || [],
+  });
   for (const issue of inputIssues) graph.reasons.push({ code: issue.code, path: issue.path });
   graph.completed = graph.reasons.length === 0;
   const hints = frameworkHints(options.packageManifests || []);
   const extracted = [
     extractExpressRoutes(graph), extractNestRoutes(graph), extractNextAppRoutes(graph),
   ];
+  const actionAnalysis = extractNextServerActions(graph);
   const frameworkCoverage = extracted.map((result) => normalizeFrameworkCoverage(
     result.coverage, hints.has(result.coverage.framework), sourceFiles.length + inputIssues.length,
   ));
+  const nextIndex = frameworkCoverage.findIndex((item) => item.framework === 'next-app');
+  if (nextIndex >= 0) frameworkCoverage[nextIndex] = mergeFrameworkCoverage(
+    frameworkCoverage[nextIndex], actionAnalysis.coverage,
+  );
   const routes = extracted.flatMap((result) => result.routes);
+  const applicationControls = extracted.flatMap((result) =>
+    (result.applicationControls || []).map((control) => ({
+      ...control,
+      framework: result.coverage.framework,
+      role: ['authentication', 'authorization'].includes(control.role)
+        ? control.role : 'unclassified',
+    })));
   const authorization = auditJsTsRouteAuthorization(graph, routes);
   const coverage = reportCoverage(frameworkCoverage, sourceFiles.length + inputIssues.length);
   return {
     routes: authorization.routes,
+    serverActions: actionAnalysis.serverActions,
+    applicationControls,
     coverage: frameworkCoverage,
     reportCoverage: coverage,
     experimentalFindings: authorization.findings,

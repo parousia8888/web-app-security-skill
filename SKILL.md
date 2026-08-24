@@ -67,12 +67,15 @@ index snapshot. These modes do not support external adapters or baseline/retest 
 diff does not establish whole-repository safety, and `--since` excludes untracked files.
 
 For supported Express, NestJS and Next.js App Router syntax, built-in audits also write
-`route-security.json` and `route-security.md`. Read framework coverage first. Keep authentication
-(who the caller is), route-level authorization (whether that caller may invoke the operation) and
-object-level authorization (whether that caller may access the selected record) separate.
-`candidate_observed` is unresolved custom evidence; `not_observed` is not a confirmed
-vulnerability. `review_first`/`review_next`/`review_later` order work and are not severity. The
-direct same-handler Prisma route-ID lead is experimental and cannot prove BOLA/IDOR.
+`route-security.json` and `route-security.md`. Follow
+[`references/access-control-chain.md`](references/access-control-chain.md): read coverage first,
+list application controls once, and keep authentication, route authorization and object
+authorization separate. Review `no_route_scoped_control_observed` routes rather than calling them
+vulnerable; expected-public endpoints still need owner classification. For supported identity and
+data providers, inspect same-handler or one-exact-local-call access chains. Stop before a second
+local call, never invent an HTTP route for a Server Action, and always keep Supabase at
+`external_policy_required`. `review_first`/`review_next`/`review_later` order work and are not
+severity.
 
 Do not run all phases just because they exist. Pick from the task:
 
@@ -84,6 +87,7 @@ Do not run all phases just because they exist. Pick from the task:
 | "our AI/search traffic dropped" | X-3 §5, X-2, then X-1 |
 | "my frontend leaks everything" | 1, then X-4 |
 | "audit my API" | 0, then 2 |
+| "review access control", BOLA/IDOR, route guards, Server Actions | 0, then `references/access-control-chain.md`, then 2 and 5 |
 | "someone could abuse my LLM endpoint" | 3 |
 | "harden my AWS" | X-5 |
 | "full security review" | 0 → 1 → 4 → X-4 → X-5 → 2 → 3 → 5 → 6 → 7 → 8 |

@@ -22,14 +22,98 @@ function grouped(routes) {
   return output;
 }
 
-function controlSnapshot(route) {
-  const control = (value) => ({ state: value.state, signals: value.signals.map((signal) => ({
+function actionKey(action) {
+  return `${action.framework}\u0000${action.name}\u0000${action.location.path}`;
+}
+
+function groupedBy(items, keyFor) {
+  const output = new Map();
+  for (const item of items) {
+    const key = keyFor(item);
+    if (!output.has(key)) output.set(key, []);
+    output.get(key).push(item);
+  }
+  return output;
+}
+
+function evidenceControl(value) {
+  return { state: value.state, signals: value.signals.map((signal) => ({
     kind: signal.kind, origin: signal.origin, location: signal.location,
-  })) });
+  })) };
+}
+
+function evidenceChain(chain) {
+  return {
+    status: chain.status, outcome: chain.outcome,
+    identity: { state: chain.identity.state, provider: chain.identity.provider,
+      signals: chain.identity.signals },
+    objectSelectors: chain.objectSelectors, callEdges: chain.callEdges,
+    dataOperation: chain.dataOperation,
+  };
+}
+
+function controlSnapshot(route) {
   return JSON.stringify({
-    authentication: control(route.authentication), authorization: control(route.authorization),
+    authentication: evidenceControl(route.authentication), authorization: evidenceControl(route.authorization),
+    routeScopedControl: { state: route.routeScopedControl.state,
+      unclassifiedSignals: route.routeScopedControl.unclassifiedSignals },
+    accessChains: route.accessChains.map(evidenceChain),
     operations: route.operations, limitations: route.limitations,
   });
+}
+
+function actionSnapshot(action) {
+  return JSON.stringify({
+    authentication: evidenceControl(action.authentication),
+    authorization: evidenceControl(action.authorization),
+    actionScopedControl: { state: action.actionScopedControl.state,
+      unclassifiedSignals: action.actionScopedControl.unclassifiedSignals },
+    accessChains: action.accessChains.map(evidenceChain),
+    operations: action.operations, limitations: action.limitations,
+  });
+}
+
+const CONTROL_ABSENT = new Set(['not_observed', 'incomplete', 'not_applicable']);
+
+function chainKey(chain) {
+  const operation = chain.dataOperation;
+  if (operation) return [operation.provider, operation.resource, operation.operation,
+    chain.objectSelectors.map((item) => item.name).join(',')].join('\u0000');
+  return [chain.callEdges.at(-1)?.to || '<none>',
+    chain.objectSelectors.map((item) => item.name).join(',')].join('\u0000');
+}
+
+function uniqueChains(chains) {
+  const groups = groupedBy(chains, chainKey);
+  return new Map([...groups].filter(([, items]) => items.length === 1)
+    .map(([key, items]) => [key, items[0]]));
+}
+
+function degradationReason(current, previous, scopedField) {
+  if (!CONTROL_ABSENT.has(previous.authentication.state)
+      && CONTROL_ABSENT.has(current.authentication.state)) return 'classified_authentication_disappeared';
+  if (!CONTROL_ABSENT.has(previous.authorization.state)
+      && CONTROL_ABSENT.has(current.authorization.state)) return 'classified_authorization_disappeared';
+  if (previous[scopedField].state === 'classified_controls_observed'
+      && current[scopedField].state !== 'classified_controls_observed') {
+    return scopedField === 'routeScopedControl'
+      ? 'route_scoped_control_degraded' : 'action_scoped_control_degraded';
+  }
+  const priorChains = uniqueChains(previous.accessChains);
+  const currentChains = uniqueChains(current.accessChains);
+  for (const [key, prior] of priorChains) {
+    const next = currentChains.get(key);
+    if (!next) continue;
+    const priorConstrained = prior.dataOperation?.principalConstraint === 'observed'
+      || prior.dataOperation?.tenantConstraint === 'observed';
+    const nextConstrained = next.dataOperation?.principalConstraint === 'observed'
+      || next.dataOperation?.tenantConstraint === 'observed';
+    if (priorConstrained && !nextConstrained) return 'principal_or_tenant_constraint_disappeared';
+    if (prior.status === 'completed' && next.status === 'partial') {
+      return 'complete_access_chain_became_incomplete';
+    }
+  }
+  return null;
 }
 
 function withBaseline(route, state, previous = null, reasonCode = null) {
@@ -43,7 +127,7 @@ function withBaseline(route, state, previous = null, reasonCode = null) {
   };
 }
 
-function recreate(document, routes, baseline, limitations = document.limitations) {
+function recreate(document, routes, serverActions, baseline, limitations = document.limitations) {
   return createRouteSecurityDocument({
     version: document.tool.version,
     generatedAt: document.generatedAt,
@@ -51,6 +135,8 @@ function recreate(document, routes, baseline, limitations = document.limitations
     subject: document.subject,
     routes,
     coverage: document.coverage,
+    applicationControls: document.applicationControls,
+    serverActions,
     limitations,
     baseline,
   });
@@ -62,13 +148,22 @@ export function compareRouteSecurityDocuments(current, previous, sourceDigest) {
   if (previous.subject.id !== current.subject.id || previous.subject.scopeDigest !== current.subject.scopeDigest) {
     throw new Error('route baseline subject or scope does not match the current project');
   }
+  if (previous.schemaVersion !== current.schemaVersion) {
+    return recreate(current, current.routes.map((route) => withBaseline(
+      route, 'not_comparable', null, 'route_schema_changed',
+    )), current.serverActions.map((action) => withBaseline(action,
+      'not_comparable', null, 'route_schema_changed')),
+    { sourceDigest, compatibility: 'not_comparable', reasonCode: 'route_schema_changed' });
+  }
   const analyzerCompatible = previous.analyzer.id === current.analyzer.id
     && previous.analyzer.revision === current.analyzer.revision
     && previous.analyzer.parser.sha256 === current.analyzer.parser.sha256;
   if (!analyzerCompatible) {
     return recreate(current, current.routes.map((route) => withBaseline(
       route, 'not_comparable', null, 'route_analyzer_changed',
-    )), { sourceDigest, compatibility: 'not_comparable', reasonCode: 'route_analyzer_changed' });
+    )), current.serverActions.map((action) => withBaseline(action,
+      'not_comparable', null, 'route_analyzer_changed')),
+    { sourceDigest, compatibility: 'not_comparable', reasonCode: 'route_analyzer_changed' });
   }
 
   const currentGroups = grouped(current.routes);
@@ -87,7 +182,10 @@ export function compareRouteSecurityDocuments(current, previous, sourceDigest) {
       continue;
     }
     if (!previousGroup.length) {
-      routes.push(withBaseline(route, 'added', null, 'no_prior_route'));
+      const sensitiveUnresolved = (route.stateChanging || route.objectAddressed)
+        && route.routeScopedControl.state !== 'classified_controls_observed';
+      routes.push(withBaseline(route, 'added', null,
+        sensitiveUnresolved ? 'new_sensitive_route_control_unresolved' : 'no_prior_route'));
       continue;
     }
     const prior = previousGroup[0];
@@ -97,7 +195,8 @@ export function compareRouteSecurityDocuments(current, previous, sourceDigest) {
     }
     const unchanged = controlSnapshot(route) === controlSnapshot(prior);
     routes.push(withBaseline(route, unchanged ? 'unchanged' : 'changed', prior,
-      unchanged ? 'same_route_control_evidence' : 'route_control_evidence_changed'));
+      unchanged ? 'same_route_control_evidence'
+        : degradationReason(route, prior, 'routeScopedControl') || 'route_control_evidence_changed'));
   }
 
   for (const prior of previous.routes.filter((route) =>
@@ -115,10 +214,62 @@ export function compareRouteSecurityDocuments(current, previous, sourceDigest) {
     }, state, prior, reason));
   }
 
-  return recreate(current, routes,
+  const currentActionGroups = groupedBy(current.serverActions, actionKey);
+  const previousActionGroups = groupedBy(previous.serverActions.filter((action) =>
+    !['removed', 'unretested'].includes(action.baseline?.state)), actionKey);
+  const actions = [];
+  const actionCoverageComplete = complete.get('next-app');
+  for (const action of current.serverActions) {
+    const key = actionKey(action);
+    const currentGroup = currentActionGroups.get(key);
+    const previousGroup = previousActionGroups.get(key) || [];
+    if (currentGroup.length !== 1 || previousGroup.length > 1) {
+      actions.push(withBaseline(action, 'not_comparable', previousGroup[0],
+        'duplicate_server_action_identity'));
+    } else if (!previousGroup.length) {
+      const unresolved = action.accessChains.length
+        && action.actionScopedControl.state !== 'classified_controls_observed';
+      actions.push(withBaseline(action, 'added', null,
+        unresolved ? 'new_server_action_control_unresolved' : 'no_prior_server_action'));
+    } else if (!actionCoverageComplete) {
+      actions.push(withBaseline(action, 'unretested', previousGroup[0],
+        'current_framework_coverage_incomplete'));
+    } else {
+      const prior = previousGroup[0];
+      const unchanged = actionSnapshot(action) === actionSnapshot(prior);
+      actions.push(withBaseline(action, unchanged ? 'unchanged' : 'changed', prior,
+        unchanged ? 'same_server_action_control_evidence'
+          : degradationReason(action, prior, 'actionScopedControl')
+            || 'server_action_control_evidence_changed'));
+    }
+  }
+  for (const prior of previous.serverActions.filter((action) =>
+    !['removed', 'unretested'].includes(action.baseline?.state))) {
+    if (currentActionGroups.has(actionKey(prior))) continue;
+    actions.push(withBaseline({ ...prior, limitations: [...new Set([...prior.limitations,
+      actionCoverageComplete ? 'baseline-server-action-not-observed-current'
+        : 'baseline-server-action-current-check-incomplete'])].sort() },
+    actionCoverageComplete ? 'removed' : 'unretested', prior,
+    actionCoverageComplete ? 'server_action_not_observed_after_completed_check'
+      : 'current_framework_coverage_incomplete'));
+  }
+
+  return recreate(current, routes, actions,
     { sourceDigest, compatibility: 'compatible', reasonCode: null },
     [...new Set([...current.limitations,
       'Removed and unretested baseline routes are retained as historical records and are not current route observations.'])]);
+}
+
+const ROUTE_REGRESSION_REASONS = new Set([
+  'classified_authentication_disappeared', 'classified_authorization_disappeared',
+  'route_scoped_control_degraded', 'action_scoped_control_degraded',
+  'principal_or_tenant_constraint_disappeared', 'complete_access_chain_became_incomplete',
+  'new_sensitive_route_control_unresolved', 'new_server_action_control_unresolved',
+]);
+
+export function routeSecurityRegressions(document) {
+  return [...document.routes, ...document.serverActions].filter((item) =>
+    ROUTE_REGRESSION_REASONS.has(item.baseline?.reasonCode));
 }
 
 export function readRouteSecurityBaseline(reportPath) {

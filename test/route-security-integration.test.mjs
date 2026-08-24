@@ -100,9 +100,10 @@ app.get('/broken', (req, res) => {
 
   const lifecycle = project('lifecycle', `
 import express from 'express';
+import passport from 'passport';
 const app = express();
 app.get('/same', sameHandler);
-app.patch('/changed/:id', changedHandler);
+app.patch('/changed/:id', passport.authenticate('jwt'), changedHandler);
 app.delete('/removed/:id', removedHandler);
 `);
   const runs = join(temp, 'lifecycle-runs');
@@ -111,21 +112,22 @@ app.delete('/removed/:id', removedHandler);
   const baselinePath = join(baselineDir, 'baseline.json');
   write(join(lifecycle, 'src', 'app.ts'), `
 import express from 'express';
-import passport from 'passport';
 const app = express();
 app.get('/same', sameHandler);
-app.patch('/changed/:id', passport.authenticate('jwt'), changedHandler);
+app.patch('/changed/:id', changedHandler);
 app.post('/added', addedHandler);
 `);
   const changedDir = start(lifecycle, runs, 'changed');
   run(['retest', changedDir, '--name', 'changed', '--baseline', baselinePath,
-    '--fail-on', 'never'], 0);
+    '--fail-on', 'never', '--fail-on-route-regression'], 1);
   const compared = loadRoute(changedDir);
   const states = Object.fromEntries(compared.routes.map((route) => [route.path, route.baseline.state]));
   assert.deepEqual(states, {
     '/added': 'added', '/changed/:id': 'changed', '/removed/:id': 'removed', '/same': 'unchanged',
   });
   assert.equal(compared.baseline.compatibility, 'compatible');
+  assert.equal(compared.routes.find((route) => route.path === '/changed/:id').baseline.reasonCode,
+    'classified_authentication_disappeared');
 
   write(join(lifecycle, 'src', 'broken.ts'), 'export const broken = `unterminated;\n');
   const incompleteDir = start(lifecycle, runs, 'incomplete');

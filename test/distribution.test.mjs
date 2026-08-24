@@ -32,7 +32,9 @@ try {
     'scripts/webapp-security.mjs', 'scripts/lib/source-audit.mjs',
     'scripts/vendor/js-ts-parser.bundle.mjs', 'scripts/vendor/js-ts-parser.manifest.json',
     'references/phase-2-api.md', 'rules/opengrep-source.yml', 'docs/report-v3.schema.json',
-    'docs/route-security-v1.schema.json', 'docs/reviews/v0.6.0-route-review.json',
+    'docs/route-security-v1.schema.json', 'docs/route-security-v2.schema.json',
+    'docs/reviews/v0.6.0-route-review.json', 'docs/reviews/v0.7.0-access-control-review.json',
+    'docs/regressions/v0.7.0-access-control-real-world-regressions.json',
   ]) assert.ok(paths.includes(required), `packed npm artifact is missing ${required}`);
   for (const forbidden of ['test/', 'docs/assets/', 'docs/adoption/', 'docs/V0.5.']) {
     assert.equal(paths.some((path) => path.startsWith(forbidden)), false,

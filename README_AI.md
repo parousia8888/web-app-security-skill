@@ -65,11 +65,13 @@ deployment ownership or authorize remote traffic.
 
 For supported Express, NestJS and Next.js App Router syntax, a built-in audit also writes
 `route-security.json` and `route-security.md`. Read framework coverage before using the route list.
-Keep authentication (who the caller is), route-level authorization (whether that caller may invoke
-the operation) and object-level authorization (whether that caller may access this specific record)
-separate. `candidate_observed` needs human interpretation; `not_observed` is not a confirmed
-vulnerability. Route priority orders review work and is not severity. The direct Prisma route-ID
-lead remains experimental and cannot prove BOLA/IDOR.
+List application controls once; do not attribute a global guard to every route. Keep authentication
+(who the caller is), route-level authorization (whether that caller may invoke the operation) and
+object-level authorization (whether that caller may access this specific record) separate. Review
+`no_route_scoped_control_observed` and partial access chains without calling either a vulnerability.
+The analyzer follows at most one exact local call, keeps Server Actions separate from HTTP routes
+and never treats Supabase source evidence as proof of RLS. Read
+`references/access-control-chain.md` before proposing an access-control change.
 
 Every actionable source finding must retain both audiences. Keep the professional term and
 standards reference, then explain the issue without assuming security vocabulary. Phrase the
@@ -85,8 +87,9 @@ production policy on the user's behalf.
 3. Run `webapp-security audit <run-directory> --name report --fail-on never` so findings do not
    prevent evidence creation.
 4. Read both `report.md` and `route-security.md` when the route artifact exists. Start with any
-   partial/unavailable framework coverage, then review `review_first` and `review_next`; do not
-   describe missing controls as demonstrated vulnerabilities.
+   partial/unavailable framework coverage, application controls, no-route-control queue and partial
+   access chains, then review `review_first` and `review_next`; do not describe missing controls as
+   demonstrated vulnerabilities.
 5. For wider caller-installed tooling, run `webapp-security doctor <project> --adapter all`, then
    use `webapp-security audit <project> --profile deep --fail-on never`. Missing tools are `unknown`;
    the command does not install them.

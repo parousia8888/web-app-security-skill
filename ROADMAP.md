@@ -87,7 +87,7 @@ permission boundaries and evidence requirements are recorded in the
 [MCP and rule-expansion decision](docs/architecture/mcp-and-rule-expansion.md). Exact implementation
 and release progress lives in the [v0.5.3 engineering plan](docs/V0.5.3_ENGINEERING_PLAN.md).
 
-## Implemented for v0.6.0 candidate
+## Shipped in v0.6.0
 
 v0.6.0 adds a companion route-security artifact to the local Skill + CLI. Bounded stable framework
 support covers direct Express registrations/static mounts, static NestJS decorators/guards and
@@ -100,7 +100,28 @@ and incomplete relationships fail closed. A 57-route fixed-commit review records
 misses and keeps the direct-Prisma BOLA lead experimental after zero ordinary-project matches.
 Implementation evidence is in the [v0.6.0 route review](docs/reviews/v0.6.0-route-review.md),
 [route regressions](docs/regressions/v0.6.0-route-real-world-regressions.md) and
-[engineering plan](docs/V0.6.0_ENGINEERING_PLAN.md). Public release evidence is pending P13/P14.
+[engineering plan](docs/V0.6.0_ENGINEERING_PLAN.md). The signed GitHub Release, npm provenance,
+verified installer, immutable Action and signed `v1` consumers are complete; exact public facts are
+in the [v0.6.0 release evidence](docs/releases/v0.6.0.md).
+
+## Implemented for v0.7.0 candidate
+
+v0.7.0 corrects application-guard aggregation and deepens the route inventory into a bounded
+access-control-chain review. Nest application controls are listed once; authentication,
+authorization and unclassified route controls no longer share one signal list; and
+`no_route_scoped_control_observed` creates a human-review queue without becoming a vulnerability.
+
+Supported identity and data evidence can now connect inside one handler or through one exact local
+call. Stable bounded families are Nest Passport/Auth.js and Prisma/Drizzle. Clerk, Better Auth and
+Supabase remain experimental; Supabase always requires external RLS-policy evidence. Static
+relative, tsconfig/jsconfig and exact workspace source relationships are accepted only when one
+target resolves. Next.js Server Actions are separate named surfaces, never invented HTTP routes.
+
+The capped [v0.7.0 access-control review](docs/reviews/v0.7.0-access-control-review.md) inventories
+173 HTTP routes and 23 Server Actions at four fixed public commits and manually reviews 32 entries.
+All 12 ordinary-project chains are partial and zero are completed, which remains a published limit.
+Four [real-world regressions](docs/regressions/v0.7.0-access-control-real-world-regressions.md) and
+the [engineering plan](docs/V0.7.0_ENGINEERING_PLAN.md) record exact scope and release progress.
 
 ## Shipped in v0.5.4
 

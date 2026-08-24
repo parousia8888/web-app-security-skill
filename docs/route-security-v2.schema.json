@@ -1,0 +1,274 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/route-security-v2.schema.json",
+  "title": "Web App Security Skill route security artifact v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "tool", "generatedAt", "mode", "subject", "analyzer", "summary", "coverage", "applicationControls", "routes", "serverActions", "limitations", "baseline"],
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "tool": {
+      "type": "object", "additionalProperties": false, "required": ["name", "version"],
+      "properties": { "name": { "const": "Web App Security Skill" }, "version": { "type": "string", "minLength": 1, "maxLength": 64 } }
+    },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "mode": { "enum": ["audit", "retest", "demo-before", "demo-after"] },
+    "subject": {
+      "type": "object", "additionalProperties": false, "required": ["id", "scopeDigest"],
+      "properties": { "id": { "$ref": "#/$defs/id" }, "scopeDigest": { "$ref": "#/$defs/sha256" } }
+    },
+    "analyzer": {
+      "type": "object", "additionalProperties": false, "required": ["id", "revision", "parser"],
+      "properties": {
+        "id": { "const": "builtin-route" }, "revision": { "const": "2" },
+        "parser": {
+          "type": "object", "additionalProperties": false, "required": ["component", "version", "sha256"],
+          "properties": { "component": { "const": "@babel/parser" }, "version": { "type": "string" }, "sha256": { "$ref": "#/$defs/sha256" } }
+        }
+      }
+    },
+    "summary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["total", "serverActions", "stateChanging", "objectAddressed", "byFramework", "byPriority", "byAuthentication", "byAuthorization", "byRouteScopedControl", "applicationControls", "byApplicationControlRole"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "serverActions": { "type": "integer", "minimum": 0 },
+        "stateChanging": { "type": "integer", "minimum": 0 },
+        "objectAddressed": { "type": "integer", "minimum": 0 },
+        "byFramework": { "$ref": "#/$defs/countMap" },
+        "byPriority": { "$ref": "#/$defs/priorityCounts" },
+        "byAuthentication": { "$ref": "#/$defs/controlCounts" },
+        "byAuthorization": { "$ref": "#/$defs/controlCounts" },
+        "byRouteScopedControl": { "$ref": "#/$defs/routeScopedControlCounts" },
+        "applicationControls": { "type": "integer", "minimum": 0 },
+        "byApplicationControlRole": { "$ref": "#/$defs/applicationControlRoleCounts" }
+      }
+    },
+    "coverage": { "type": "array", "items": { "$ref": "#/$defs/coverage" } },
+    "applicationControls": { "type": "array", "maxItems": 1000, "items": { "$ref": "#/$defs/applicationControl" } },
+    "routes": { "type": "array", "items": { "$ref": "#/$defs/route" } },
+    "serverActions": { "type": "array", "items": { "$ref": "#/$defs/serverAction" } },
+    "limitations": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+    "baseline": { "$ref": "#/$defs/documentBaseline" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "text": { "type": "string", "minLength": 1, "maxLength": 2048, "pattern": "^[^\\u0000-\\u001f\\u007f]+$" },
+    "safeName": { "type": "string", "minLength": 1, "maxLength": 160, "pattern": "^[^\\u0000-\\u001f\\u007f]+$" },
+    "framework": { "enum": ["express", "nestjs", "next-app"] },
+    "controlState": { "enum": ["local_observed", "inherited_observed", "candidate_observed", "not_observed", "incomplete", "not_applicable"] },
+    "routeScopedControlState": { "enum": ["classified_controls_observed", "unclassified_control_observed", "no_route_scoped_control_observed"] },
+    "priority": { "enum": ["review_first", "review_next", "review_later", "no_automatic_priority"] },
+    "countMap": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+    "controlCounts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["local_observed", "inherited_observed", "candidate_observed", "not_observed", "incomplete", "not_applicable"],
+      "properties": {
+        "local_observed": { "type": "integer", "minimum": 0 }, "inherited_observed": { "type": "integer", "minimum": 0 },
+        "candidate_observed": { "type": "integer", "minimum": 0 }, "not_observed": { "type": "integer", "minimum": 0 },
+        "incomplete": { "type": "integer", "minimum": 0 }, "not_applicable": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "routeScopedControlCounts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["classified_controls_observed", "unclassified_control_observed", "no_route_scoped_control_observed"],
+      "properties": {
+        "classified_controls_observed": { "type": "integer", "minimum": 0 },
+        "unclassified_control_observed": { "type": "integer", "minimum": 0 },
+        "no_route_scoped_control_observed": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "applicationControlRoleCounts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["authentication", "authorization", "unclassified"],
+      "properties": {
+        "authentication": { "type": "integer", "minimum": 0 },
+        "authorization": { "type": "integer", "minimum": 0 },
+        "unclassified": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "priorityCounts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["review_first", "review_next", "review_later", "no_automatic_priority"],
+      "properties": {
+        "review_first": { "type": "integer", "minimum": 0 }, "review_next": { "type": "integer", "minimum": 0 },
+        "review_later": { "type": "integer", "minimum": 0 }, "no_automatic_priority": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "location": {
+      "type": "object", "additionalProperties": false, "required": ["path", "line"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1, "maxLength": 240, "pattern": "^(?!/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000-\\u001f\\u007f]+$" },
+        "line": { "type": ["integer", "null"], "minimum": 1 }
+      }
+    },
+    "signal": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "origin", "location"],
+      "properties": { "kind": { "$ref": "#/$defs/id" }, "origin": { "$ref": "#/$defs/text" }, "location": { "$ref": "#/$defs/location" } }
+    },
+    "control": {
+      "type": "object", "additionalProperties": false, "required": ["state", "signals", "boundary"],
+      "properties": {
+        "state": { "$ref": "#/$defs/controlState" },
+        "signals": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/signal" } },
+        "boundary": { "$ref": "#/$defs/text" }
+      }
+    },
+    "routeScopedControl": {
+      "type": "object", "additionalProperties": false, "required": ["state", "unclassifiedSignals", "boundary"],
+      "properties": {
+        "state": { "$ref": "#/$defs/routeScopedControlState" },
+        "unclassifiedSignals": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/signal" } },
+        "boundary": { "$ref": "#/$defs/text" }
+      }
+    },
+    "applicationControl": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "fingerprint", "framework", "kind", "origin", "role", "location", "boundary"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "fingerprint": { "$ref": "#/$defs/sha256" },
+        "framework": { "$ref": "#/$defs/framework" }, "kind": { "$ref": "#/$defs/id" },
+        "origin": { "$ref": "#/$defs/text" }, "role": { "enum": ["authentication", "authorization", "unclassified"] },
+        "location": { "$ref": "#/$defs/location" }, "boundary": { "$ref": "#/$defs/text" }
+      }
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false, "required": ["framework", "status", "counts", "reasons"],
+      "properties": {
+        "framework": { "$ref": "#/$defs/framework" }, "status": { "enum": ["completed", "partial", "not_applicable"] },
+        "counts": {
+          "type": "object", "additionalProperties": false, "required": ["discovered", "eligible", "parsed", "incomplete"],
+          "properties": {
+            "discovered": { "type": "integer", "minimum": 0 }, "eligible": { "type": "integer", "minimum": 0 },
+            "parsed": { "type": "integer", "minimum": 0 }, "incomplete": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "reasons": { "type": "array", "items": { "$ref": "#/$defs/reason" } }
+      }
+    },
+    "reason": {
+      "type": "object", "additionalProperties": false, "required": ["code", "count", "samplePaths"],
+      "properties": {
+        "code": { "$ref": "#/$defs/id" }, "count": { "type": "integer", "minimum": 1 },
+        "samplePaths": { "type": "array", "maxItems": 10, "items": { "type": "string", "minLength": 1, "maxLength": 240 } }
+      }
+    },
+    "selector": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "name", "location"],
+      "properties": { "kind": { "$ref": "#/$defs/id" }, "name": { "$ref": "#/$defs/safeName" }, "location": { "$ref": "#/$defs/location" } }
+    },
+    "callEdge": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "from", "to", "location"],
+      "properties": {
+        "kind": { "enum": ["direct", "local_function", "nest_injected_service"] },
+        "from": { "$ref": "#/$defs/safeName" }, "to": { "$ref": "#/$defs/safeName" }, "location": { "$ref": "#/$defs/location" }
+      }
+    },
+    "dataOperation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["provider", "resource", "operation", "location", "objectConstraint", "principalConstraint", "tenantConstraint", "externalPolicy"],
+      "properties": {
+        "provider": { "$ref": "#/$defs/id" }, "resource": { "$ref": "#/$defs/safeName" },
+        "operation": { "$ref": "#/$defs/id" }, "location": { "$ref": "#/$defs/location" },
+        "objectConstraint": { "$ref": "#/$defs/constraintState" },
+        "principalConstraint": { "$ref": "#/$defs/constraintState" },
+        "tenantConstraint": { "$ref": "#/$defs/constraintState" },
+        "externalPolicy": { "$ref": "#/$defs/constraintState" }
+      }
+    },
+    "constraintState": { "enum": ["observed", "not_observed", "external_policy_required", "incomplete", "not_applicable"] },
+    "identity": {
+      "type": "object", "additionalProperties": false, "required": ["state", "provider", "signals", "boundary"],
+      "properties": {
+        "state": { "enum": ["identity_call_observed", "session_lookup_observed", "candidate_observed", "not_observed", "incomplete", "not_applicable"] },
+        "provider": { "type": ["string", "null"], "maxLength": 80 },
+        "signals": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/signal" } },
+        "boundary": { "$ref": "#/$defs/text" }
+      }
+    },
+    "verification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["unauthenticated", "owner", "nonOwner", "lowerRole", "functional"],
+      "properties": {
+        "unauthenticated": { "$ref": "#/$defs/text" }, "owner": { "$ref": "#/$defs/text" },
+        "nonOwner": { "$ref": "#/$defs/text" }, "lowerRole": { "$ref": "#/$defs/text" },
+        "functional": { "$ref": "#/$defs/text" }
+      }
+    },
+    "accessChain": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "fingerprint", "status", "outcome", "identity", "objectSelectors", "callEdges", "dataOperation", "evidenceBoundary", "verification"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "fingerprint": { "$ref": "#/$defs/sha256" },
+        "status": { "enum": ["completed", "partial", "not_applicable"] },
+        "outcome": { "enum": ["principal_constraint_observed", "external_policy_required", "principal_constraint_not_observed", "no_supported_object_operation", "incomplete"] },
+        "identity": { "$ref": "#/$defs/identity" },
+        "objectSelectors": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/selector" } },
+        "callEdges": { "type": "array", "maxItems": 2, "items": { "$ref": "#/$defs/callEdge" } },
+        "dataOperation": { "oneOf": [{ "$ref": "#/$defs/dataOperation" }, { "type": "null" }] },
+        "evidenceBoundary": { "$ref": "#/$defs/text" }, "verification": { "$ref": "#/$defs/verification" }
+      }
+    },
+    "recordBaseline": {
+      "type": "object", "additionalProperties": false, "required": ["state", "priorFingerprint", "reasonCode"],
+      "properties": {
+        "state": { "enum": ["new", "unchanged", "changed", "added", "removed", "unretested", "not_comparable", null] },
+        "priorFingerprint": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] },
+        "reasonCode": { "type": ["string", "null"] }
+      }
+    },
+    "route": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "fingerprint", "framework", "method", "path", "pathKind", "location", "handler", "stateChanging", "objectAddressed", "authentication", "authorization", "routeScopedControl", "accessChains", "operations", "priority", "limitations", "baseline"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "fingerprint": { "$ref": "#/$defs/sha256" }, "framework": { "$ref": "#/$defs/framework" },
+        "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "ALL", "UNKNOWN"] },
+        "path": { "type": ["string", "null"], "maxLength": 512 }, "pathKind": { "enum": ["static", "parameterized", "dynamic", "unknown"] },
+        "location": { "$ref": "#/$defs/location" }, "handler": { "type": ["string", "null"], "maxLength": 160 },
+        "stateChanging": { "type": "boolean" }, "objectAddressed": { "type": "boolean" },
+        "authentication": { "$ref": "#/$defs/control" }, "authorization": { "$ref": "#/$defs/control" },
+        "routeScopedControl": { "$ref": "#/$defs/routeScopedControl" },
+        "accessChains": { "type": "array", "maxItems": 50, "items": { "$ref": "#/$defs/accessChain" } },
+        "operations": { "type": "array", "maxItems": 30, "items": { "$ref": "#/$defs/id" } },
+        "priority": {
+          "type": "object", "additionalProperties": false, "required": ["level", "reasons"],
+          "properties": { "level": { "$ref": "#/$defs/priority" }, "reasons": { "type": "array", "maxItems": 12, "items": { "$ref": "#/$defs/id" } } }
+        },
+        "limitations": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/id" } },
+        "baseline": { "$ref": "#/$defs/recordBaseline" }
+      }
+    },
+    "serverAction": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "fingerprint", "framework", "name", "location", "authentication", "authorization", "actionScopedControl", "accessChains", "operations", "priority", "limitations", "baseline"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "fingerprint": { "$ref": "#/$defs/sha256" },
+        "framework": { "const": "next-app" }, "name": { "$ref": "#/$defs/safeName" },
+        "location": { "$ref": "#/$defs/location" }, "authentication": { "$ref": "#/$defs/control" },
+        "authorization": { "$ref": "#/$defs/control" }, "actionScopedControl": { "$ref": "#/$defs/routeScopedControl" },
+        "accessChains": { "type": "array", "maxItems": 50, "items": { "$ref": "#/$defs/accessChain" } },
+        "operations": { "type": "array", "maxItems": 30, "items": { "$ref": "#/$defs/id" } },
+        "priority": {
+          "type": "object", "additionalProperties": false, "required": ["level", "reasons"],
+          "properties": { "level": { "$ref": "#/$defs/priority" }, "reasons": { "type": "array", "maxItems": 12, "items": { "$ref": "#/$defs/id" } } }
+        },
+        "limitations": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/id" } },
+        "baseline": { "$ref": "#/$defs/recordBaseline" }
+      }
+    },
+    "documentBaseline": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object", "additionalProperties": false, "required": ["sourceDigest", "compatibility", "reasonCode"],
+          "properties": {
+            "sourceDigest": { "$ref": "#/$defs/sha256" },
+            "compatibility": { "enum": ["compatible", "not_comparable"] },
+            "reasonCode": { "type": ["string", "null"] }
+          }
+        }
+      ]
+    }
+  }
+}

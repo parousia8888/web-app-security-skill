@@ -1,7 +1,11 @@
 import { walkJsTsAst } from './js-ts-ast-parser.mjs';
 import { expressionName } from './js-ts-module-graph.mjs';
+import { analyzeDataOperations } from './js-ts-data-operation-evidence.mjs';
+import { analyzeIdentityEvidence } from './js-ts-identity-evidence.mjs';
+import { analyzeOneHopAccess } from './js-ts-one-hop-access.mjs';
 import { importedBindings } from './frameworks/route-extractor-helpers.mjs';
 import { prioritizeRoute } from './route-security-priority.mjs';
+import { accessChainRecord } from './route-security-model.mjs';
 
 export const ROUTE_AUTHORIZATION_RULE_ID = 'js-route-object-authorization-review';
 
@@ -382,6 +386,44 @@ function operationEvidence(module, route, handler, clients) {
   return { operations, delegated };
 }
 
+function directAccessChains(graph, module, route, handler) {
+  const routeFacts = initialRouteAliases(route, handler, importedBindings(module));
+  collectLocalFacts(handler, routeFacts);
+  const identity = analyzeIdentityEvidence(graph, module, handler);
+  const analyzed = analyzeDataOperations(graph, module, handler, {
+    objectAliases: routeFacts.aliases,
+    principalAliases: identity.principalAliases,
+  });
+  const objectSelectors = routeFacts.names.map((name) => ({
+    kind: 'route-parameter', name, location: route.location,
+  }));
+  const directChains = analyzed.operations.map((dataOperation) => {
+    const constrained = dataOperation.principalConstraint === 'observed'
+      || dataOperation.tenantConstraint === 'observed';
+    const outcome = constrained ? 'principal_constraint_observed'
+      : dataOperation.externalPolicy === 'external_policy_required'
+        ? 'external_policy_required' : 'principal_constraint_not_observed';
+    return accessChainRecord({
+      entryKind: 'route', entryId: route.id, status: 'completed', outcome,
+      identity: identity.identity, objectSelectors, callEdges: [], dataOperation,
+      evidenceBoundary: dataOperation.externalPolicy === 'external_policy_required'
+        ? 'The request-selected object reaches a supported Supabase operation. Query constraints are static evidence only, and database row-level security must be checked separately.'
+        : 'The request-selected object reaches a supported same-handler data operation. Visible query constraints do not prove runtime authorization, and missing visible constraints do not prove a vulnerability.',
+    });
+  });
+  const oneHop = analyzeOneHopAccess({
+    graph, module, handler, entry: { kind: 'route', id: route.id,
+      name: route.handler || route.id, module },
+    identity: identity.identity, objectAliases: routeFacts.aliases,
+    principalAliases: identity.principalAliases, objectSelectors,
+  });
+  return {
+    chains: [...directChains, ...oneHop.map(accessChainRecord)],
+    operations: [...analyzed.operations, ...oneHop.map((item) => item.dataOperation).filter(Boolean)],
+    limitations: oneHop.map((item) => item.reason).filter(Boolean),
+  };
+}
+
 function rawFinding(route, operation) {
   const line = operation.call.loc?.start?.line ?? route.location.line;
   const construct = `prisma_${operation.operation}_route_identifier`;
@@ -446,12 +488,15 @@ export function auditJsTsRouteAuthorization(graph, routes) {
     }
     scanned += 1;
     const evidence = operationEvidence(module, route, handler, prismaClients(module));
+    const access = directAccessChains(graph, module, route, handler);
     for (const operation of evidence.operations) {
       if (!operation.principalConstraint) findings.push(rawFinding(route, operation));
     }
-    const operations = evidence.operations.map((item) => `prisma-${item.operation.replace(/[A-Z]/g,
-      (character) => `-${character.toLowerCase()}`)}`);
+    const operations = [...evidence.operations.map((item) => `prisma-${item.operation.replace(/[A-Z]/g,
+      (character) => `-${character.toLowerCase()}`)}`),
+    ...access.operations.map((item) => `${item.provider}-${item.operation}`)];
     const limitations = [...route.limitations];
+    limitations.push(...access.limitations);
     if (evidence.operations.some((item) => item.principalConstraint)) {
       limitations.push('principal-constraint-observed-not-validated');
     }
@@ -459,6 +504,7 @@ export function auditJsTsRouteAuthorization(graph, routes) {
       limitations.push('delegated-object-authorization-unresolved');
     }
     reviewedRoutes.push(prioritizeRoute({ ...route,
+      accessChains: [...(route.accessChains || []), ...access.chains],
       operations: [...new Set([...route.operations, ...operations])].sort(),
       limitations: [...new Set(limitations)].sort(),
     }));

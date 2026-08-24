@@ -159,6 +159,7 @@ const include = [
   'docs/reviews/v0.6.0-route-review.json',
   'docs/reviews/v0.6.0-route-review.md',
   'docs/route-security-v1.schema.json',
+  'docs/route-security-v2.schema.json',
 ];
 
 function stagePayload(spec) {

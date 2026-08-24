@@ -336,6 +336,13 @@ export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMIT
   }
   const parsedPackages = new Map([...packageResults.entries()]
     .filter(([, result]) => result.outcome === 'scanned').map(([path, result]) => [path, result.parsed]));
+  const routeInputIssues = [];
+  const moduleConfigFiles = [];
+  for (const file of files.filter((item) => item.name === 'tsconfig.json' || item.name === 'jsconfig.json')) {
+    const loaded = load(file);
+    if (loaded.outcome === 'scanned') moduleConfigFiles.push({ path: file.path, text: loaded.text });
+    else routeInputIssues?.push?.({ code: loaded.code, path: file.path });
+  }
   const pnpmWorkspaces = new Map();
   for (const file of files.filter((item) => item.name === 'pnpm-workspace.yaml')) {
     const workspaceRoot = posix(dirname(file.path));
@@ -382,7 +389,6 @@ export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMIT
   }
 
   const routeSources = [];
-  const routeInputIssues = [];
   for (const file of files) {
     const classification = classifyJsTsSource(file.path);
     if (!classification.eligible) {
@@ -416,6 +422,8 @@ export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMIT
   const routeAnalysis = analyzeRouteSecurity(routeSources, {
     inputIssues: routeInputIssues,
     packageManifests: [...parsedPackages.values()],
+    packageManifestRecords: [...parsedPackages.entries()].map(([path, manifest]) => ({ path, manifest })),
+    configFiles: moduleConfigFiles,
     graphLimits: { maxModules: effectiveLimits.maxFiles },
   });
   if (['partial', 'unavailable'].includes(routeAnalysis.reportCoverage.status)) {

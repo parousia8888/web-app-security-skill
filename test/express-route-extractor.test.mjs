@@ -28,7 +28,10 @@ const patch = result.routes.find((route) => route.method === 'PATCH');
 assert.equal(patch.path, '/api/projects/:id');
 assert.equal(patch.objectAddressed, true);
 assert.equal(patch.authentication.state, 'inherited_observed');
-assert.equal(patch.authorization.state, 'candidate_observed');
+assert.equal(patch.authorization.state, 'not_observed');
+assert.equal(patch.routeScopedControl.state, 'classified_controls_observed');
+assert.ok(patch.routeScopedControl.unclassifiedSignals.some((signal) =>
+  signal.origin === 'customPolicy'));
 const reportMethods = result.routes.filter((route) => route.path === '/api/reports').map((route) => route.method).sort();
 assert.deepEqual(reportMethods, ['GET', 'POST']);
 assert.equal(result.routes.find((route) => route.method === 'ALL').stateChanging, true);

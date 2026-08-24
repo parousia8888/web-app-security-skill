@@ -26,9 +26,14 @@ for (const entry of [
   'docs/regressions/v0.5.4-real-world-regressions.md',
   'docs/regressions/v0.6.0-route-real-world-regressions.json',
   'docs/regressions/v0.6.0-route-real-world-regressions.md',
+  'docs/regressions/v0.7.0-access-control-real-world-regressions.json',
+  'docs/regressions/v0.7.0-access-control-real-world-regressions.md',
   'docs/reviews/v0.6.0-route-review.json',
   'docs/reviews/v0.6.0-route-review.md',
+  'docs/reviews/v0.7.0-access-control-review.json',
+  'docs/reviews/v0.7.0-access-control-review.md',
   'docs/route-security-v1.schema.json',
+  'docs/route-security-v2.schema.json',
 ]) {
   assert.ok(pkg.files.includes(entry), `npm files is missing ${entry}`);
 }

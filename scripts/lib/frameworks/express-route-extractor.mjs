@@ -1,10 +1,10 @@
 import { routeRecord } from '../route-security-model.mjs';
-import { signalForPrimitive, signalsForRole } from '../route-control-registry.mjs';
+import { signalForPrimitive, signalsForRole, unclassifiedSignals } from '../route-control-registry.mjs';
 import { prioritizeRoute } from '../route-security-priority.mjs';
 import {
   aggregateReasons, callName, controlFromSignals, expressionName, functionName,
   importedBindings, joinRoutePath, literalString, localModuleExport, objectAddressedPath,
-  pathKind, sourceLocation, structuralGraphReasons, walkJsTsAst,
+  pathKind, routeScopeFromSignals, sourceLocation, structuralGraphReasons, walkJsTsAst,
 } from './route-extractor-helpers.mjs';
 
 const METHODS = new Map([
@@ -161,10 +161,17 @@ export function extractExpressRoutes(graph) {
         : inheritedAuthn.some((item) => item.exact) ? controlFromSignals(inheritedAuthn, true)
           : localAuthn.length ? controlFromSignals(localAuthn)
             : inheritedAuthn.length ? controlFromSignals(inheritedAuthn, true) : controlFromSignals([]);
-      const authorization = localAuthz.some((item) => item.exact) ? controlFromSignals(localAuthz)
-        : inheritedAuthz.some((item) => item.exact) ? controlFromSignals(inheritedAuthz, true)
-          : localAuthz.length ? controlFromSignals(localAuthz)
-            : inheritedAuthz.length ? controlFromSignals(inheritedAuthz, true) : controlFromSignals([]);
+      const authorization = localAuthz.some((item) => item.exact)
+        ? controlFromSignals(localAuthz, false, 'authorization')
+        : inheritedAuthz.some((item) => item.exact)
+          ? controlFromSignals(inheritedAuthz, true, 'authorization')
+          : localAuthz.length ? controlFromSignals(localAuthz, false, 'authorization')
+            : inheritedAuthz.length ? controlFromSignals(inheritedAuthz, true, 'authorization')
+              : controlFromSignals([], false, 'authorization');
+      const scopedSignals = [...route.signals, ...inherited];
+      const routeScopedControl = routeScopeFromSignals(
+        scopedSignals.filter((item) => item.role !== 'unknown'), unclassifiedSignals(scopedSignals),
+      );
       const limitations = [];
       if (route.dynamic) limitations.push('dynamic-route-path');
       if (route.receiverKind === 'router' && !mounts.some((item) => item.target === route.receiver)) {
@@ -175,7 +182,7 @@ export function extractExpressRoutes(graph) {
         framework: 'express', method: route.method, path: fullPath,
         pathKind: pathKind(fullPath, route.dynamic), location: sourceLocation(route.modulePath, route.node),
         handler: route.handler, objectAddressed: objectAddressedPath(fullPath), authentication,
-        authorization, limitations,
+        authorization, routeScopedControl, limitations,
       })));
     }
   }

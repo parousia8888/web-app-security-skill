@@ -1,0 +1,351 @@
+{
+  "schemaVersion": 1,
+  "release": "0.7.0",
+  "reviewedOn": "2026-08-24",
+  "methodology": {
+    "kind": "fixed-commit ordinary-source review",
+    "networkBehavior": "Repositories were cloned at fixed commits; project dependencies and applications were not executed.",
+    "scoreBoundary": "This review is not a production precision, recall, reachability or exploitability measurement.",
+    "reviewCap": "Four projects and 32 manually inspected entries; no project was added to inflate counts."
+  },
+  "aggregate": {
+    "projects": 4,
+    "routes": 173,
+    "serverActions": 23,
+    "manualEntries": 32,
+    "partialChains": 12,
+    "completedChains": 0
+  },
+  "aliasResolutionDelta": {
+    "project": "formbricks",
+    "beforePartialChains": 3,
+    "afterPartialChains": 9,
+    "completedChains": 0,
+    "boundary": "Static alias resolution exposed more exact local calls, but the one-hop limit and unresolved wrappers kept every ordinary-project chain incomplete."
+  },
+  "projects": [
+    {
+      "id": "nestjs-boilerplate",
+      "repository": "brocoders/nestjs-boilerplate",
+      "commit": "9620f159eefe38f47747d02ab162852367c5472c",
+      "license": "MIT",
+      "routes": 24,
+      "serverActions": 0,
+      "routeCoverage": "completed",
+      "partialChains": 3,
+      "completedChains": 0
+    },
+    {
+      "id": "vercel-chatbot",
+      "repository": "vercel/chatbot",
+      "commit": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
+      "license": "Apache-2.0",
+      "routes": 15,
+      "serverActions": 7,
+      "routeCoverage": "partial",
+      "partialChains": 0,
+      "completedChains": 0
+    },
+    {
+      "id": "formbricks",
+      "repository": "formbricks/formbricks",
+      "commit": "b66c1dd978af618a0e402bd3343b456bed68594c",
+      "license": "AGPL-3.0",
+      "routes": 130,
+      "serverActions": 16,
+      "routeCoverage": "partial",
+      "partialChains": 9,
+      "completedChains": 0
+    },
+    {
+      "id": "documenso",
+      "repository": "documenso/documenso",
+      "commit": "75330166cc00b29c14399bc2e391e4b4d8080c00",
+      "license": "AGPL-3.0",
+      "routes": 4,
+      "serverActions": 0,
+      "routeCoverage": "partial",
+      "partialChains": 0,
+      "completedChains": 0
+    }
+  ],
+  "observations": [
+    {
+      "project": "nestjs-boilerplate",
+      "entry": "POST /auth/email/login",
+      "source": "src/auth/auth.controller.ts:39",
+      "assessment": "expected_public",
+      "note": "No route-scoped control observed; appropriate for a login entry but still owner-classified."
+    },
+    {
+      "project": "nestjs-boilerplate",
+      "entry": "POST /auth/email/register",
+      "source": "src/auth/auth.controller.ts:51",
+      "assessment": "expected_public",
+      "note": "No route-scoped control observed; appropriate for registration."
+    },
+    {
+      "project": "nestjs-boilerplate",
+      "entry": "POST /auth/logout",
+      "source": "src/auth/auth.controller.ts:125",
+      "assessment": "supported_control",
+      "note": "Route-scoped Passport authentication was observed; no authorization claim was made."
+    },
+    {
+      "project": "nestjs-boilerplate",
+      "entry": "GET /auth/me",
+      "source": "src/auth/auth.controller.ts:90",
+      "assessment": "supported_control",
+      "note": "Route-scoped Passport authentication was observed."
+    },
+    {
+      "project": "nestjs-boilerplate",
+      "entry": "DELETE /auth/me",
+      "source": "src/auth/auth.controller.ts:154",
+      "assessment": "supported_control",
+      "note": "State-changing route has route-scoped authentication evidence."
+    },
+    {
+      "project": "nestjs-boilerplate",
+      "entry": "GET /files/:path",
+      "source": "src/files/infrastructure/uploader/local/files.controller.ts:58",
+      "assessment": "review_lead",
+      "note": "No route-scoped control was observed; path policy and intended public access require review."
+    },
+    {
+      "project": "nestjs-boilerplate",
+      "entry": "DELETE /users/:id",
+      "source": "src/users/users.controller.ts:129",
+      "assessment": "correct_bounded_stop",
+      "note": "Inherited authentication and an authorization candidate were separated; the chain stopped before a second local call."
+    },
+    {
+      "project": "nestjs-boilerplate",
+      "entry": "GET /users/:id",
+      "source": "src/users/users.controller.ts:92",
+      "assessment": "correct_bounded_stop",
+      "note": "The route was object-addressed and the one-hop chain stopped explicitly at the service boundary."
+    },
+    {
+      "project": "vercel-chatbot",
+      "entry": "POST /api/chat",
+      "source": "app/(chat)/api/chat/route.ts:70",
+      "assessment": "known_miss",
+      "note": "Local Auth.js use is visible in source, but route control remains unclassified and body-selected IDs are outside this release."
+    },
+    {
+      "project": "vercel-chatbot",
+      "entry": "DELETE /api/chat",
+      "source": "app/(chat)/api/chat/route.ts:447",
+      "assessment": "known_miss",
+      "note": "Local Auth.js use is visible, but query-selected IDs do not enter the v0.7.0 chain selector."
+    },
+    {
+      "project": "vercel-chatbot",
+      "entry": "GET /api/document",
+      "source": "app/(chat)/api/document/route.ts:19",
+      "assessment": "known_miss",
+      "note": "The handler performs an owner comparison, but query-selected document IDs are outside the route-parameter selector."
+    },
+    {
+      "project": "vercel-chatbot",
+      "entry": "POST /api/document",
+      "source": "app/(chat)/api/document/route.ts:51",
+      "assessment": "known_miss",
+      "note": "The handler performs ownership checks; no chain is emitted because the ID comes from query state."
+    },
+    {
+      "project": "vercel-chatbot",
+      "entry": "DELETE /api/document",
+      "source": "app/(chat)/api/document/route.ts:110",
+      "assessment": "known_miss",
+      "note": "The handler performs ownership checks; no chain is emitted because the ID comes from query state."
+    },
+    {
+      "project": "vercel-chatbot",
+      "entry": "GET /api/vote",
+      "source": "app/(chat)/api/vote/route.ts:12",
+      "assessment": "known_miss",
+      "note": "Auth.js and an explicit owner comparison are visible, but the query-selected chat ID is not modeled."
+    },
+    {
+      "project": "vercel-chatbot",
+      "entry": "PATCH /api/vote",
+      "source": "app/(chat)/api/vote/route.ts:44",
+      "assessment": "known_miss",
+      "note": "Auth.js and an explicit owner comparison are visible, but the body-selected chat ID is not modeled."
+    },
+    {
+      "project": "vercel-chatbot",
+      "entry": "ACTION updateChatVisibility",
+      "source": "app/(chat)/actions.ts:64",
+      "assessment": "supported_identity",
+      "note": "Exact local Auth.js identity evidence is observed; no object chain is emitted for the unsupported argument shape."
+    },
+    {
+      "project": "formbricks",
+      "entry": "GET /legacy-organization-settings/[workspaceId]/[[...path]]",
+      "source": "apps/web/app/(redirects)/legacy-organization-settings/[workspaceId]/[[...path]]/route.ts:8",
+      "assessment": "correct_bounded_stop",
+      "note": "The alias-resolved local call is visible, but the exported wrapper cannot be reduced to one supported operation."
+    },
+    {
+      "project": "formbricks",
+      "entry": "POST /api/internal/feedback-datasets/[datasetId]/purge",
+      "source": "apps/web/app/api/internal/feedback-datasets/[datasetId]/purge/route.ts:15",
+      "assessment": "known_miss",
+      "note": "The route is inventoried, but wrapper-based controls and deeper service calls remain outside the bounded chain."
+    },
+    {
+      "project": "formbricks",
+      "entry": "DELETE /api/v1/management/action-classes/[actionClassId]",
+      "source": "apps/web/app/api/v1/management/action-classes/[actionClassId]/route.ts:146",
+      "assessment": "known_miss",
+      "note": "The object route is inventoried; re-exported wrappers prevent a complete handler chain."
+    },
+    {
+      "project": "formbricks",
+      "entry": "GET /api/v1/management/responses/[responseId]",
+      "source": "apps/web/app/api/v1/management/responses/[responseId]/route.ts:48",
+      "assessment": "known_miss",
+      "note": "The object route is inventoried; handler-wrapper resolution is incomplete."
+    },
+    {
+      "project": "formbricks",
+      "entry": "GET /api/v1/management/surveys/[surveyId]",
+      "source": "apps/web/app/api/v1/management/surveys/[surveyId]/route.ts:52",
+      "assessment": "known_miss",
+      "note": "The object route is inventoried; handler-wrapper resolution is incomplete."
+    },
+    {
+      "project": "formbricks",
+      "entry": "DELETE /api/v1/webhooks/[webhookId]",
+      "source": "apps/web/app/api/v1/webhooks/[webhookId]/route.ts:36",
+      "assessment": "known_miss",
+      "note": "The object route is inventoried; no supported one-hop data operation was established."
+    },
+    {
+      "project": "formbricks",
+      "entry": "POST /api/v2/client/[workspaceId]/responses",
+      "source": "apps/web/app/api/v2/client/[workspaceId]/responses/route.ts:201",
+      "assessment": "review_lead",
+      "note": "No route-scoped control was observed; public client semantics require owner classification."
+    },
+    {
+      "project": "formbricks",
+      "entry": "POST /api/v3/surveys/[surveyId]/archive",
+      "source": "apps/web/app/api/v3/surveys/[surveyId]/archive/route.ts:10",
+      "assessment": "known_miss",
+      "note": "The state-changing object route is inventoried; wrapper and deeper-call evidence remain incomplete."
+    },
+    {
+      "project": "formbricks",
+      "entry": "ACTION getMembershipByUserIdOrganizationIdAction",
+      "source": "apps/web/lib/membership/hooks/actions.ts:8",
+      "assessment": "correct_bounded_stop",
+      "note": "Alias resolution exposes two local-call candidates; both stop without inventing a completed data chain."
+    },
+    {
+      "project": "formbricks",
+      "entry": "ACTION getMembershipRole",
+      "source": "apps/web/lib/membership/hooks/actions.ts:20",
+      "assessment": "correct_bounded_stop",
+      "note": "One exact local call is followed, then analysis stops before the next local call."
+    },
+    {
+      "project": "formbricks",
+      "entry": "ACTION logSignOutAction",
+      "source": "apps/web/modules/auth/actions/sign-out.ts:12",
+      "assessment": "correct_bounded_stop",
+      "note": "The first local call is resolved and the second edge is left incomplete."
+    },
+    {
+      "project": "formbricks",
+      "entry": "ACTION checkRoleManagementPermission",
+      "source": "apps/web/modules/ee/role-management/actions.ts:26",
+      "assessment": "correct_bounded_stop",
+      "note": "Alias resolution adds bounded call evidence without upgrading it to authorization proof."
+    },
+    {
+      "project": "documenso",
+      "entry": "GET /llms-full.txt",
+      "source": "apps/docs/src/app/llms-full.txt/route.ts:5",
+      "assessment": "expected_public",
+      "note": "Public documentation route; no route-scoped authentication is expected."
+    },
+    {
+      "project": "documenso",
+      "entry": "GET /llms.txt",
+      "source": "apps/docs/src/app/llms.txt/route.ts:5",
+      "assessment": "expected_public",
+      "note": "Public documentation route; no route-scoped authentication is expected."
+    },
+    {
+      "project": "documenso",
+      "entry": "GET /llms.mdx/docs/[[...slug]]",
+      "source": "apps/docs/src/app/llms.mdx/docs/[[...slug]]/route.ts:7",
+      "assessment": "expected_public",
+      "note": "Public documentation route; the dynamic slug is not treated as an authorization object ID."
+    },
+    {
+      "project": "documenso",
+      "entry": "GET /og/docs/[...slug]",
+      "source": "apps/docs/src/app/og/docs/[...slug]/route.tsx:27",
+      "assessment": "expected_public",
+      "note": "Public image route; no route-scoped authentication is expected."
+    }
+  ],
+  "promotion": {
+    "identity": [
+      {
+        "family": "NestJS Passport",
+        "status": "stable_bounded",
+        "basis": "Existing exact package semantics plus ordinary Nest controller review."
+      },
+      {
+        "family": "Auth.js / NextAuth",
+        "status": "stable_bounded",
+        "basis": "Exact factory/export fixtures plus ordinary Vercel Chatbot source review."
+      },
+      {
+        "family": "Clerk",
+        "status": "experimental",
+        "basis": "Exact fixtures and benign neighbours only; no ordinary-project sample in this capped review."
+      },
+      {
+        "family": "Better Auth",
+        "status": "experimental",
+        "basis": "Exact fixtures and benign neighbours only; no ordinary-project sample in this capped review."
+      },
+      {
+        "family": "Supabase identity",
+        "status": "experimental",
+        "basis": "Exact fixtures only; RLS and deployed session behavior remain external."
+      }
+    ],
+    "data": [
+      {
+        "family": "Prisma",
+        "status": "stable_bounded",
+        "basis": "Positive, benign and incomplete fixtures plus ordinary Formbricks query review; no production accuracy claim."
+      },
+      {
+        "family": "Drizzle",
+        "status": "stable_bounded",
+        "basis": "Positive and benign fixtures plus ordinary Vercel Chatbot query review; no production accuracy claim."
+      },
+      {
+        "family": "Supabase Query Builder",
+        "status": "experimental",
+        "basis": "Exact fixtures only; every result retains external_policy_required."
+      }
+    ]
+  },
+  "residualLimits": [
+    "Ordinary-project completed chains were 0; fixture conformance is not ordinary-project effectiveness.",
+    "Query-string and JSON-body object selectors are outside the v0.7.0 route-chain boundary.",
+    "Next.js wrapper and re-export patterns caused 33 unresolved route/action relationships across the reviewed Next.js projects.",
+    "Workspace exports that point only to unbuilt dist files are not guessed back to source files.",
+    "One-hop analysis stops before a second local call even when a human can continue the chain."
+  ]
+}

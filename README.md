@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#see-the-result">Demo</a> ·
-  <a href="#whats-new-in-v060">v0.6.0</a> ·
+  <a href="#whats-new-in-v070-candidate">v0.7.0</a> ·
   <a href="#install">Install</a> ·
   <a href="#run-the-first-project">First project</a> ·
   <a href="docs/tutorial.md">Tutorial</a> ·
@@ -40,17 +40,24 @@ For each actionable result, the report gives you:
   normal-behavior retests.
 
 For supported JavaScript/TypeScript frameworks, the same command also writes
-`route-security.json`, `route-security.md` and a SHA-256 sidecar. The route view lists known
-endpoints, shows where recognizable controls were observed, and orders what to review next:
+`route-security.json`, `route-security.md` and a SHA-256 sidecar. It inventories HTTP routes and
+Next.js Server Actions separately, lists application-wide controls once, and shows what to review
+next:
 
 | Security term | Plain meaning | What the route view can say |
 |---|---|---|
-| Authentication (authn) | Who is making the request? | A supported login/session guard was observed, was not observed, or could not be resolved. |
-| Route-level authorization (authz) | May this identity call this operation? | A supported policy/guard was observed, or a custom candidate still needs review. |
-| Object-level authorization (BOLA/IDOR) | May this identity access this specific record? | Usually unresolved; a path such as `/users/:id` is review priority, not proof of a vulnerability. |
+| Application control | What was registered for the whole app? | A global guard or middleware is listed once; this does not prove it protects every route. |
+| Authentication (authn) | Who is making the request? | A supported login/session source was observed, was not observed, or could not be resolved. |
+| Route-level authorization (authz) | May this identity call this operation? | A supported policy/guard was observed, or a custom route control still needs review. |
+| Object-level authorization (BOLA/IDOR) | May this identity access this specific record? | A caller-selected ID can be followed into supported Prisma/Drizzle/Supabase operations in the handler or through one exact local call. A missing visible constraint is a review lead, not proof of a vulnerability. |
 
 `review_first`, `review_next` and `review_later` are work-order labels, not severity scores. A missing
 visible control is never converted into a confirmed vulnerability.
+
+In plain language, the access-chain view can say: "this route takes a project ID, obtains the
+current user through Auth.js, and sends both values into a Prisma query through one resolved local
+function." It cannot prove runtime reachability, a database policy, or what happens beyond a second
+local call. Supabase results always say that external RLS policy evidence is still required.
 
 For the widest maintained local pass, select the no-download deep profile. It uses the built-in
 rules and calls pinned Checkov, Gitleaks, Opengrep and OSV-Scanner binaries already installed by the
@@ -90,32 +97,38 @@ check reruns the fixture and fails if any surface disagrees.
 For the complete install-to-uninstall path, follow the tested
 [first project tutorial](docs/tutorial.md).
 
-## What's new in v0.6.0
+## What's new in v0.7.0 candidate
 
-v0.6.0 adds a framework-aware review layer beside the existing finding report. The signed release
-and npm package are public; the trust-chain and Action promotion evidence remains separately
-verifiable below:
+v0.7.0 deepens the v0.6.0 route inventory into a bounded access-control-chain review. It is a local
+release candidate until the signed tag, GitHub Release, npm provenance and public consumers pass:
 
-- **Route inventory:** bounded stable extraction for direct Express app/router registrations,
-  static NestJS controller/method decorators, and direct named Next.js App Router exports.
-- **Control mapping:** authentication, route-level authorization and object-level authorization are
-  separate evidence fields. Supported signals can be observed; custom controls remain candidates;
-  no visible control remains a review question rather than a vulnerability conclusion.
-- **Review order:** state-changing, object-addressed and sensitive-operation routes move earlier in
-  the queue. Priority is not CVSS severity and expected-public auth routes can be benign reviews.
-- **Fail-closed coverage:** aliased Express registrations, unresolved mounts, dynamic Nest paths and
-  Next handler re-exports become partial/unknown evidence instead of silently disappearing.
-- **Experimental direct-Prisma lead:** a same-handler route identifier reaching a direct Prisma
-  operation without a visible principal constraint can be surfaced, but it does not prove BOLA and
-  remains experimental after zero ordinary-project matches.
-- **No runtime install:** a pinned `@babel/parser` bundle ships with the CLI/Skill. Users do not run
-  `npm install` in audited projects, and the parser version, license and digest are recorded.
+- **Correct Nest control scope:** `APP_GUARD` controls are listed once at application level instead
+  of being copied into every route. Authentication and authorization signals are separated, while
+  unclassified controls remain unclassified.
+- **Missing route control is filterable:** `no_route_scoped_control_observed` isolates
+  state-changing or object-addressed routes that need human classification. Login, registration,
+  recovery and webhook endpoints may be intentionally public, so absence is never a finding by
+  itself.
+- **Bounded access chains:** supported Auth.js/Nest Passport identity and Prisma/Drizzle operations
+  have stable bounded semantics. Clerk, Better Auth, Supabase identity and Supabase Query Builder
+  ship as experimental evidence; every Supabase chain remains `external_policy_required`.
+- **One exact local call:** static same-file, relative import, bounded Nest service, static
+  tsconfig/jsconfig alias and exact workspace-export relationships can be followed once. Analysis
+  stops before a second local call and records the reason.
+- **Server Actions are separate:** supported Next.js Server Actions are reviewed as named callable
+  surfaces without invented HTTP methods or URLs.
+- **Regression gate:** route baselines expose lost authentication, authorization, scoped controls,
+  query constraints and completed-chain coverage. `--fail-on-route-regression` is opt-in and cannot
+  turn incomplete evidence into a pass.
 
-The bounded [57-route ordinary-project review](docs/reviews/v0.6.0-route-review.md) records 51
-detected routes and six explicit misses across fixed Express, NestJS and Next.js commits. This is a
-purposive boundary review, not production precision/recall. The associated [six minimized
-regressions](docs/regressions/v0.6.0-route-real-world-regressions.md) protect the correctness failures
-found during that review.
+The capped [four-project access-control review](docs/reviews/v0.7.0-access-control-review.md)
+inventoried 173 HTTP routes and 23 Server Actions and manually reviewed 32 entries. It produced 12
+partial chains and zero completed ordinary-project chains. Those zero completions are a visible
+limit, not a success claim. Four named
+[real-world regressions](docs/regressions/v0.7.0-access-control-real-world-regressions.md) protect the
+Nest aggregation, fingerprint, Next monorepo-root and tsconfig-alias failures found during work.
+Detailed use and interpretation are in the
+[access-control-chain reference](references/access-control-chain.md).
 
 The existing finding explanation contract remains: every v3 source finding includes the technical
 term, plain-language meaning, realistic consequence, evidence boundary, proposal, alternatives,

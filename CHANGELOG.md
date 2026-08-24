@@ -5,6 +5,44 @@ All notable changes to **Web App Security Skill** are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.0] — 2026-08-24
+
+### Added
+- Route-security schema v2 records application controls once, route-scoped-control state,
+  access-control chains and Next.js Server Actions as a separate non-HTTP surface.
+- Exact bounded identity evidence covers Nest Passport and Auth.js as stable families, with Clerk,
+  Better Auth and Supabase identity explicitly experimental.
+- Prisma and Drizzle operations have stable bounded same-handler and one-local-call evidence;
+  Supabase Query Builder remains experimental and always retains `external_policy_required`.
+- One-hop local resolution supports exact same-file calls, relative imports, bounded Nest
+  constructor injection, unambiguous nearest tsconfig/jsconfig paths and exact workspace source
+  exports. It stops before a second local call.
+- An opt-in `--fail-on-route-regression` gate reports defined route/action access-control
+  degradations without overriding incomplete-evidence exit behavior.
+- A fixed-commit four-project review inventories 173 routes and 23 Server Actions, manually reviews
+  32 entries and records 12 partial and zero completed ordinary-project chains without publishing a
+  production accuracy claim.
+
+### Changed
+- Application-wide guards are no longer copied onto every route. Authentication, authorization and
+  unclassified route-control signals are separate, and `no_route_scoped_control_observed` is
+  directly reviewable.
+- Access-control review explanations include observed facts, proof limits, likely consequences,
+  change risks and owner-controlled unauthenticated/owner/non-owner/lower-role/normal-flow checks.
+- Route v1 baselines are explicitly not comparable with route-security v2.
+
+### Fixed
+- Named regressions protect Nest global-guard role duplication, access-chain fingerprint
+  collisions, standard Next monorepo app roots and exact tsconfig alias resolution.
+
+### Security boundary
+- A missing route control or principal/tenant query constraint is review evidence, never automatic
+  proof of BOLA/IDOR. Runtime reachability, deployed policy, RLS and paths beyond one exact local call
+  remain outside the automated conclusion.
+
+Publication status: v0.7.0 candidate only until signed tag, GitHub Release, npm provenance,
+verified installer, immutable Action and signed `v1` consumers pass.
+
 ## [0.6.0] — 2026-08-24
 
 ### Added

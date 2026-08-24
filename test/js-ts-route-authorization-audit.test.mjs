@@ -44,6 +44,49 @@ export async function DELETE(_request, { params }) {
   return Response.json(await prisma.account.delete({ where: { id: selectedId } }));
 }
 ` },
+  { path: 'src/drizzle.ts', text: `
+import { drizzle } from 'drizzle-orm/node-postgres';
+export const sqlDb = drizzle({});
+` },
+  { path: 'src/supabase.ts', text: `
+import { createServerClient } from '@supabase/ssr';
+export function createClient() { return createServerClient('url', 'key', {}); }
+` },
+  { path: 'src/access.ts', text: `
+import express from 'express';
+import { eq, and } from 'drizzle-orm';
+import { currentUser } from '@clerk/nextjs/server';
+import { sqlDb } from './drizzle';
+import { createClient } from './supabase';
+const app = express();
+app.get('/drizzle-orders/:id', async (req, res) => {
+  const user = await currentUser();
+  return res.json(await sqlDb.select().from(orders).where(and(
+    eq(orders.id, req.params.id), eq(orders.ownerId, user.id),
+  )));
+});
+app.get('/supabase-orders/:id', async (req, res) => {
+  const client = await createClient();
+  return res.json(await client.from('orders').select('*').eq('id', req.params.id));
+});
+` },
+  { path: 'src/project-repository.ts', text: `
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+export function loadProject(id, ownerId) {
+  return prisma.project.findFirst({ where: { id, ownerId } });
+}
+` },
+  { path: 'src/hop.ts', text: `
+import express from 'express';
+import { currentUser } from '@clerk/nextjs/server';
+import { loadProject } from './project-repository';
+const app = express();
+app.get('/hop-projects/:id', async (req, res) => {
+  const user = await currentUser();
+  return res.json(await loadProject(req.params.id, user.id));
+});
+` },
 ];
 
 function runAudit(sourceFiles) {
@@ -71,6 +114,27 @@ assert.ok(delegated.limitations.includes('delegated-object-authorization-unresol
 assert.equal(result.findings.some((finding) => finding.evidence.routePath === '/delegated/:id'), false);
 assert.ok(result.routes.find((route) => route.path === '/projects/:id' && route.framework === 'nestjs')
   .operations.includes('prisma-find-unique'));
+const nestAccess = result.routes.find((route) => route.path === '/projects/:id'
+  && route.framework === 'nestjs').accessChains;
+assert.equal(nestAccess.length, 1);
+assert.equal(nestAccess[0].dataOperation.provider, 'prisma');
+assert.equal(nestAccess[0].outcome, 'principal_constraint_not_observed');
+assert.deepEqual(nestAccess[0].objectSelectors.map((selector) => selector.name), ['id']);
+const drizzleAccess = result.routes.find((route) => route.path === '/drizzle-orders/:id').accessChains;
+assert.equal(drizzleAccess.length, 1);
+assert.equal(drizzleAccess[0].dataOperation.provider, 'drizzle');
+assert.equal(drizzleAccess[0].identity.provider, 'clerk');
+assert.equal(drizzleAccess[0].outcome, 'principal_constraint_observed');
+const supabaseAccess = result.routes.find((route) => route.path === '/supabase-orders/:id').accessChains;
+assert.equal(supabaseAccess.length, 1);
+assert.equal(supabaseAccess[0].dataOperation.provider, 'supabase');
+assert.equal(supabaseAccess[0].dataOperation.externalPolicy, 'external_policy_required');
+assert.equal(supabaseAccess[0].outcome, 'external_policy_required');
+const hopAccess = result.routes.find((route) => route.path === '/hop-projects/:id').accessChains;
+assert.equal(hopAccess.length, 1);
+assert.equal(hopAccess[0].callEdges[0].kind, 'local_function');
+assert.equal(hopAccess[0].dataOperation.provider, 'prisma');
+assert.equal(hopAccess[0].outcome, 'principal_constraint_observed');
 
 const disconnected = runAudit(files.map((file) => file.path === 'src/express.ts'
   ? { ...file, text: file.text.replace('id: projectId', "id: 'server-owned-project'") } : file)).result;

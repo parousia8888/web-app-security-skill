@@ -1,9 +1,10 @@
 import { routeRecord } from '../route-security-model.mjs';
-import { signalForPrimitive, signalsForRole } from '../route-control-registry.mjs';
+import { signalForPrimitive, signalsForRole, unclassifiedSignals } from '../route-control-registry.mjs';
 import { prioritizeRoute } from '../route-security-priority.mjs';
 import {
-  aggregateReasons, callName, controlFromSignals, expressionName, importedBindings, joinRoutePath,
-  literalString, objectAddressedPath, pathKind, sourceLocation, structuralGraphReasons, walkJsTsAst,
+  aggregateReasons, controlFromSignals, expressionName, importedBindings, joinRoutePath,
+  literalString, localModuleExport, objectAddressedPath, pathKind, routeScopeFromSignals,
+  sourceLocation, structuralGraphReasons, walkJsTsAst,
 } from './route-extractor-helpers.mjs';
 
 const HTTP = new Map([
@@ -20,7 +21,83 @@ function nestImported(imports, local, imported, source = '@nestjs/common') {
   return binding?.source === source && binding.imported === imported;
 }
 
-function guardSignals(module, imports, decorators) {
+function classDeclaration(module, name) {
+  let found = null;
+  walkJsTsAst(module?.ast, (node) => {
+    if (!found && node.type === 'ClassDeclaration' && node.id?.name === name) found = node;
+  });
+  return found;
+}
+
+function variableValue(module, name) {
+  let found = null;
+  walkJsTsAst(module?.ast, (node) => {
+    if (!found && node.type === 'VariableDeclarator' && expressionName(node.id) === name) found = node.init;
+  });
+  return found;
+}
+
+function resolvedLocalSymbol(graph, module, imports, name) {
+  const direct = classDeclaration(module, name);
+  if (direct) return { module, name, node: direct };
+  const binding = imports.get(name);
+  if (!binding?.resolvedPath || binding.resolutionReason) return null;
+  const target = graph.modules.get(binding.resolvedPath);
+  const local = localModuleExport(graph, binding.resolvedPath, binding.imported);
+  const node = local ? classDeclaration(target, local) : null;
+  return node ? { module: target, name: local, node } : null;
+}
+
+function staticString(graph, module, imports, node, depth = 0) {
+  if (!node || depth > 2) return null;
+  const literal = literalString(node);
+  if (literal !== null) return literal;
+  const name = expressionName(node);
+  if (!name || name.includes('.')) return null;
+  const local = variableValue(module, name);
+  if (local) return staticString(graph, module, imports, local, depth + 1);
+  const binding = imports.get(name);
+  if (!binding?.resolvedPath || binding.resolutionReason) return null;
+  const target = graph.modules.get(binding.resolvedPath);
+  const exported = localModuleExport(graph, binding.resolvedPath, binding.imported);
+  return exported ? staticString(graph, target, importedBindings(target),
+    variableValue(target, exported), depth + 1) : null;
+}
+
+function structuralGuardRole(graph, module, imports, guardName, location) {
+  const resolved = resolvedLocalSymbol(graph, module, imports, guardName);
+  if (!resolved) return null;
+  const targetImports = importedBindings(resolved.module);
+  const superCall = resolved.node.superClass?.type === 'CallExpression' ? resolved.node.superClass : null;
+  const superName = expressionName(superCall?.callee || resolved.node.superClass);
+  const superBinding = targetImports.get(superName);
+  const exactSuper = superBinding ? signalForPrimitive(
+    superBinding.source, superBinding.imported, location,
+  ) : null;
+  if (exactSuper?.role === 'authentication') {
+    return { ...exactSuper, kind: 'nest-passport-derived-auth-guard',
+      origin: `${resolved.module.path}:${resolved.name}` };
+  }
+
+  let authorizationMetadata = null;
+  walkJsTsAst(resolved.node, (node) => {
+    if (authorizationMetadata || node.type !== 'CallExpression') return;
+    const called = expressionName(node.callee) || '';
+    if (!/\.(?:get|getAll|getAllAndMerge|getAllAndOverride)$/.test(called)) return;
+    const key = staticString(graph, resolved.module, targetImports, node.arguments[0]);
+    if (key && /(?:^|[-_.:])(role|roles|permission|permissions|ability|abilities|policy|policies|scope|scopes)(?:$|[-_.:])/i.test(`.${key}.`)) {
+      authorizationMetadata = key;
+    }
+  });
+  if (authorizationMetadata) {
+    return { kind: 'nest-metadata-authorization-guard-candidate',
+      origin: `${resolved.module.path}:${resolved.name}`, location,
+      exact: false, role: 'authorization' };
+  }
+  return null;
+}
+
+function guardSignals(graph, module, imports, decorators) {
   const signals = [];
   for (const decorator of decorators || []) {
     const call = decoratorCall(decorator);
@@ -32,7 +109,10 @@ function guardSignals(module, imports, decorators) {
       const binding = imports.get(guardName);
       const exact = binding ? signalForPrimitive(binding.source, binding.imported,
         sourceLocation(module.path, argument)) : null;
-      signals.push(exact || { kind: 'nest-custom-guard-candidate',
+      const structural = guardName ? structuralGuardRole(
+        graph, module, imports, guardName, sourceLocation(module.path, argument),
+      ) : null;
+      signals.push(exact || structural || { kind: 'nest-custom-guard-candidate',
         origin: guardName || 'anonymous-guard', location: sourceLocation(module.path, argument),
         exact: false, role: 'unknown' });
     }
@@ -53,7 +133,7 @@ function publicSignals(module, imports, decorators) {
   return signals;
 }
 
-function globalGuardSignals(module, imports) {
+function globalGuardSignals(graph, module, imports) {
   const signals = [];
   walkJsTsAst(module.ast, (node) => {
     if (node.type !== 'ObjectExpression') return;
@@ -69,8 +149,13 @@ function globalGuardSignals(module, imports) {
       }
       if (['useClass', 'useFactory', 'useValue'].includes(key)) guard = expressionName(property.value);
     }
-    if (provider) signals.push({ kind: 'nest-global-guard-candidate', origin: guard || 'APP_GUARD',
-      location: sourceLocation(module.path, node), exact: false, role: 'unknown' });
+    if (provider) {
+      const location = sourceLocation(module.path, node);
+      const structural = guard ? structuralGuardRole(graph, module, imports, guard, location) : null;
+      signals.push(structural ? { ...structural, kind: `nest-global-${structural.kind}` }
+        : { kind: 'nest-global-guard-candidate', origin: guard || 'APP_GUARD',
+          location, exact: false, role: 'unknown' });
+    }
   });
   return signals;
 }
@@ -97,7 +182,7 @@ export function extractNestRoutes(graph) {
   const routes = [];
   const reasons = [...structuralGraphReasons(graph)];
   const globalSignals = [...graph.modules.values()].filter((module) => module.ast)
-    .flatMap((module) => globalGuardSignals(module, importedBindings(module)));
+    .flatMap((module) => globalGuardSignals(graph, module, importedBindings(module)));
   let eligible = 0;
   for (const module of graph.modules.values()) {
     if (!module.ast) continue;
@@ -115,7 +200,7 @@ export function extractNestRoutes(graph) {
       if (dynamicController) {
         reasons.push({ code: 'nest_dynamic_controller_path', path: module.path });
       }
-      const classGuards = guardSignals(module, imports, node.decorators);
+      const classGuards = guardSignals(graph, module, imports, node.decorators);
       const classPublic = publicSignals(module, imports, node.decorators);
       for (const methodNode of node.body.body) {
         if (!['ClassMethod', 'ClassPrivateMethod'].includes(methodNode.type)) continue;
@@ -129,23 +214,24 @@ export function extractNestRoutes(graph) {
           const dynamicMethod = methodPaths === null;
           const dynamic = dynamicController || dynamicMethod;
           if (dynamicMethod) reasons.push({ code: 'nest_dynamic_method_path', path: module.path });
-          const methodGuards = guardSignals(module, imports, methodNode.decorators);
+          const methodGuards = guardSignals(graph, module, imports, methodNode.decorators);
           const publicOverrides = [...classPublic, ...publicSignals(module, imports, methodNode.decorators)];
-          const inherited = methodGuards.length ? [] : classGuards.length ? classGuards : globalSignals;
-          const localGuards = methodGuards;
           const select = (role) => {
-            const localRole = signalsForRole(localGuards, role);
-            const inheritedRole = signalsForRole(inherited, role);
-            if (localRole.length) return controlFromSignals(localRole);
-            if (inheritedRole.length) return controlFromSignals(inheritedRole, true);
-            return controlFromSignals([]);
+            const localRole = signalsForRole(methodGuards, role);
+            const inheritedRole = signalsForRole(classGuards, role);
+            if (localRole.some((item) => item.exact)) return controlFromSignals(localRole, false, role);
+            if (inheritedRole.some((item) => item.exact)) return controlFromSignals(inheritedRole, true, role);
+            if (localRole.length) return controlFromSignals(localRole, false, role);
+            if (inheritedRole.length) return controlFromSignals(inheritedRole, true, role);
+            return controlFromSignals([], false, role);
           };
-          let authentication = select('authentication');
-          let authorization = select('authorization');
-          if (publicOverrides.length) {
-            authentication = controlFromSignals(publicOverrides);
-            authorization = controlFromSignals(publicOverrides);
-          }
+          const authentication = select('authentication');
+          const authorization = select('authorization');
+          const routeSignals = [...classGuards, ...methodGuards];
+          const routeScopedControl = routeScopeFromSignals(
+            routeSignals.filter((item) => item.role !== 'unknown'),
+            [...unclassifiedSignals(routeSignals), ...publicOverrides],
+          );
           const pathPairs = dynamic ? [[null, null]]
             : prefixes.flatMap((prefix) => methodPaths.map((methodPath) => [prefix, methodPath]));
           for (const [prefix, methodPath] of pathPairs) {
@@ -153,7 +239,7 @@ export function extractNestRoutes(graph) {
             routes.push(prioritizeRoute(routeRecord({ framework: 'nestjs', method, path,
               pathKind: pathKind(path, dynamic), location: sourceLocation(module.path, methodNode),
               handler: expressionName(methodNode.key), objectAddressed: objectAddressedPath(path),
-              authentication, authorization,
+              authentication, authorization, routeScopedControl,
               limitations: [dynamic ? 'dynamic-route-path' : null,
                 publicOverrides.length ? 'public-override-requires-review' : null].filter(Boolean) })));
           }
@@ -164,6 +250,7 @@ export function extractNestRoutes(graph) {
   const frameworkReasons = reasons.filter((item) => item.path && graph.modules.has(item.path));
   return {
     routes,
+    applicationControls: globalSignals,
     coverage: { framework: 'nestjs', status: frameworkReasons.length ? 'partial' : eligible ? 'completed' : 'not_applicable',
       counts: { discovered: graph.modules.size, eligible, parsed: eligible, incomplete: new Set(frameworkReasons.map((item) => item.path)).size },
       reasons: aggregateReasons(frameworkReasons) },

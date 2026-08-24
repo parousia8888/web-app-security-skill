@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#查看结果">Demo</a> ·
-  <a href="#v060-新增内容">v0.6.0</a> ·
+  <a href="#v070-candidate-新增内容">v0.7.0</a> ·
   <a href="#安装">安装</a> ·
   <a href="#执行第一个项目">首个项目</a> ·
   <a href="docs/tutorial.zh-CN.md">完整教程</a> ·
@@ -40,17 +40,22 @@ npx --yes web-app-security-skill audit . --fail-on never
 - 可审查的修改建议、可能影响的正常功能、回滚条件，以及分开的安全复测和功能复测。
 
 对受支持的 JavaScript/TypeScript 框架，同一条命令还会生成 `route-security.json`、
-`route-security.md` 和 SHA-256 校验文件。路由视图列出已识别接口、可识别的控制证据，以及建议的
-人工审查顺序：
+`route-security.md` 和 SHA-256 校验文件。它会分开列出 HTTP 路由与 Next.js Server Action，
+全局控制只列一次，并给出人工审查顺序：
 
 | 安全术语 | 白话意思 | 路由视图能说明什么 |
 |---|---|---|
-| Authentication（authn，身份认证） | 发请求的人是谁？ | 看到了受支持的登录/session guard、没看到，或当前无法解析。 |
-| Route-level authorization（路由级授权） | 这个身份能不能调用这个操作？ | 看到了受支持的 policy/guard，或只看到仍需人工确认的自定义候选。 |
-| Object-level authorization（BOLA/IDOR，对象级授权） | 这个身份能不能访问这一条具体记录？ | 通常仍是未解决问题；`/users/:id` 这类路径只会提高审查优先级，不会自动证明漏洞。 |
+| Application control（应用级控制） | 整个应用注册了什么控制？ | 全局 guard 或 middleware 只列一次；不能据此证明每条路由都受保护。 |
+| Authentication（authn，身份认证） | 发请求的人是谁？ | 看到了受支持的登录/session 来源、没看到，或当前无法解析。 |
+| Route-level authorization（路由级授权） | 这个身份能不能调用这个操作？ | 看到了受支持的 policy/guard，或只看到仍需人工确认的路由控制。 |
+| Object-level authorization（BOLA/IDOR，对象级授权） | 这个身份能不能访问这一条具体记录？ | 可把用户传入的 ID 跟到 handler 内或一跳本地调用里的 Prisma/Drizzle/Supabase 操作；没看到约束只是复查线索，不是漏洞证明。 |
 
 `review_first`、`review_next`、`review_later` 是工作排序，不是漏洞严重性。源码里没看到控制，
 也不会被自动写成 confirmed 漏洞。
+
+白话说，访问控制链现在能表达：“这条接口接收项目 ID，通过 Auth.js 取得当前用户，再把两个值经
+一层可解析的本地函数送进 Prisma 查询。”它不能证明运行时一定走到这里、数据库策略一定正确，也
+不会继续猜第二层本地调用。Supabase 结果始终保留“还需检查外部 RLS 策略”。
 
 需要目前维护范围内最广的一次本地检查时，使用不下载工具的 deep profile。它运行内置规则，并
 调用用户已经安装的固定版本 Checkov、Gitleaks、Opengrep 与 OSV-Scanner；缺少的工具会记录为
@@ -88,27 +93,31 @@ npm run demo -- --out ./demo-output
 
 完整的安装到卸载流程见经过测试的[第一个项目教程](docs/tutorial.zh-CN.md)。
 
-## v0.6.0 新增内容
+## v0.7.0 candidate 新增内容
 
-v0.6.0 在原有 finding 报告旁边增加框架级路由安全审查层。签名 release 与 npm 包已公开；可信
-安装链和 Action 提升证据继续在下方单独验证：
+v0.7.0 把 v0.6.0 的路由清单推进成有边界的访问控制链审查。在签名 tag、GitHub Release、npm
+provenance 和公开 consumer 全部通过前，它仍是本地 release candidate：
 
-- **路由清单：**对直接 Express app/router 注册、静态 NestJS controller/method decorator、直接
-  Next.js App Router named export 提供有边界的稳定提取。
-- **控制映射：**身份认证、路由级授权、对象级授权分别记录。受支持信号可以记为 observed；自定义
-  控制保持 candidate；源码没看到控制只表示需要复核，不会自动变成漏洞。
-- **审查排序：**修改状态、带对象 ID、涉及敏感操作的路由会排在前面。优先级不是 CVSS 严重性，
-  公开登录、注册、找回密码等路由可以是预期的良性复核。
-- **失败时明确暴露：**Express alias/未解析 mount、动态 Nest path、Next handler re-export 会变成
-  partial/unknown 证据，不会静默消失。
-- **实验性 direct-Prisma 线索：**同 handler 内，路由 ID 进入直接 Prisma 操作且没看到 principal
-  约束时可以提示复核；它不能证明 BOLA，普通项目样本零命中后仍保持 experimental。
-- **不要求运行时安装依赖：**CLI/Skill 自带固定版本 `@babel/parser` bundle；不会在被审计项目中执行
-  `npm install`，parser 版本、许可证和 digest 均有记录。
+- **修正 Nest 控制范围：** `APP_GUARD` 只在应用级列一次，不再复制到每条路由；认证和授权信号
+  分开，无法分类的控制继续保持无法分类。
+- **可单独找出没看到路由控制的接口：** `no_route_scoped_control_observed` 会列出需要人工分类的
+  改数据/带对象 ID 路由。登录、注册、找回密码、webhook 可能本来就应公开，因此“没看到”不等于漏洞。
+- **有边界的访问控制链：** Auth.js/Nest Passport 身份与 Prisma/Drizzle 操作进入 stable bounded；
+  Clerk、Better Auth、Supabase 身份和 Supabase Query Builder 保持 experimental。Supabase 永远保留
+  `external_policy_required`。
+- **只跟一层本地调用：** 支持同文件、相对 import、可精确确定的 Nest service、静态
+  tsconfig/jsconfig alias 与 workspace export；第二层调用会停止并说明原因。
+- **Server Action 单独列：** 支持的 Next.js Server Action 作为具名可调用面审查，不虚构 HTTP method
+  或 URL。
+- **访问控制退化门：** baseline 可看出认证、授权、路由控制、查询约束或已完成链是否消失。
+  `--fail-on-route-regression` 必须主动开启，也不能把不完整证据变成通过。
 
-[57 条路由的普通项目审查](docs/reviews/v0.6.0-route-review.md)在固定 Express、NestJS、Next.js
-commit 上记录了 51 条提取结果和 6 条明确漏检。这是有目的的边界审查，不是生产 precision/recall。
-对应的[6 条最小回归](docs/regressions/v0.6.0-route-real-world-regressions.md)保护审查中发现的正确性问题。
+本次受限的[四项目访问控制审查](docs/reviews/v0.7.0-access-control-review.md)共列出 173 条 HTTP 路由、
+23 个 Server Action，人工查看 32 项，得到 12 条 partial chain、0 条普通项目 completed chain。
+这个 0 是公开能力限制，不是成功率。另有 4 条
+[真实回归](docs/regressions/v0.7.0-access-control-real-world-regressions.md)固定 Nest 聚合、fingerprint、
+Next monorepo root 和 tsconfig alias 问题。具体怎么读报告、怎么做双账号复查，见
+[访问控制链参考](references/access-control-chain.md)。
 
 原有 finding 解释合同继续生效：每条 v3 源码 finding 都包含专业术语、白话解释、现实后果、证据
 边界、提案、替代方案、副作用、用户决策、安全复测、功能复测和回滚。稳定规则清单现为 25 条

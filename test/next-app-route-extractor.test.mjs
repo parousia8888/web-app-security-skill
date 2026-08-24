@@ -9,16 +9,20 @@ export async function GET() { const user = await getAuth(); return Response.json
 const update = async () => Response.json({ ok: true }); export { update as PATCH };
 ` },
   { path: 'app/blog/[...slug]/route.js', text: 'export const POST = async () => new Response();' },
+  { path: 'apps/web/app/api/items/[itemId]/route.ts',
+    text: 'export const DELETE = async () => new Response();' },
   { path: 'pages/api/legacy.ts', text: 'export default function handler() {}' },
   { path: 'app/_private/route.ts', text: 'export function GET() {}' },
 ]);
 const result = extractNextAppRoutes(graph);
-assert.equal(result.routes.length, 3);
+assert.equal(result.routes.length, 4);
 const get = result.routes.find((route) => route.method === 'GET');
 assert.equal(get.path, '/projects/[id]');
 assert.equal(get.authentication.state, 'local_observed');
 assert.equal(get.objectAddressed, true);
 assert.ok(result.routes.some((route) => route.path === '/blog/[...slug]' && route.method === 'POST'));
+assert.ok(result.routes.some((route) => route.path === '/api/items/[itemId]'
+  && route.method === 'DELETE'));
 assert.equal(result.routes.some((route) => route.location.path.includes('pages/api')), false);
 assert.ok(result.coverage.reasons.some((reason) => reason.code === 'next_private_route_segment'));
 

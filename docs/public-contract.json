@@ -35,5 +35,24 @@
       "The historical real-world regression corpus guards named failures and is not a representative accuracy benchmark.",
       "No authenticated DAST, automatic BOLA/IDOR proof or unattended production patching is claimed."
     ]
+  },
+  "candidateSourceRelease": {
+    "version": "0.7.0",
+    "status": "candidate_unpublished",
+    "routeSchema": "docs/route-security-v2.schema.json",
+    "accessControlReview": "docs/reviews/v0.7.0-access-control-review.json",
+    "accessControlRegressions": "docs/regressions/v0.7.0-access-control-real-world-regressions.json",
+    "stableFrameworks": ["express", "nestjs", "next-app"],
+    "serverActionSurface": "next-server-actions",
+    "stableIdentityFamilies": ["nestjs-passport", "authjs"],
+    "stableDataFamilies": ["prisma", "drizzle"],
+    "experimentalFamilies": ["clerk", "better-auth", "supabase-identity", "supabase-query-builder"],
+    "limits": [
+      "Application controls are not attributed to every route.",
+      "A missing route-scoped control or visible query constraint is review evidence, not vulnerability proof.",
+      "Access-chain analysis stops before a second project-local call.",
+      "Supabase always requires external RLS-policy evidence.",
+      "The fixed-commit ordinary-project review produced 12 partial and zero completed chains."
+    ]
   }
 }

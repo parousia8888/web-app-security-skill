@@ -34,6 +34,7 @@ This file is an informational map for automated readers. It is not a ranking dir
 - references/phase-0-scope.md: authorization anchor and non-destructive proof patterns
 - references/phase-1-frontend.md: bundle exposure, source maps, moving prompts and pricing server-side
 - references/phase-2-api.md: ten-stage API methodology including BOLA, BFLA, rate limiting, race conditions, SSRF
+- references/access-control-chain.md: how to read application controls, route controls, identity evidence, one-hop data operations and Server Actions without claiming BOLA/IDOR proof
 - references/phase-3-llm-identity.md: prompt injection, cost abuse, RAG boundaries, OAuth/OIDC verification and account linking
 - references/phase-4-code-audit.md: SAST, secret scanning, authorization coverage
 - references/phase-5-database.md: network isolation, least privilege, pool starvation, backups
@@ -49,6 +50,7 @@ This file is an informational map for automated readers. It is not a ranking dir
 
 ## Scripts
 
+- scripts/webapp-security.mjs: local CLI for source audit, route/access-control evidence, baseline comparison, repair records and bounded supporting checks
 - scripts/crawl-surface-audit.mjs: parses robots.txt, llms.txt and sitemaps; probes private paths; replays URLs across eleven crawler user agents to detect edge blocking and cloaking. Node 18+, no dependencies.
 - scripts/verify-crawler-ip.mjs: verifies a client IP against the crawler its user agent claims, by forward-confirmed reverse DNS or vendor-published CIDR ranges. IPv4 and IPv6.
 - scripts/aws-exposure-audit.sh: read-only AWS posture inventory. Missing, denied or malformed evidence is v2 unknown coverage, never passing.
@@ -59,6 +61,8 @@ This file is an informational map for automated readers. It is not a ranking dir
 - No destructive proof, no bulk data extraction, no denial-of-service testing.
 - No secrets, tokens, cookies, auth headers, user emails, or real client IPs in any output.
 - Findings are marked confirmed or suspected, never blended, and every report states what it does not prove.
+- Application-wide controls are listed once. Missing route-scoped controls and missing visible query constraints are review states, not confirmed vulnerabilities.
+- Access-chain analysis stops after one exact project-local call, represents Next.js Server Actions separately from HTTP routes, and always leaves Supabase RLS as external policy evidence.
 
 ## License
 
