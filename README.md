@@ -100,9 +100,9 @@ For the complete install-to-uninstall path, follow the tested
 ## What's new in v0.7.1
 
 v0.7.1 is a security-boundary and execution-reliability patch for the v0.7.0 route and
-access-control release. It does not add detectors or widen framework support. It remains a local
-candidate until the signed tag, GitHub Release, npm provenance, verified installer and public
-consumers pass:
+access-control release. It does not add detectors or widen framework support. The signed tag,
+GitHub Release, npm package and provenance are public; verified-installer and stable-Action
+promotion remain separately gated:
 
 - **Actionable default HIGH gate:** a `suspected` HIGH source lead now fails the default `high`
   policy without being relabelled `confirmed`. Old reports without the new policy field retain
