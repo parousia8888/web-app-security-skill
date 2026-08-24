@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#查看结果">Demo</a> ·
-  <a href="#v070-candidate-新增内容">v0.7.0</a> ·
+  <a href="#v070-新增内容">v0.7.0</a> ·
   <a href="#安装">安装</a> ·
   <a href="#执行第一个项目">首个项目</a> ·
   <a href="docs/tutorial.zh-CN.md">完整教程</a> ·
@@ -93,10 +93,10 @@ npm run demo -- --out ./demo-output
 
 完整的安装到卸载流程见经过测试的[第一个项目教程](docs/tutorial.zh-CN.md)。
 
-## v0.7.0 candidate 新增内容
+## v0.7.0 新增内容
 
-v0.7.0 把 v0.6.0 的路由清单推进成有边界的访问控制链审查。在签名 tag、GitHub Release、npm
-provenance 和公开 consumer 全部通过前，它仍是本地 release candidate：
+v0.7.0 把 v0.6.0 的路由清单推进成有边界的访问控制链审查。签名 tag、GitHub Release、npm 包和
+provenance 已公开；verified installer 与 `v1` 仍要等各自的不可变 consumer 通过后再推进：
 
 - **修正 Nest 控制范围：** `APP_GUARD` 只在应用级列一次，不再复制到每条路由；认证和授权信号
   分开，无法分类的控制继续保持无法分类。

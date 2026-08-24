@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#see-the-result">Demo</a> ·
-  <a href="#whats-new-in-v070-candidate">v0.7.0</a> ·
+  <a href="#whats-new-in-v070">v0.7.0</a> ·
   <a href="#install">Install</a> ·
   <a href="#run-the-first-project">First project</a> ·
   <a href="docs/tutorial.md">Tutorial</a> ·
@@ -97,10 +97,11 @@ check reruns the fixture and fails if any surface disagrees.
 For the complete install-to-uninstall path, follow the tested
 [first project tutorial](docs/tutorial.md).
 
-## What's new in v0.7.0 candidate
+## What's new in v0.7.0
 
-v0.7.0 deepens the v0.6.0 route inventory into a bounded access-control-chain review. It is a local
-release candidate until the signed tag, GitHub Release, npm provenance and public consumers pass:
+v0.7.0 deepens the v0.6.0 route inventory into a bounded access-control-chain review. The signed
+tag, GitHub Release, npm package and provenance are public; verified-installer and `v1` promotion
+remain gated on their immutable consumers:
 
 - **Correct Nest control scope:** `APP_GUARD` controls are listed once at application level instead
   of being copied into every route. Authentication and authorization signals are separated, while

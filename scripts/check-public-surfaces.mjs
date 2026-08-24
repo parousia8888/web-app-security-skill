@@ -19,24 +19,16 @@ function fail(message) {
 }
 
 if (contract.schemaVersion !== 1) fail('public contract schemaVersion must be 1');
-if (contract.currentSourceRelease?.version !== '0.6.0'
+if (contract.currentSourceRelease?.version !== '0.7.0'
     || contract.currentSourceRelease?.status !== 'published'
-    || !existsSync(`${ROOT}/${contract.currentSourceRelease?.routeReview || ''}`)) {
-  fail('published v0.6.0 route-review contract is missing or invalid');
+    || !existsSync(`${ROOT}/${contract.currentSourceRelease?.routeSchema || ''}`)
+    || !existsSync(`${ROOT}/${contract.currentSourceRelease?.accessControlReview || ''}`)
+    || !existsSync(`${ROOT}/${contract.currentSourceRelease?.accessControlRegressions || ''}`)) {
+  fail('published v0.7.0 access-control contract is missing or invalid');
 }
 if (JSON.stringify(contract.currentSourceRelease?.stableFrameworks) !== JSON.stringify([
   'express', 'nestjs', 'next-app',
-])) fail('published v0.6.0 framework scope changed');
-if (contract.candidateSourceRelease?.version !== '0.7.0'
-    || contract.candidateSourceRelease?.status !== 'candidate_unpublished'
-    || !existsSync(`${ROOT}/${contract.candidateSourceRelease?.routeSchema || ''}`)
-    || !existsSync(`${ROOT}/${contract.candidateSourceRelease?.accessControlReview || ''}`)
-    || !existsSync(`${ROOT}/${contract.candidateSourceRelease?.accessControlRegressions || ''}`)) {
-  fail('v0.7.0 candidate access-control contract is missing or invalid');
-}
-if (JSON.stringify(contract.candidateSourceRelease?.stableFrameworks) !== JSON.stringify([
-  'express', 'nestjs', 'next-app',
-])) fail('v0.7.0 candidate framework scope changed');
+])) fail('published v0.7.0 framework scope changed');
 for (const path of [...(contract.projectJourneys || []), ...(contract.methodStudies || [])]) {
   if (!existsSync(`${ROOT}/${path}`)) fail(`public evidence document is missing: ${path}`);
 }
@@ -81,9 +73,9 @@ for (const [path, text] of [['README.md', en], ['README.zh-CN.md', zh]]) {
 }
 
 for (const [path, text, releaseHeading, explanationMarkers] of [
-  ['README.md', en, "## What's new in v0.7.0 candidate",
+  ['README.md', en, "## What's new in v0.7.0",
     ['plain-language explanation', 'what the evidence proves', 'likely product side effects', 'normal-behavior retests']],
-  ['README.zh-CN.md', zh, '## v0.7.0 candidate 新增内容',
+  ['README.zh-CN.md', zh, '## v0.7.0 新增内容',
     ['白话解释', '当前证据证明了什么', '可能影响的正常功能', '功能复测']],
 ]) {
   const trialIndex = text.indexOf(firstTrial);

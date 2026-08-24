@@ -3,10 +3,10 @@
 本教程覆盖从干净环境安装，到范围记录、源码检查、补丁审查、复测、升级和卸载的完整流程。产品承诺是：
 **把 Web 项目交给 AI coding agent，完成范围确认、风险检查、最小加固、复测和证据交付。**
 
-这里的确定性路径只读取本地源码，不访问部署实例。已发布的 v0.6.0 会运行 25 条 built-in risk 与
+这里的确定性路径只读取本地源码，不访问部署实例。已发布的 v0.7.0 会运行 25 条 built-in risk 与
 3 条证据完整性规则，并加深 JavaScript/TypeScript 和 Python 覆盖。受支持的 Express、NestJS 与
-Next.js App Router 项目还会得到单独的路由安全审查。它仍然是范围明确的首次检查，不是通用 SAST、
-自动 BOLA 证明，也不证明项目已经安全。
+Next.js App Router 项目还会得到带有边界访问控制链的路由安全审查，并单独列出 Next.js Server
+Action。它仍然是范围明确的首次检查，不是通用 SAST、自动 BOLA 证明，也不证明项目已经安全。
 
 ## 环境要求
 
@@ -21,20 +21,20 @@ Next.js App Router 项目还会得到单独的路由安全审查。它仍然是�
 
 ### 稳定 release
 
-下载 v0.6.0 的全部产物，验证 checksum，解包并从已验证的 payload 安装：
+下载 v0.7.0 的全部产物，验证 checksum，解包并从已验证的 payload 安装：
 
 ```bash
 mkdir web-app-security-release && cd web-app-security-release
-gh release download v0.6.0 --repo parousia8888/web-app-security-skill
+gh release download v0.7.0 --repo parousia8888/web-app-security-skill
 sha256sum -c SHA256SUMS
-tar -xzf web-app-security-skill-0.6.0.tar.gz
-node web-app-security-skill-0.6.0/scripts/webapp-security.mjs install
+tar -xzf web-app-security-skill-0.7.0.tar.gz
+node web-app-security-skill-0.7.0/scripts/webapp-security.mjs install
 webapp-security version
 ```
 
 macOS 没有 GNU `sha256sum` 时，使用 `shasum -a 256 -c SHA256SUMS`。Release 还提供 SPDX SBOM、
 源码 manifest、build provenance attestation 和签名 tag：
-[v0.6.0 release](https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.6.0)。
+[v0.7.0 release](https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.7.0)。
 
 ### 当前 checkout
 
