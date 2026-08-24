@@ -4,8 +4,8 @@ The recommended README command has three independently reviewable stages. It doe
 merely because they came from the same TLS origin as a checksum file.
 
 1. The README fixes `bootstrap-install.sh` to commit
-   `cb36196fb438fb0ad0e5b5a6a27043bf48ffb018` and verifies SHA-256
-   `544d0ded89ed98467c275c838f033148d944668b0b56842d849ff8ae4abc63d2` before `sh` runs it.
+   `25a37e476720ad8ef221e38c0e2842abf928a1db` and verifies SHA-256
+   `ce37908a73bd9ffd004ec3c0a4d36dc88e3baa6187bd17df816a454a940bfe63` before `sh` runs it.
 2. The bootstrap fixes `install-verified.mjs` to commit
    `7f84917f5014b4f0f2eb532b7007394ad3123615` and verifies SHA-256
    `38d40a706fc4e0c377657d5b49a4a8980811a2518104ac95c762278b87d7b804` before Node runs it.

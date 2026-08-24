@@ -158,7 +158,7 @@ bootstrap 并在执行前验证 SHA-256，然后验证选定 release 的 manifes
 归档，再进入安装。
 
 ```bash
-( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/cb36196fb438fb0ad0e5b5a6a27043bf48ffb018/scripts/bootstrap-install.sh?immutable=cb36196fb438fb0ad0e5b5a6a27043bf48ffb018'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" '544d0ded89ed98467c275c838f033148d944668b0b56842d849ff8ae4abc63d2'; sh "$p" )
+( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/25a37e476720ad8ef221e38c0e2842abf928a1db/scripts/bootstrap-install.sh?immutable=25a37e476720ad8ef221e38c0e2842abf928a1db'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" 'ce37908a73bd9ffd004ec3c0a4d36dc88e3baa6187bd17df816a454a940bfe63'; sh "$p" )
 ```
 
 也可以只装单一入口：
@@ -354,7 +354,7 @@ Composite Action 保持 v0.3 crawl 输入与输出兼容。Crawl mode 默认被�
 
 ```yaml
 - name: Audit public crawl boundary
-  uses: parousia8888/web-app-security-skill@bfed608b5d1abe56b6b34b09f0c6ef59f17eab4a
+  uses: parousia8888/web-app-security-skill@2b746b168d767c9b2225a273474e561650b2b6f8
   with:
     site: https://example.com
     acknowledge-authorization: true
@@ -362,21 +362,20 @@ Composite Action 保持 v0.3 crawl 输入与输出兼容。Crawl mode 默认被�
     fail-on: high
 ```
 
-需要可重复 CI 时使用上面的 v0.7.0 不可变 commit。签名的稳定大版本别名现在也指向该源码；晋级后
-公开 consumer [`32682179514`](https://github.com/parousia8888/web-app-security-skill/actions/runs/32682179514)
-已经通过：
+需要可重复 CI 时使用上面的 v0.7.1 不可变 commit。签名的稳定大版本别名仍停在 v0.7.0，直到
+v0.7.1 不可变 consumer 和晋级后的读回验证通过：
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
 ```
 
-Source mode 默认只用内置 adapter。v0.7.0 不可变 Action 运行 v3 源码合同、25 条 built-in risk、
+Source mode 默认只用内置 adapter。v0.7.1 不可变 Action 运行 v3 源码合同、25 条 built-in risk、
 3 条证据完整性规则、有边界的 Express/NestJS/Next.js 路由与 Server Action 清单，以及有边界的
 访问控制链审查。外部二进制必须由调用方固定版本并安装，Action 不会下载：
 
 ```yaml
 - name: Audit source
-  uses: parousia8888/web-app-security-skill@bfed608b5d1abe56b6b34b09f0c6ef59f17eab4a
+  uses: parousia8888/web-app-security-skill@2b746b168d767c9b2225a273474e561650b2b6f8
   with:
     mode: source
     project: .
