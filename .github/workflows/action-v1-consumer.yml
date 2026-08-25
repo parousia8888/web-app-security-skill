@@ -14,14 +14,14 @@ jobs:
       - name: "Create owned NestJS route-control fixture"
         shell: "bash"
         run: |
-          mkdir -p "$RUNNER_TEMP/v071-route-fixture/src"
-          printf '%s\n' '{"private":true,"dependencies":{"@nestjs/common":"fixture","@nestjs/core":"fixture","@nestjs/passport":"fixture"}}' > "$RUNNER_TEMP/v071-route-fixture/package.json"
-          printf '%s\n' '{"lockfileVersion":3}' > "$RUNNER_TEMP/v071-route-fixture/package-lock.json"
-          cat > "$RUNNER_TEMP/v071-route-fixture/src/auth.guard.ts" <<'SOURCE'
+          mkdir -p "$RUNNER_TEMP/v072-route-fixture/src"
+          printf '%s\n' '{"private":true,"dependencies":{"@nestjs/common":"fixture","@nestjs/core":"fixture","@nestjs/passport":"fixture"}}' > "$RUNNER_TEMP/v072-route-fixture/package.json"
+          printf '%s\n' '{"lockfileVersion":3}' > "$RUNNER_TEMP/v072-route-fixture/package-lock.json"
+          cat > "$RUNNER_TEMP/v072-route-fixture/src/auth.guard.ts" <<'SOURCE'
           import { AuthGuard } from '@nestjs/passport';
           export class JwtAuthGuard extends AuthGuard('jwt') {}
           SOURCE
-          cat > "$RUNNER_TEMP/v071-route-fixture/src/roles.guard.ts" <<'SOURCE'
+          cat > "$RUNNER_TEMP/v072-route-fixture/src/roles.guard.ts" <<'SOURCE'
           import { Reflector } from '@nestjs/core';
           export class RolesGuard {
             constructor(private reflector: Reflector) {}
@@ -30,15 +30,15 @@ jobs:
             }
           }
           SOURCE
-          cat > "$RUNNER_TEMP/v071-route-fixture/src/rate-limit.guard.ts" <<'SOURCE'
+          cat > "$RUNNER_TEMP/v072-route-fixture/src/rate-limit.guard.ts" <<'SOURCE'
           export class RateLimitGuard { canActivate() { return true; } }
           SOURCE
-          cat > "$RUNNER_TEMP/v071-route-fixture/src/app.module.ts" <<'SOURCE'
+          cat > "$RUNNER_TEMP/v072-route-fixture/src/app.module.ts" <<'SOURCE'
           import { APP_GUARD } from '@nestjs/core';
           import { RateLimitGuard } from './rate-limit.guard';
           export const providers = [{ provide: APP_GUARD, useClass: RateLimitGuard }];
           SOURCE
-          cat > "$RUNNER_TEMP/v071-route-fixture/src/audit.controller.ts" <<'SOURCE'
+          cat > "$RUNNER_TEMP/v072-route-fixture/src/audit.controller.ts" <<'SOURCE'
           import { Controller, Get, Patch, UseGuards } from '@nestjs/common';
           import { JwtAuthGuard } from './auth.guard';
           import { RolesGuard } from './roles.guard';
@@ -48,18 +48,18 @@ jobs:
             @Patch('projects/:id') unguardedMutation() {}
           }
           SOURCE
-      - name: "Consume immutable v0.7.1 Action"
-        uses: "parousia8888/web-app-security-skill@2b746b168d767c9b2225a273474e561650b2b6f8"
+      - name: "Consume immutable v0.7.2 Action"
+        uses: "parousia8888/web-app-security-skill@30402c866b86d78b66d0d4b495fee40ff6a6f160"
         with:
           mode: "source"
-          project: "${{ runner.temp }}/v071-route-fixture"
+          project: "${{ runner.temp }}/v072-route-fixture"
           adapters: "builtin"
           fail-on: "never"
-          output-dir: "${{ runner.temp }}/v071-route-report"
+          output-dir: "${{ runner.temp }}/v072-route-report"
       - name: "Verify route-security v2 control separation"
         shell: "bash"
         env:
-          ROUTE_REPORT: "${{ runner.temp }}/v071-route-report"
+          ROUTE_REPORT: "${{ runner.temp }}/v072-route-report"
         run: |
           node <<'NODE'
           const fs = require('node:fs');
