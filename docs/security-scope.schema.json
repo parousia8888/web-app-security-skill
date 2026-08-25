@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/security-scope.schema.json",
+  "$id": "https://raw.githubusercontent.com/parousia8888/web-app-security-skill/main/docs/security-scope.schema.json",
   "title": "Web App Security Skill scope",
   "type": "object",
   "required": ["schemaVersion", "generatedBy", "generatedAt", "subject", "auditBoundary", "run", "target", "authorization", "checkModes", "discoveryEvidence", "exclusions"],

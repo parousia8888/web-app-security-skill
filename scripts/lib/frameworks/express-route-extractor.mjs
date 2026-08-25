@@ -12,6 +12,19 @@ const METHODS = new Map([
   ['options', 'OPTIONS'], ['head', 'HEAD'], ['all', 'ALL'],
 ]);
 
+function requiredSource(node) {
+  return node?.type === 'CallExpression' && expressionName(node.callee) === 'require'
+    && node.arguments.length === 1 ? literalString(node.arguments[0]) : null;
+}
+
+function directExpressFactory(node) {
+  if (node?.type !== 'CallExpression') return null;
+  if (requiredSource(node.callee) === 'express') return 'app';
+  if (node.callee?.type !== 'MemberExpression'
+      || requiredSource(node.callee.object) !== 'express') return null;
+  return expressionName(node.callee.property) === 'Router' ? 'router' : null;
+}
+
 function receiverFactories(module) {
   const imports = importedBindings(module);
   const receivers = new Map();
@@ -19,6 +32,11 @@ function receiverFactories(module) {
     if (node.type !== 'VariableDeclarator' || node.id?.type !== 'Identifier'
         || node.init?.type !== 'CallExpression') return;
     const name = callName(node.init);
+    const directFactory = directExpressFactory(node.init);
+    if (directFactory) {
+      receivers.set(node.id.name, directFactory);
+      return;
+    }
     if (!name) return;
     const root = name.split('.')[0];
     const binding = imports.get(root);
@@ -44,6 +62,14 @@ function middlewareSignal(module, imports, node) {
 }
 
 function mountTarget(module, imports, receivers, node, graph) {
+  const required = requiredSource(node);
+  if (required) {
+    const imported = module.imports.find((item) => item.source === required
+      && item.resolution?.path && !item.resolution.reason);
+    if (!imported) return null;
+    const exportedLocal = localModuleExport(graph, imported.resolution.path, 'default');
+    return exportedLocal ? `${imported.resolution.path}::${exportedLocal}` : null;
+  }
   const name = expressionName(node);
   if (!name) return null;
   if (receivers.has(name)) return `${module.path}::${name}`;
@@ -51,6 +77,46 @@ function mountTarget(module, imports, receivers, node, graph) {
   if (!binding?.resolvedPath || binding.resolutionReason) return null;
   const exportedLocal = localModuleExport(graph, binding.resolvedPath, binding.imported);
   return exportedLocal ? `${binding.resolvedPath}::${exportedLocal}` : null;
+}
+
+function localFunctionNode(graph, path, name) {
+  const target = graph.modules.get(path);
+  if (!target?.ast || !name) return null;
+  let found = null;
+  walkJsTsAst(target.ast, (node) => {
+    if (found) return;
+    if (node.type === 'FunctionDeclaration' && node.id?.name === name) found = node;
+    if (node.type === 'VariableDeclarator' && node.id?.name === name
+        && ['FunctionExpression', 'ArrowFunctionExpression'].includes(node.init?.type)) found = node.init;
+  });
+  return found;
+}
+
+function registrationFunctionReason(module, imports, receivers, node, graph) {
+  if (node.type !== 'CallExpression') return null;
+  const called = expressionName(node.callee);
+  if (!called) return null;
+  const root = called.split('.')[0];
+  const binding = imports.get(root);
+  if (!binding?.resolvedPath || binding.resolutionReason || binding.source === 'express') return null;
+  const receiverIndex = node.arguments.findIndex((argument) => receivers.has(expressionName(argument)));
+  if (receiverIndex < 0) return null;
+  const exported = localModuleExport(graph, binding.resolvedPath,
+    called.includes('.') ? called.split('.').slice(1).join('.') : binding.imported);
+  const target = localFunctionNode(graph, binding.resolvedPath, exported);
+  const parameter = target?.params?.[receiverIndex];
+  if (parameter?.type !== 'Identifier') return null;
+  let routeReceiverObserved = false;
+  walkJsTsAst(target.body, (candidate) => {
+    if (candidate.type !== 'CallExpression' || candidate.callee?.type !== 'MemberExpression') return;
+    const receiver = expressionName(candidate.callee.object);
+    const method = expressionName(candidate.callee.property);
+    if (receiver === parameter.name && (METHODS.has(method) || method === 'use')) {
+      routeReceiverObserved = true;
+    }
+  });
+  return routeReceiverObserved
+    ? { code: 'express_registration_function_unresolved', path: module.path } : null;
 }
 
 function routeChainBase(node) {
@@ -71,6 +137,8 @@ function moduleFacts(module, graph) {
   const middleware = [];
   const reasons = [];
   walkJsTsAst(module.ast, (node) => {
+    const registrationReason = registrationFunctionReason(module, imports, receivers, node, graph);
+    if (registrationReason) reasons.push(registrationReason);
     if (node.type !== 'CallExpression' || node.callee?.type !== 'MemberExpression') return;
     const property = expressionName(node.callee.property);
     const receiver = expressionName(node.callee.object);
@@ -114,7 +182,7 @@ function moduleFacts(module, graph) {
       receiverKind: receivers.get(routeReceiver), method, path: staticPath, dynamic: staticPath === null,
       handler: functionName(handler), node, order: node.start || 0, signals });
   });
-  return { routes, mounts, middleware, reasons };
+  return { routes, mounts, middleware, reasons, applicable: receivers.size > 0 };
 }
 
 function ancestorContexts(route, mounts, middleware, maxDepth = 12) {
@@ -186,7 +254,8 @@ export function extractExpressRoutes(graph) {
       })));
     }
   }
-  const eligible = facts.filter((item) => item.routes.length || item.mounts.length || item.middleware.length).length;
+  const eligible = facts.filter((item) => item.applicable || item.routes.length
+    || item.mounts.length || item.middleware.length).length;
   const frameworkReasons = reasons.filter((item) => item.path && graph.modules.has(item.path));
   return {
     routes,

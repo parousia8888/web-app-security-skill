@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/report.schema.json",
+  "$id": "https://raw.githubusercontent.com/parousia8888/web-app-security-skill/main/docs/report.schema.json",
   "title": "Web App Security Skill report",
   "type": "object",
   "required": ["schemaVersion", "tool", "generatedAt", "mode", "scope", "summary", "findings", "limitations"],

@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#see-the-result">Demo</a> ·
-  <a href="#whats-new-in-v071">v0.7.1</a> ·
+  <a href="#whats-new-in-v072">v0.7.2</a> ·
   <a href="#install">Install</a> ·
   <a href="#run-the-first-project">First project</a> ·
   <a href="docs/tutorial.md">Tutorial</a> ·
@@ -59,6 +59,14 @@ current user through Auth.js, and sends both values into a Prisma query through 
 function." It cannot prove runtime reachability, a database policy, or what happens beyond a second
 local call. Supabase results always say that external RLS policy evidence is still required.
 
+For Express, stable inventory covers direct ESM/CommonJS `express()` and `Router()` receivers,
+direct `require('express').Router()`, inline route calls, exact static mounts and exact local
+CommonJS router mounts. An imported local route-registration function is reported as
+`express_registration_function_unresolved` and makes coverage partial. In that case exit code `3`
+means evidence is incomplete and the tool refuses to report a clean route result; it does not mean
+that three vulnerabilities were found. A finding policy failure can still take precedence with exit
+code `1`.
+
 For the widest maintained local pass, select the no-download deep profile. It uses the built-in
 rules and calls pinned Checkov, Gitleaks, Opengrep and OSV-Scanner binaries already installed by the
 user. A missing tool becomes `unknown` evidence with setup guidance:
@@ -97,29 +105,26 @@ check reruns the fixture and fails if any surface disagrees.
 For the complete install-to-uninstall path, follow the tested
 [first project tutorial](docs/tutorial.md).
 
-## What's new in v0.7.1
+## What's new in v0.7.2
 
-v0.7.1 is a security-boundary and execution-reliability patch for the v0.7.0 route and
-access-control release. It does not add detectors or widen framework support. The signed tag,
-GitHub Release, npm package, provenance and verified installer are public. The signed `v1` alias
-now resolves to the immutable v0.7.1 source after both immutable and public-alias consumers passed:
+v0.7.2 is a bounded correctness and trust-language patch. It adds no detector family or framework
+claim:
 
-- **Actionable default HIGH gate:** a `suspected` HIGH source lead now fails the default `high`
-  policy without being relabelled `confirmed`. Old reports without the new policy field retain
-  confirmed-only behavior.
-- **Bounded source analysis:** JavaScript/TypeScript and Python scans have per-file token and
-  operation limits plus a run-wide operation limit. Exhaustion is explicit `unknown` evidence and
-  exit code `3`; affected route coverage becomes partial.
-- **Bounded crawl networking:** every request and redirect is checked against destination, DNS,
-  private-network, response-size and timeout limits. Local fixtures still require an explicit
-  private-network opt-in.
-- **Recursive evidence redaction:** nested credential wrappers, arrays, Bearer/Basic values and
-  embedded private paths are sanitized across JSON, Markdown, HTML, SARIF, JUnit and observation
-  outputs while documented authorization evidence models remain readable.
-- **No dynamic robots regex:** attacker-controlled wildcard rules use a literal cached matcher,
-  including adversarial repeated-wildcard input.
-- **Complete installed payload:** Claude plugin metadata, bundled Opengrep rules and v0.7 review
-  evidence are included, and the installed ruleset digest is checked.
+- **Safe demo output:** reruns clean only a marked demo-owned directory and fixed generated files;
+  unowned, symlinked and protected paths are refused.
+- **Wider technical-evidence redaction:** camelCase, snake_case and kebab-case credential names,
+  singular/plural credential containers and common high-confidence token formats are sanitized in
+  every report-bundle renderer. Generic `key` metadata remains reviewable.
+- **Express false-clean paths closed:** direct CommonJS routers and exact local CommonJS mounts are
+  inventoried. Imported local route-registration functions that remain unsupported make coverage
+  partial and produce `unknown` evidence instead of a clean empty route result.
+- **Executable schema contracts:** all shipped JSON Schemas compile offline with Ajv, and a curated
+  corpus must agree with the handwritten validators.
+- **Recomputable ordinary review:** every v0.7.0 project record now carries fixed source/tool
+  commits, exact target/command, report digests and coverage reasons; aggregate totals are derived
+  from those records.
+- **Separated release trust signals:** repository-local tag policy, GitHub tag verification,
+  GitHub release-asset provenance and npm OIDC provenance have explicit independent boundaries.
 
 The stable inventory remains 25 built-in risk rules, 3 evidence-integrity rules and 16 opt-in
 external-adapter risk rules. Pattern matches remain `suspected`; policy gating never upgrades
@@ -445,8 +450,15 @@ Verify downloaded release assets:
 sha256sum -c SHA256SUMS
 gh attestation verify web-app-security-skill-*.tar.gz \
   --repo parousia8888/web-app-security-skill
-git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.6.0
+git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.7.2
 ```
+
+`.github/release-signers` is a repository-local signer policy: a successful local check proves that
+the tag matches the policy in the checked-out repository, but it does not independently prove
+GitHub account ownership. Check GitHub's verification for the exact tag object separately.
+npm OIDC provenance is a separate signal for the npm package. The exact boundaries and the
+cross-channel source identity check are in
+[release trust boundaries](docs/release-trust-boundaries.md).
 
 ## 5 ordinary project journeys
 

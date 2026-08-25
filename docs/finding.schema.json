@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/finding.schema.json",
+  "$id": "https://raw.githubusercontent.com/parousia8888/web-app-security-skill/main/docs/finding.schema.json",
   "title": "Web App Security Skill finding",
   "type": "object",
   "required": ["schemaVersion", "id", "fingerprint", "ruleId", "title", "severity", "state", "summary", "evidence", "remediation", "retest", "baselineState"],

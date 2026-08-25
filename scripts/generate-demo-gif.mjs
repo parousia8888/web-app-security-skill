@@ -13,6 +13,7 @@ const METADATA = join(ROOT, 'docs', 'assets', 'demo.json');
 const WIDTH = 840;
 const HEIGHT = 472;
 const temp = mkdtempSync(join(tmpdir(), 'web-app-security-demo-gif-'));
+const demoOutput = join(temp, 'demo-output');
 
 function frame(title, subtitle, lines, { accent = 5, delay = 180 } = {}) {
   const canvas = createCanvas(WIDTH, HEIGHT);
@@ -30,11 +31,11 @@ function frame(title, subtitle, lines, { accent = 5, delay = 180 } = {}) {
 }
 
 try {
-  const demo = spawnSync(process.execPath, [join(ROOT, 'scripts', 'demo.mjs'), '--out', temp], {
+  const demo = spawnSync(process.execPath, [join(ROOT, 'scripts', 'demo.mjs'), '--out', demoOutput], {
     cwd: ROOT, encoding: 'utf8', timeout: 30000, env: { ...process.env, SOURCE_DATE_EPOCH: '0' },
   });
   if (demo.status !== 0) throw new Error(demo.stderr || demo.stdout || 'demo failed');
-  const facts = JSON.parse(readFileSync(join(temp, 'demo-result.json'), 'utf8'));
+  const facts = JSON.parse(readFileSync(join(demoOutput, 'demo-result.json'), 'utf8'));
   const frames = [
     frame('SOURCE AUDIT', 'INTENTIONALLY VULNERABLE NODE.JS FIXTURE', [
       { text: '$ NPM RUN DEMO -- --OUT ./DEMO-OUTPUT', color: 5 },

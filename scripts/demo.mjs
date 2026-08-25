@@ -1,17 +1,90 @@
 #!/usr/bin/env node
-import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import {
+  cpSync, lstatSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync,
+} from 'node:fs';
+import { homedir } from 'node:os';
+import { dirname, isAbsolute, join, parse, relative, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const args = process.argv.slice(2);
 const outIndex = args.indexOf('--out');
+if (outIndex !== -1 && (!args[outIndex + 1] || args[outIndex + 1].startsWith('-'))) {
+  console.error('usage: webapp-security demo [--out <owned-output-directory>]');
+  process.exit(2);
+}
 const out = resolve(outIndex === -1 ? join(ROOT, 'demo-output') : args[outIndex + 1]);
 const epoch = process.env.SOURCE_DATE_EPOCH || '0';
 const env = { ...process.env, SOURCE_DATE_EPOCH: epoch };
 const project = join(out, 'owned-source-fixture');
 const runs = join(out, 'runs');
+const OWNER_FILE = '.web-app-security-demo-owner.json';
+const OWNER = { schemaVersion: 1, product: 'Web App Security Skill', purpose: 'owned-demo-output' };
+const OWNED_CHILDREN = [
+  'owned-source-fixture', 'runs', 'before-evidence', 'after-evidence', 'hardening.patch',
+  'functional-retest.txt', 'before.json', 'before.md', 'before.html', 'after.json', 'after.md',
+  'after.sarif', 'demo-result.json', 'summary.md',
+];
+
+function pathExists(path) {
+  try { lstatSync(path); return true; } catch (error) {
+    if (error.code === 'ENOENT') return false;
+    throw error;
+  }
+}
+
+function canonicalCandidate(path) {
+  if (pathExists(path)) return realpathSync(path);
+  const tail = [];
+  let cursor = path;
+  while (!pathExists(cursor)) {
+    const parent = dirname(cursor);
+    if (parent === cursor) break;
+    tail.unshift(cursor.slice(parent.length + (parent.endsWith('/') ? 0 : 1)));
+    cursor = parent;
+  }
+  return resolve(realpathSync(cursor), ...tail);
+}
+
+function containsPath(parent, child) {
+  const relationship = relative(parent, child);
+  return relationship === '' || (!relationship.startsWith('..') && !isAbsolute(relationship));
+}
+
+function assertSafeOutput(path) {
+  if (pathExists(path) && lstatSync(path).isSymbolicLink()) {
+    throw new Error('refusing symlink demo output directory');
+  }
+  const candidate = canonicalCandidate(path);
+  const protectedPaths = [parse(candidate).root, homedir(), process.cwd(), ROOT]
+    .map((item) => canonicalCandidate(resolve(item)));
+  if (protectedPaths.some((protectedPath) => containsPath(candidate, protectedPath))) {
+    throw new Error('refusing protected demo output directory');
+  }
+}
+
+function prepareOwnedOutput(path) {
+  assertSafeOutput(path);
+  const marker = join(path, OWNER_FILE);
+  if (pathExists(path)) {
+    if (!lstatSync(path).isDirectory()) throw new Error('demo output is not a directory');
+    if (!pathExists(marker) || lstatSync(marker).isSymbolicLink()) {
+      throw new Error('refusing pre-existing unowned demo output directory');
+    }
+    let owner;
+    try { owner = JSON.parse(readFileSync(marker, 'utf8')); } catch {
+      throw new Error('refusing demo output with an invalid ownership marker');
+    }
+    if (JSON.stringify(owner) !== JSON.stringify(OWNER)) {
+      throw new Error('refusing demo output with an invalid ownership marker');
+    }
+    for (const child of OWNED_CHILDREN) rmSync(join(path, child), { recursive: true, force: true });
+    return;
+  }
+  mkdirSync(path, { recursive: true, mode: 0o700 });
+  writeFileSync(marker, `${JSON.stringify(OWNER, null, 2)}\n`, { flag: 'wx', mode: 0o600 });
+}
 
 function run(commandArgs, options = {}) {
   const result = spawnSync(process.execPath, commandArgs, {
@@ -23,8 +96,7 @@ function run(commandArgs, options = {}) {
   return result;
 }
 
-rmSync(out, { recursive: true, force: true });
-mkdirSync(out, { recursive: true });
+prepareOwnedOutput(out);
 cpSync(join(ROOT, 'examples', 'insecure-demo'), project, { recursive: true });
 
 run([join(ROOT, 'scripts', 'webapp-security.mjs'), 'start', project, '--out', runs, '--run-id', 'before']);

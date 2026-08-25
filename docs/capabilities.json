@@ -15,7 +15,7 @@
   "resultStates": {
     "confirmed": "Reproduced with sufficient sanitized evidence.",
     "suspected": "A lead that still needs context or reproduction.",
-    "unknown": "The check or evidence source was unavailable.",
+    "unknown": "The check or evidence source was unavailable or incomplete. In source CLI runs, exit 3 means the tool refuses a clean result because evidence is incomplete; it is not a vulnerability count.",
     "not_applicable": "Outside the recorded scope or absent from the project."
   },
   "capabilities": [
@@ -56,8 +56,8 @@
       "name": "Framework-aware route, action and control inventory",
       "category": "detection",
       "maturity": "stable",
-      "scope": "Produces route-security v2 artifacts for bounded Express, NestJS and Next.js App Router syntax, with Next.js Server Actions as a separate non-HTTP surface. Application controls are listed once, authentication and authorization signals are separated, and routes with no observed route-scoped control remain review states rather than vulnerability findings.",
-      "evidence": ["scripts/lib/route-security-audit.mjs", "scripts/lib/frameworks/express-route-extractor.mjs", "scripts/lib/frameworks/nest-route-extractor.mjs", "scripts/lib/frameworks/next-app-route-extractor.mjs", "scripts/lib/frameworks/next-server-action-extractor.mjs", "docs/reviews/v0.7.0-access-control-review.json", "test/route-security-integration.test.mjs", "test/next-server-action-extractor.test.mjs"]
+      "scope": "Produces route-security v2 artifacts for bounded Express, NestJS and Next.js App Router syntax, with Next.js Server Actions as a separate non-HTTP surface. Stable Express syntax covers variable-bound ESM/CommonJS factories, direct require('express').Router(), inline routes, exact static mounts and exact local CommonJS router mounts. A structurally observed imported local registration function remains unsupported and fails closed as partial/unknown evidence. Application controls are listed once, authentication and authorization signals are separated, and routes with no observed route-scoped control remain review states rather than vulnerability findings.",
+      "evidence": ["scripts/lib/route-security-audit.mjs", "scripts/lib/frameworks/express-route-extractor.mjs", "scripts/lib/frameworks/nest-route-extractor.mjs", "scripts/lib/frameworks/next-app-route-extractor.mjs", "scripts/lib/frameworks/next-server-action-extractor.mjs", "docs/reviews/v0.7.0-access-control-review.json", "test/express-route-extractor.test.mjs", "test/route-security-integration.test.mjs", "test/next-server-action-extractor.test.mjs"]
     },
     {
       "id": "bounded-access-control-chain",
@@ -168,8 +168,8 @@
       "name": "Stable multi-format finding reports",
       "category": "evidence_reporting",
       "maturity": "stable",
-      "scope": "Renders source v3 and crawl, demo, crawler-identity, edge and AWS v2 conclusions as JSON, Markdown, escaped HTML, SARIF 2.1.0 and JUnit while preserving domain, evidence state, baseline state and fingerprints. Legacy v1 remains historical input only.",
-      "evidence": ["docs/finding-v3.schema.json", "docs/report-v3.schema.json", "docs/finding-v2.schema.json", "docs/report-v2.schema.json", "scripts/lib/evidence-v3.mjs", "scripts/lib/evidence-v2.mjs", "test/report-v3-contract.test.mjs", "test/evidence-loop.test.mjs"]
+      "scope": "Renders source v3 and crawl, demo, crawler-identity, edge and AWS v2 conclusions as JSON, Markdown, escaped HTML, SARIF 2.1.0 and JUnit while preserving domain, evidence state, baseline state and fingerprints. Technical evidence is recursively sanitized across report-bundle artifacts using normalized credential-key nouns and bounded high-confidence value formats; generic metadata remains visible. This is leak prevention for the evidence contract, not a complete secret scanner. Legacy v1 remains historical input only.",
+      "evidence": ["docs/finding-v3.schema.json", "docs/report-v3.schema.json", "docs/finding-v2.schema.json", "docs/report-v2.schema.json", "scripts/lib/evidence-v3.mjs", "scripts/lib/evidence-v2.mjs", "test/report-v3-contract.test.mjs", "test/evidence-loop.test.mjs", "test/evidence-writer.test.mjs", "scripts/check-json-schema-contracts.mjs"]
     },
     {
       "id": "patch-retest-loop",

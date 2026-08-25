@@ -24,7 +24,7 @@ consumers.
 | Agent silently selects product policy | Authentication, CORS, public access, data or infrastructure changes without owner intent | Structured `userDecisions`; approval gate; CLI never applies project edits |
 | Secret leakage in reports | Credential or user-data exposure | Sanitized evidence contract; private reporting |
 | Partial or permissive report write | Sensitive or misleading evidence remains on disk | Private modes, exclusive staging, validation and atomic bundle commit |
-| CI/release substitution | Consumers run modified code | Full-SHA actions, checksums, SPDX SBOM, artifact attestation |
+| CI/release substitution | Consumers run modified code | Full-SHA actions, cross-channel source identity, repository-local tag policy, platform signature verification, separate GitHub-asset and npm provenance, checksums and SPDX SBOM |
 | Agent overreach | Destructive or out-of-scope actions | Read-only default; minimum proof; explicit phase routing |
 | Denial of service by verification | Target availability impact | Bounded concurrency; active rate test opt-in; `--n` cap |
 

@@ -20,6 +20,7 @@ assert.equal(pkg.bin['webapp-security'], 'scripts/webapp-security.mjs');
 for (const entry of [
   'SKILL.md', 'VERSION', 'KNOWN_LIMITATIONS.md', 'THIRD_PARTY_NOTICES.md',
   'scripts', 'references', 'rules',
+  'docs/release-trust-boundaries.md',
   'docs/conformance/v0.6.0-rule-contract-conformance.json',
   'docs/conformance/v0.6.0-rule-contract-conformance.md',
   'docs/regressions/v0.5.4-real-world-regressions.json',

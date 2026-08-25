@@ -16,6 +16,7 @@ const ruleCorpus = JSON.parse(readFileSync(join(ROOT, 'docs', 'stable-rule-corpu
 const releaseState = JSON.parse(readFileSync(join(ROOT, 'docs', 'release-state.json'), 'utf8'));
 const published = releaseState.publishedRelease;
 const temp = mkdtempSync(join(tmpdir(), 'web-app-security-launch-'));
+const demoOutput = join(temp, 'demo-output');
 
 function heading(path) {
   const document = readFileSync(join(ROOT, path), 'utf8');
@@ -23,13 +24,13 @@ function heading(path) {
 }
 
 try {
-  const demo = spawnSync(process.execPath, [join(ROOT, 'scripts', 'demo.mjs'), '--out', temp], {
+  const demo = spawnSync(process.execPath, [join(ROOT, 'scripts', 'demo.mjs'), '--out', demoOutput], {
     cwd: ROOT,
     encoding: 'utf8',
     timeout: 30000,
   });
   if (demo.status !== 0) throw new Error(demo.stderr || demo.stdout || 'demo failed');
-  const demoFacts = JSON.parse(readFileSync(join(temp, 'demo-result.json'), 'utf8'));
+  const demoFacts = JSON.parse(readFileSync(join(demoOutput, 'demo-result.json'), 'utf8'));
   const count = (category, maturity) => capabilities.capabilities.filter((item) =>
     item.category === category && (!maturity || item.maturity === maturity)).length;
   const stableDetection = count('detection', 'stable');

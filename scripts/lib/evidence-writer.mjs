@@ -7,7 +7,6 @@ import { basename, join, resolve } from 'node:path';
 const MAX_STRING = 4096;
 const MAX_ARRAY = 200;
 const MAX_KEYS = 200;
-const SECRET_KEY = /^(authorization|cookie|set-cookie|password|passwd|secret|token|api[-_]?key|access[-_]?key|private[-_]?key)$/i;
 const SENSITIVE_ID_KEY = /^(account|accountId|user|userName|bucket|bucketName|securityGroup|groupId|arn)$/i;
 const PRIVATE_PATH = /(?:\/(?:Users|home|private)\/[^\s"'<>),;\]}]+|[A-Za-z]:\\Users\\[^\s"'<>),;\]}]+)/g;
 
@@ -20,6 +19,32 @@ function pathExists(path) {
   }
 }
 
+function keyTokens(key) {
+  return String(key)
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/[^A-Za-z0-9]+/g, ' ')
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((token) => ({
+      cookies: 'cookie', credentials: 'credential', passwords: 'password', secrets: 'secret',
+      tokens: 'token', keys: 'key',
+    })[token] || token);
+}
+
+function isSecretKey(key) {
+  const tokens = keyTokens(key);
+  if (!tokens.length) return false;
+  if (tokens.length === 1) {
+    return ['authorization', 'cookie', 'credential', 'passwd', 'password', 'secret', 'token']
+      .includes(tokens[0]);
+  }
+  const phrase = tokens.join(' ');
+  return ['set cookie', 'api key', 'access key', 'private key', 'access token', 'refresh token',
+    'id token', 'client secret', 'client credential'].includes(phrase);
+}
+
 function cleanString(input) {
   let value = String(input)
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
@@ -28,6 +53,12 @@ function cleanString(input) {
     .replace(/\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]+/gi, '$1 [REDACTED]')
     .replace(/\b(password|passwd|secret|token|api[-_]?key|access[-_]?key)\s*[=:]\s*([^\s,;]+)/gi, '$1=[REDACTED]')
     .replace(/([?&](?:access_token|token|secret|password|api_key|key|code)=)[^&#\s]*/gi, '$1[REDACTED]')
+    .replace(/\bgh[pousr]_[A-Za-z0-9]{20,255}\b/g, '[REDACTED_GITHUB_TOKEN]')
+    .replace(/\bxox[baprs]-[A-Za-z0-9-]{20,255}\b/g, '[REDACTED_SLACK_TOKEN]')
+    .replace(/\b(?:AKIA|ASIA)[A-Z0-9]{16}\b/g, '[REDACTED_AWS_ACCESS_KEY]')
+    .replace(/\bAIza[0-9A-Za-z_-]{35}\b/g, '[REDACTED_GOOGLE_API_KEY]')
+    .replace(/\bsk-(?:proj-)?[A-Za-z0-9_-]{20,255}\b/g, '[REDACTED_API_KEY]')
+    .replace(/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g, '[REDACTED_JWT]')
     .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[REDACTED_EMAIL]')
     .replace(/\b\d{12}\b/g, '[REDACTED_AWS_ACCOUNT]');
   value = value.replace(PRIVATE_PATH, (path) => `[REDACTED_PRIVATE_PATH:${digest(path)}]`);
@@ -36,7 +67,7 @@ function cleanString(input) {
 }
 
 function isAuthorizationEvidenceModel(key, entries) {
-  if (!/^authorization$/i.test(key)) return false;
+  if (keyTokens(key).join(' ') !== 'authorization') return false;
   const names = new Set(entries.map(([itemKey]) => itemKey));
   return ['state', 'signals', 'boundary'].every((name) => names.has(name))
     || ['status', 'basis', 'proof', 'note'].every((name) => names.has(name));
@@ -44,7 +75,7 @@ function isAuthorizationEvidenceModel(key, entries) {
 
 export function sanitizeEvidence(value, key = '') {
   if (typeof value === 'string') {
-    if (SECRET_KEY.test(key)) return '[REDACTED]';
+    if (isSecretKey(key)) return '[REDACTED]';
     if (SENSITIVE_ID_KEY.test(key) && !/(Digest|Ref)$/i.test(key)) {
       return `[REDACTED_${key.toUpperCase()}:${digest(value)}]`;
     }
@@ -53,13 +84,14 @@ export function sanitizeEvidence(value, key = '') {
   if (Array.isArray(value)) return value.slice(0, MAX_ARRAY).map((item) => sanitizeEvidence(item, key));
   if (value && typeof value === 'object') {
     const entries = Object.entries(value).slice(0, MAX_KEYS);
-    const inheritSensitiveKey = SECRET_KEY.test(key) && !isAuthorizationEvidenceModel(key, entries);
+    const inheritSensitiveKey = isSecretKey(key) && !isAuthorizationEvidenceModel(key, entries);
     return Object.fromEntries(entries
       .map(([itemKey, item]) => [
         cleanString(itemKey),
         sanitizeEvidence(item, inheritSensitiveKey ? key : itemKey),
       ]));
   }
+  if (value !== null && isSecretKey(key)) return '[REDACTED]';
   return value;
 }
 

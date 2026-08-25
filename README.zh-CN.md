@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#查看结果">Demo</a> ·
-  <a href="#v071-新增内容">v0.7.1</a> ·
+  <a href="#v072-新增内容">v0.7.2</a> ·
   <a href="#安装">安装</a> ·
   <a href="#执行第一个项目">首个项目</a> ·
   <a href="docs/tutorial.zh-CN.md">完整教程</a> ·
@@ -57,6 +57,13 @@ npx --yes web-app-security-skill audit . --fail-on never
 一层可解析的本地函数送进 Prisma 查询。”它不能证明运行时一定走到这里、数据库策略一定正确，也
 不会继续猜第二层本地调用。Supabase 结果始终保留“还需检查外部 RLS 策略”。
 
+Express 的 stable 清单支持直接 ESM/CommonJS `express()` 与 `Router()` receiver、
+`require('express').Router()`、inline route、精确静态 mount 和精确本地 CommonJS router mount。
+如果发现导入的本地路由注册函数但还不能解析，报告会写出
+`express_registration_function_unresolved` 并把覆盖率设为 partial。此时退出码 `3` 表示证据不完整，
+工具拒绝给出“路由检查干净”的结论，不是发现了 3 个漏洞；如果 finding policy 同时触发，退出码
+`1` 仍可优先。
+
 需要目前维护范围内最广的一次本地检查时，使用不下载工具的 deep profile。它运行内置规则，并
 调用用户已经安装的固定版本 Checkov、Gitleaks、Opengrep 与 OSV-Scanner；缺少的工具会记录为
 带安装指引的 `unknown`：
@@ -93,23 +100,22 @@ npm run demo -- --out ./demo-output
 
 完整的安装到卸载流程见经过测试的[第一个项目教程](docs/tutorial.zh-CN.md)。
 
-## v0.7.1 新增内容
+## v0.7.2 新增内容
 
-v0.7.1 是 v0.7.0 路由与访问控制版本的安全边界和执行可靠性补丁，不增加检测器，也不扩大框架
-支持。签名 tag、GitHub Release、npm 包、provenance 与 verified installer 已公开。不可变 consumer
-和公开别名 consumer 均通过后，签名的 `v1` 已指向不可变 v0.7.1 源码：
+v0.7.2 是限定范围的正确性与信任说明补丁，不增加检测器家族，也不扩大框架宣传：
 
-- **默认 HIGH 门真正可用：** `suspected` HIGH 源码线索现在会触发默认 `high` policy 失败，但不会被
-  改写成 `confirmed`。缺少新 policy 字段的旧报告继续按 confirmed-only 解释。
-- **源码分析有资源上限：** JavaScript/TypeScript 与 Python 扫描增加单文件 token/operation 上限和
-  全局 operation 上限。超限会成为明确的 `unknown` 和退出码 `3`，受影响的路由覆盖率会变成 partial。
-- **爬取网络有完整边界：** 每次请求与重定向都会检查目标地址、DNS、私网、响应大小和超时；本地
-  fixture 仍必须明确开启 private-network 选项。
-- **递归证据脱敏：** JSON、Markdown、HTML、SARIF、JUnit 和 observation 输出都会处理嵌套凭据、
-  数组、Bearer/Basic 值和文本中的私有绝对路径，同时保留规定格式的授权证据对象供人阅读。
-- **robots 不再动态编译正则：** 通配规则使用 literal cached matcher，重复大量 `*` 的输入也有边界。
-- **安装 payload 完整：** 安装内容包含 Claude plugin 元数据、内置 Opengrep 规则和 v0.7 审查证据，
-  并验证安装后 ruleset digest。
+- **Demo 输出有归属边界：** 重跑只清理带有效 owner marker 的 demo 目录和固定生成文件；未归属目录、
+  symlink 与受保护路径全部拒绝。
+- **技术证据脱敏更完整：** camelCase、snake_case、kebab-case、单复数凭据容器和常见高置信 token
+  格式会在全部报告 bundle renderer 中脱敏；普通 `key` 元数据仍可供审查。
+- **关闭 Express 假干净路径：** 直接 CommonJS router 和精确本地 CommonJS mount 会进入清单；发现
+  暂不支持的导入式本地路由注册函数时，覆盖率变成 partial 并输出 `unknown`，不会返回空白干净结果。
+- **Schema 可以独立执行：** 所有公开 JSON Schema 都必须离线通过 Ajv 编译，精选样例还必须与手写
+  validator 得出一致结果。
+- **普通项目审查可重算：** v0.7.0 的每个项目记录都包含固定源码/tool commit、精确 target/command、
+  报告摘要与 coverage reason，汇总数字由项目记录计算。
+- **release 信任信号分开：** 仓库内 tag policy、GitHub tag verification、GitHub release 资产
+  provenance 与 npm OIDC provenance 各自说明证据边界。
 
 stable 清单仍是 25 条 built-in risk、3 条 evidence-integrity 和 16 条 opt-in 外部 adapter risk。
 模式命中继续保持 `suspected`，policy 阻断不会升级证据，不完整分析也不会变成 pass。v0.7.0 的
@@ -403,8 +409,13 @@ Source mode 默认只用内置 adapter。v0.7.1 不可变 Action 运行 v3 源�
 sha256sum -c SHA256SUMS
 gh attestation verify web-app-security-skill-*.tar.gz \
   --repo parousia8888/web-app-security-skill
-git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.6.0
+git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.7.2
 ```
+
+`.github/release-signers` 是仓库内 signer policy：本地验签通过只证明 tag 与当前检出的仓库政策
+一致，不能单独证明 GitHub 账户所有权。GitHub 对精确 tag object 的 verification 需要另行检查；
+npm OIDC provenance 是另一条独立信号，只覆盖 npm 包。各信号边界和跨渠道源码身份核对方法见
+[release 信任边界](docs/release-trust-boundaries.md)。
 
 ## 5 个普通项目旅程
 

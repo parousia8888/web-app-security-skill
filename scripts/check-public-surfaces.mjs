@@ -119,6 +119,17 @@ for (const [path, text] of [['README.md', en], ['README.zh-CN.md', zh]]) {
   if (!text.includes('Object-level authorization')) fail(`${path} does not explain object authorization`);
 }
 
+if (!en.includes('express_registration_function_unresolved')
+    || !zh.includes('express_registration_function_unresolved')) {
+  fail('README files do not expose the Express registration fail-closed reason code');
+}
+if (!normalize(en).includes('does not mean that three vulnerabilities were found')) {
+  fail('English README does not explain exit 3 in plain language');
+}
+if (!normalize(zh).includes('不是发现了 3 个漏洞')) {
+  fail('Chinese README does not explain exit 3 in plain language');
+}
+
 const detectionCount = capabilities.capabilities.filter((item) =>
   item.category === 'detection' && item.maturity === 'stable').length;
 for (const [path, text] of [

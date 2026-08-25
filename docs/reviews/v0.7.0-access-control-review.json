@@ -1,12 +1,14 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "release": "0.7.0",
   "reviewedOn": "2026-08-24",
+  "reproducedOn": "2026-08-25",
   "methodology": {
     "kind": "fixed-commit ordinary-source review",
     "networkBehavior": "Repositories were cloned at fixed commits; project dependencies and applications were not executed.",
     "scoreBoundary": "This review is not a production precision, recall, reachability or exploitability measurement.",
-    "reviewCap": "Four projects and 32 manually inspected entries; no project was added to inflate counts."
+    "reviewCap": "Four projects and 32 manually inspected entries; no project was added to inflate counts.",
+    "artifactBoundary": "Raw report hashes bind the 2026-08-25 reproduction artifacts, not retained 2026-08-24 report bytes. Route semantic hashes omit generatedAt, ephemeral subject identity, baseline and mode."
   },
   "aggregate": {
     "projects": 4,
@@ -29,44 +31,102 @@
       "repository": "brocoders/nestjs-boilerplate",
       "commit": "9620f159eefe38f47747d02ab162852367c5472c",
       "license": "MIT",
+      "target": ".",
+      "reportSha256": "23268c3ea6afe6ff727892deeb1709d55856996222c331f94ce2ebede91486ab",
+      "routeReportSha256": "bfbe86fba54c4d33955322a5fab49a44dfa6b4d982008204dfad9306bb2e8aad",
+      "routeSemanticSha256": "f08abf7df36861848b793e02c739742452ee0367bf75b74eccd7ff9e7459d0f2",
       "routes": 24,
       "serverActions": 0,
       "routeCoverage": "completed",
+      "coverageReasons": [],
       "partialChains": 3,
-      "completedChains": 0
+      "completedChains": 0,
+      "toolCommit": "bfed608b5d1abe56b6b34b09f0c6ef59f17eab4a",
+      "command": "SOURCE_DATE_EPOCH=0 node {tool}/scripts/webapp-security.mjs audit . --out {output} --fail-on never",
+      "reproducedOn": "2026-08-25",
+      "manualEntries": 8,
+      "recordDigest": "345673f1a949fd4d2bc8bac83b17fdcb0fc39b71871a4fd4f6b07a471785ec87"
     },
     {
       "id": "vercel-chatbot",
       "repository": "vercel/chatbot",
       "commit": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
       "license": "Apache-2.0",
+      "target": ".",
+      "reportSha256": "f27e47358c3cec9189890a8746cf7a59d1b45a7015b909785aff4f1d038e4292",
+      "routeReportSha256": "3281fedc3e1c1ad57d06a01be8651032cc92ffedc00a1d990ba141854c0c41f1",
+      "routeSemanticSha256": "8545f28061e89052b4724a06681c62b831ae66138d5a4c2644d32815811ebea6",
       "routes": 15,
       "serverActions": 7,
       "routeCoverage": "partial",
+      "coverageReasons": [
+        {
+          "framework": "next-app",
+          "code": "next_route_handler_export_unresolved",
+          "count": 1
+        }
+      ],
       "partialChains": 0,
-      "completedChains": 0
+      "completedChains": 0,
+      "toolCommit": "bfed608b5d1abe56b6b34b09f0c6ef59f17eab4a",
+      "command": "SOURCE_DATE_EPOCH=0 node {tool}/scripts/webapp-security.mjs audit . --out {output} --fail-on never",
+      "reproducedOn": "2026-08-25",
+      "manualEntries": 8,
+      "recordDigest": "fc4c30d9b8cffe4e1784f8b9f6c9e8ff0d15add9d9a84da0062bdc1b70e370bb"
     },
     {
       "id": "formbricks",
       "repository": "formbricks/formbricks",
       "commit": "b66c1dd978af618a0e402bd3343b456bed68594c",
       "license": "AGPL-3.0",
+      "target": ".",
+      "reportSha256": "d1f9cfa3dac61b396809dd6f5c794cfe60eb3a63955fe064ebebb9635c31827c",
+      "routeReportSha256": "eea03bdf7cc314c2e021fa4c18e343ab63511e0494ccf279d705be93551635a8",
+      "routeSemanticSha256": "461fffa71901efc816bb55d1d0be68aa18481c88c8312039e418b78a6140b04f",
       "routes": 130,
       "serverActions": 16,
       "routeCoverage": "partial",
+      "coverageReasons": [
+        {
+          "framework": "next-app",
+          "code": "next_route_handler_export_unresolved",
+          "count": 32
+        }
+      ],
       "partialChains": 9,
-      "completedChains": 0
+      "completedChains": 0,
+      "toolCommit": "bfed608b5d1abe56b6b34b09f0c6ef59f17eab4a",
+      "command": "SOURCE_DATE_EPOCH=0 node {tool}/scripts/webapp-security.mjs audit . --out {output} --fail-on never",
+      "reproducedOn": "2026-08-25",
+      "manualEntries": 12,
+      "recordDigest": "4e320e6b877b80bcb13cad5d33f5c8ec89630ee3d91c3c8aaeda0e105a5029ed"
     },
     {
       "id": "documenso",
       "repository": "documenso/documenso",
       "commit": "75330166cc00b29c14399bc2e391e4b4d8080c00",
       "license": "AGPL-3.0",
+      "target": "apps/docs",
+      "reportSha256": "31eb8627a0624665358f26cc7d76435c7ebd74dc117ca199ad4f1f11bd6bdabf",
+      "routeReportSha256": "8c453f41da09a8f8806adce210ed48b8b32d39845ab0050219b65d2bfeca6aaf",
+      "routeSemanticSha256": "ead1f052878cc73bb5246f72bef9c89e3763666360b83b848033235537aa447c",
       "routes": 4,
       "serverActions": 0,
       "routeCoverage": "partial",
+      "coverageReasons": [
+        {
+          "framework": "next-app",
+          "code": "next_route_handler_export_unresolved",
+          "count": 1
+        }
+      ],
       "partialChains": 0,
-      "completedChains": 0
+      "completedChains": 0,
+      "toolCommit": "bfed608b5d1abe56b6b34b09f0c6ef59f17eab4a",
+      "command": "SOURCE_DATE_EPOCH=0 node {tool}/scripts/webapp-security.mjs audit apps/docs --out {output} --fail-on never",
+      "reproducedOn": "2026-08-25",
+      "manualEntries": 4,
+      "recordDigest": "f90de7a4d951df6d457f4e2c23735ed2390c5a851fa123d3abe8bfdbb4fd0477"
     }
   ],
   "observations": [

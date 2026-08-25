@@ -89,6 +89,44 @@ app.get('/broken', (req, res) => {
   assert.equal(loadRoute(malformedOut).coverage.find((entry) => entry.framework === 'express').status,
     'partial');
 
+  const commonJs = project('commonjs-direct', `
+const express = require('express');
+const app = express();
+app.use('/api', require('./routes'));
+`);
+  write(join(commonJs, 'src', 'routes.js'), `
+const router = require('express').Router();
+router.get('/orders/:id', showOrder);
+module.exports = router;
+`);
+  const commonJsOut = join(temp, 'commonjs-direct-report');
+  run(['audit', commonJs, '--out', commonJsOut, '--fail-on', 'never'], 0);
+  const commonJsRoutes = loadRoute(commonJsOut);
+  assert.deepEqual(commonJsRoutes.routes.map((route) => route.path), ['/api/orders/:id']);
+  assert.equal(commonJsRoutes.coverage.find((entry) => entry.framework === 'express').status,
+    'completed');
+
+  const registration = project('registration-function', `
+import express from 'express';
+import { registerRoutes } from './routes.js';
+const app = express();
+registerRoutes(app);
+`);
+  write(join(registration, 'src', 'routes.js'), `
+export function registerRoutes(receiver) { receiver.post('/jobs', createJob); }
+`);
+  const registrationOut = join(temp, 'registration-function-report');
+  run(['audit', registration, '--out', registrationOut, '--fail-on', 'never'], 3);
+  const registrationReport = JSON.parse(readFileSync(join(registrationOut, 'report.json'), 'utf8'));
+  assert.ok(registrationReport.findings.some((finding) =>
+    finding.rule.id === 'js-route-security-evidence-incomplete' && finding.state === 'unknown'));
+  const registrationRoutes = loadRoute(registrationOut);
+  const registrationCoverage = registrationRoutes.coverage.find((entry) =>
+    entry.framework === 'express');
+  assert.equal(registrationCoverage.status, 'partial');
+  assert.deepEqual(registrationCoverage.reasons.map((reason) => reason.code),
+    ['express_registration_function_unresolved']);
+
   const externalOut = join(temp, 'external-report');
   const emptyPath = join(temp, 'empty-path');
   mkdirSync(emptyPath);

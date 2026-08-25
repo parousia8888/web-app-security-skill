@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.2] — 2026-08-25
+
+### Fixed
+- Demo reruns now clean only a marker-owned output directory and a fixed generated-child allowlist.
+  Unowned directories, symlinks, protected paths and a missing `--out` value fail without recursive
+  deletion.
+- Technical evidence redaction normalizes camelCase, snake_case and kebab-case credential keys,
+  covers singular/plural credential containers and removes bounded high-confidence credential
+  formats from every report-bundle renderer. Generic metadata and documented authorization models
+  remain reviewable.
+- Express route inventory recognizes direct CommonJS routers and exact local CommonJS mounts.
+  Structurally observed imported local registration functions that remain unsupported now produce
+  `express_registration_function_unresolved`, partial coverage, `unknown` evidence and exit code
+  `3` instead of a false-clean empty result.
+- All shipped JSON Schemas now compile offline under Ajv Draft 2020-12, use fetchable raw-content
+  identifiers and share a curated agreement gate with handwritten validators.
+
+### Changed
+- The fixed-commit v0.7.0 ordinary-project access review now derives aggregate totals from complete
+  project records containing source/tool commits, exact targets and commands, coverage reasons and
+  digest-bound reproduced reports. Refresh remains explicit and network-only.
+- Release documentation separates repository-local signer consistency, GitHub tag verification,
+  GitHub release-asset attestations, npm OIDC provenance and checksum/SBOM integrity. The enforced
+  cross-channel identity is the release tag source, release manifest source, npm `gitHead` and
+  immutable Action commit; later public-state commits may advance `main`.
+
+### Security boundary
+- Exit code `3` means evidence was unavailable or incomplete and the tool refused a clean result;
+  it is not a vulnerability count. Detector counts, stable framework scope and evidence-state
+  definitions remain unchanged from v0.7.1.
+
+Publication status: v0.7.2 candidate only until the signed tag, GitHub Release, npm provenance,
+verified installer, immutable Action and signed `v1` consumers pass.
+
 ## [0.7.1] — 2026-08-25
 
 ### Changed

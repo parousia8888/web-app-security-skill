@@ -93,6 +93,15 @@ export function validateExplanationV3(explanation) {
 
 export function validateFindingV3(finding) {
   const errors = [];
+  if (!object(finding)) return ['finding must be an object'];
+  const allowed = new Set([
+    'schemaVersion', 'id', 'fingerprint', 'fingerprintVersion', 'rule', 'adapter', 'domain',
+    'title', 'severity', 'state', 'summary', 'location', 'evidence', 'remediation', 'retest',
+    'explanation', 'baseline',
+  ]);
+  for (const key of Object.keys(finding)) {
+    if (!allowed.has(key)) errors.push(`finding.${key} is not allowed`);
+  }
   if (finding?.schemaVersion !== 3) errors.push('finding.schemaVersion must be 3');
   errors.push(...validateFindingV2(downgradeFindingV3(finding)));
   errors.push(...validateExplanationV3(finding?.explanation));
@@ -101,6 +110,7 @@ export function validateFindingV3(finding) {
 
 export function validateReportV3(report) {
   const errors = [];
+  if (!object(report)) return ['report must be an object'];
   if (report?.schemaVersion !== 3) errors.push('report.schemaVersion must be 3');
   if (report?.baseline && ![1, 2, 3].includes(report.baseline.sourceSchemaVersion)) {
     errors.push('report.baseline.sourceSchemaVersion is invalid');

@@ -35,3 +35,8 @@ gh attestation verify web-app-security-skill-*.tar.gz \
 The attestation proves which GitHub workflow produced an artifact. It does not prove that every
 security conclusion made by the scripts is correct; the test and release evidence address that
 separate question.
+
+The local `.github/release-signers` check is a repository-consistency check, GitHub's verified tag
+status is a platform signal, and npm OIDC provenance covers the npm package. Read
+[`docs/release-trust-boundaries.md`](docs/release-trust-boundaries.md) before treating one channel's
+result as evidence for another channel.

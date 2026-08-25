@@ -13,6 +13,15 @@ const ID = /^[a-z0-9][a-z0-9._-]+$/;
 const SEVERITIES = ['critical', 'high', 'medium', 'low', 'info'];
 const BASELINE_COMPATIBILITY = ['compatible', 'not_comparable', 'not_attempted'];
 const CHECK_STATES = ['completed', 'incomplete', 'not_run'];
+const FINDING_FIELDS = [
+  'schemaVersion', 'id', 'fingerprint', 'fingerprintVersion', 'rule', 'adapter', 'domain',
+  'title', 'severity', 'state', 'summary', 'location', 'evidence', 'remediation', 'retest',
+  'baseline',
+];
+const REPORT_FIELDS = [
+  'schemaVersion', 'tool', 'generatedAt', 'mode', 'subject', 'ruleset', 'scope', 'policy',
+  'coverage', 'summary', 'findings', 'limitations', 'baseline', 'migration',
+];
 
 export function sha256(value) {
   return createHash('sha256').update(value).digest('hex');
@@ -59,6 +68,10 @@ function countRecord(value, keys, label, errors) {
 
 export function validateFindingV2(finding) {
   const errors = [];
+  if (!object(finding)) return ['finding must be an object'];
+  for (const key of Object.keys(finding)) {
+    if (!FINDING_FIELDS.includes(key)) errors.push(`finding.${key} is not allowed`);
+  }
   if (finding?.schemaVersion !== 2) errors.push('finding.schemaVersion must be 2');
   if (!ID.test(finding?.id || '')) errors.push('finding.id is invalid');
   if (!SHA256.test(finding?.fingerprint || '')) errors.push('finding.fingerprint must be sha256');
@@ -111,6 +124,10 @@ export function validateFindingV2(finding) {
 
 export function validateReportV2(report) {
   const errors = [];
+  if (!object(report)) return ['report must be an object'];
+  for (const key of Object.keys(report)) {
+    if (!REPORT_FIELDS.includes(key)) errors.push(`report.${key} is not allowed`);
+  }
   if (report?.schemaVersion !== 2) errors.push('report.schemaVersion must be 2');
   if (!['audit', 'retest', 'demo-before', 'demo-after'].includes(report?.mode)) errors.push('report.mode is invalid');
   if (requiredObject(report?.subject, ['id', 'binding', 'scopeDigest', 'localPathIncluded'], 'report.subject', errors)) {

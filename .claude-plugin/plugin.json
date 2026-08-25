@@ -1,7 +1,7 @@
 {
   "name": "web-app-security-skill",
   "description": "Audit and harden authorized Web projects with explainable, reproducible evidence.",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "author": {
     "name": "parousia8888",
     "url": "https://github.com/parousia8888"

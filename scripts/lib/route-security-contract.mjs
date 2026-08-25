@@ -10,8 +10,19 @@ const safePath = (value) => typeof value === 'string' && value.length > 0 && val
 
 export function validateRouteSecurityDocument(document) {
   const errors = [];
+  if (document === null || typeof document !== 'object' || Array.isArray(document)) {
+    return ['route document must be an object'];
+  }
   const version = document?.schemaVersion;
   if (![1, 2].includes(version)) errors.push('schemaVersion must be 1 or 2');
+  const allowed = version === 1
+    ? ['schemaVersion', 'tool', 'generatedAt', 'mode', 'subject', 'analyzer', 'summary', 'coverage',
+      'routes', 'limitations', 'baseline']
+    : ['schemaVersion', 'tool', 'generatedAt', 'mode', 'subject', 'analyzer', 'summary', 'coverage',
+      'applicationControls', 'routes', 'serverActions', 'limitations', 'baseline'];
+  for (const key of Object.keys(document)) {
+    if (!allowed.includes(key)) errors.push(`document.${key} is not allowed`);
+  }
   if (document?.tool?.name !== 'Web App Security Skill' || !document?.tool?.version) errors.push('tool identity is invalid');
   if (!['audit', 'retest', 'demo-before', 'demo-after'].includes(document?.mode)) errors.push('mode is invalid');
   if (!document?.subject?.id || !digest(document?.subject?.scopeDigest)) errors.push('subject is invalid');

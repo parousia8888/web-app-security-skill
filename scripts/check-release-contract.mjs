@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { validateReleaseTrustLanguage } from './lib/release-trust-boundaries.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const read = (path) => readFileSync(`${ROOT}/${path}`, 'utf8');
@@ -91,6 +92,16 @@ for (const marker of [
   '| Node.js | 22, 24 | Ubuntu and macOS CI |',
   '| Windows / WSL2 | Not supported |',
 ]) requireText('docs/compatibility.md', marker);
+
+for (const error of validateReleaseTrustLanguage({
+  readme: read('README.md'),
+  readmeZh: read('README.zh-CN.md'),
+  security: read('SECURITY.md'),
+  trust: read('docs/release-trust-boundaries.md'),
+})) {
+  console.error(`release contract: ${error}`);
+  failed = true;
+}
 
 if (read('.github/workflows/release.yml').includes('- "v*"')) {
   console.error('release contract: moving major tags must not trigger a versioned release');

@@ -46,4 +46,49 @@ const unrelated = extractExpressRoutes(buildJsTsModuleGraph([
 assert.equal(unrelated.coverage.status, 'completed',
   'an unrelated module resolution gap must not poison route coverage');
 
-console.log('express route extractor ok: mounts, order, route chains, candidates and lookalikes');
+const directCommonJs = extractExpressRoutes(buildJsTsModuleGraph([
+  { path: 'src/app.cjs', text: `
+const express = require('express');
+const app = express();
+app.use('/v1', require('./routes'));
+` },
+  { path: 'src/routes.cjs', text: `
+const router = require('express').Router();
+router.get('/items/:id', showItem);
+module.exports = router;
+` },
+]));
+assert.equal(directCommonJs.coverage.status, 'completed');
+assert.deepEqual(directCommonJs.routes.map((route) => route.path), ['/v1/items/:id']);
+
+const unresolvedRegistration = extractExpressRoutes(buildJsTsModuleGraph([
+  { path: 'src/app.js', text: `
+import express from 'express';
+import { registerRoutes } from './routes.js';
+const app = express();
+registerRoutes(app);
+` },
+  { path: 'src/routes.js', text: `
+export function registerRoutes(receiver) { receiver.post('/jobs', createJob); }
+` },
+]));
+assert.equal(unresolvedRegistration.routes.length, 0);
+assert.equal(unresolvedRegistration.coverage.status, 'partial');
+assert.deepEqual(unresolvedRegistration.coverage.reasons.map((reason) => reason.code),
+  ['express_registration_function_unresolved']);
+
+const benignReceiverCall = extractExpressRoutes(buildJsTsModuleGraph([
+  { path: 'src/worker.js', text: `
+import express from 'express';
+import { initializeTelemetry } from './telemetry.js';
+const app = express();
+initializeTelemetry(app);
+` },
+  { path: 'src/telemetry.js', text: `
+export function initializeTelemetry(target) { console.log(Boolean(target)); }
+` },
+]));
+assert.equal(benignReceiverCall.routes.length, 0);
+assert.equal(benignReceiverCall.coverage.status, 'completed');
+
+console.log('express route extractor ok: ESM/CommonJS mounts, fail-closed registration and benign receivers');

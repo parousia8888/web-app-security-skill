@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import {
   createFindingV2, createReportV2, initializeFindingsV2, writeReportBundleV2,
 } from '../scripts/lib/evidence-v2.mjs';
+import { renderFindingMarkdownV3, upgradeFindingV2 } from '../scripts/lib/evidence-v3.mjs';
 import { sanitizeEvidence, writeAtomicEvidenceBundle } from '../scripts/lib/evidence-writer.mjs';
 import { sourceCoverage, sourceRule, sourceRuleset } from '../scripts/lib/source-rules.mjs';
 
@@ -30,6 +31,17 @@ try {
       cookie: { name: 'session', value: secret },
     },
     nestedTokens: [{ token: [secret, { value: secret }] }],
+    redactionKeyMatrix: {
+      tokens: [secret], secrets: secret, passwords: secret, api_keys: secret,
+      credential: secret, credentials: { value: secret }, accessToken: secret,
+      access_tokens: [secret],
+    },
+    genericKeysRemainUseful: { key: 'rule-key', keys: ['primary-key-name'] },
+    highConfidenceValues: {
+      github: 'ghp_0123456789abcdefghijklmnopqrstuv',
+      aws: 'AKIA0123456789ABCDEF',
+      jwt: 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abcdefghijklmnop',
+    },
     diagnostic: `scanner failed while reading /Users/${secret}/project/src/app.js`,
     route: {
       authorization: {
@@ -52,6 +64,12 @@ try {
   assert.match(serialized, /REDACTED/);
   assert.equal(sanitized.route.authorization.state, 'candidate_observed',
     'authorization evidence models must not be mistaken for credential values');
+  assert.equal(sanitized.genericKeysRemainUseful.key, 'rule-key',
+    'generic key metadata must not be redacted without a credential noun');
+  assert.deepEqual(sanitized.genericKeysRemainUseful.keys, ['primary-key-name']);
+  assert.equal(sanitized.highConfidenceValues.github, '[REDACTED_GITHUB_TOKEN]');
+  assert.equal(sanitized.highConfidenceValues.aws, '[REDACTED_AWS_ACCESS_KEY]');
+  assert.equal(sanitized.highConfidenceValues.jwt, '[REDACTED_JWT]');
   assert.equal(sanitized.list.length, 200);
   assert.ok(sanitized.message.length < 4200);
   assert.doesNotMatch(sanitized.message, /\u0000/);
@@ -70,6 +88,9 @@ try {
     summary: `Authorization: Bearer ${secret}\n<script>alert(1)</script>`,
     evidence: {
       subject: 'lockfile', token: secret, email: `${secret}@example.invalid`,
+      tokens: [secret], secrets: secret, passwords: secret, api_keys: secret,
+      credential: secret, credentials: { value: secret }, accessToken: secret,
+      access_tokens: [secret], key: 'dependency-lock-key',
       headers: { authorization: { value: `Bearer ${secret}` } },
       nested: [{ token: [secret, { value: secret }] }],
       diagnostic: `failed at /home/${secret}/project/src/server.js`,
@@ -96,7 +117,12 @@ try {
     name: 'report.observations.json',
     json: { authorization: `Bearer ${secret}`, error: '<error>unavailable</error>' },
   }] });
-  const rendered = Object.values(renderedFiles).map((path) => readFileSync(path, 'utf8')).join('\n');
+  const renderedArtifacts = Object.entries(renderedFiles)
+    .map(([name, path]) => [name, readFileSync(path, 'utf8')]);
+  const rendered = renderedArtifacts.map(([, content]) => content).join('\n');
+  for (const [name, content] of renderedArtifacts) {
+    assert.doesNotMatch(content, new RegExp(secret), `${name} must not expose the sentinel`);
+  }
   assert.doesNotMatch(rendered, new RegExp(secret));
   assert.doesNotMatch(rendered, /\/(?:Users|home|private)\//);
   JSON.parse(readFileSync(renderedFiles.json, 'utf8'));
@@ -104,6 +130,12 @@ try {
   JSON.parse(readFileSync(renderedFiles['report.observations.json'], 'utf8'));
   assert.match(readFileSync(renderedFiles.html, 'utf8'), /&lt;script&gt;/);
   assert.match(readFileSync(renderedFiles.junit, 'utf8'), /&lt;script&gt;/);
+  const technicalMarkdown = renderFindingMarkdownV3(upgradeFindingV2(report.findings[0]),
+    { technical: true }).join('\n');
+  assert.doesNotMatch(technicalMarkdown, new RegExp(secret),
+    'technical finding output must use the sanitized evidence tree');
+  assert.match(technicalMarkdown, /dependency-lock-key/,
+    'non-credential key metadata remains reviewable');
 
   const existing = join(temp, 'existing');
   mkdirSync(existing, { mode: 0o700 });

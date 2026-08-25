@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/parousia8888/web-app-security-skill/blob/main/docs/case-studies/template.schema.json",
+  "$id": "https://raw.githubusercontent.com/parousia8888/web-app-security-skill/main/docs/case-studies/template.schema.json",
   "title": "Web App Security Skill public case",
   "type": "object",
   "additionalProperties": false,
@@ -103,6 +103,7 @@
       "if": {
         "properties": {
           "evidence": {
+            "type": "array",
             "contains": {
               "type": "object",
               "properties": { "state": { "const": "suspected" } },

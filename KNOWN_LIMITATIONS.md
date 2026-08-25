@@ -17,14 +17,14 @@ Web application is secure.
 
 ## Route-security review
 
-The v0.7.0 route and access-control inventory parses supported JavaScript and TypeScript with a pinned bundled
+The current route and access-control inventory parses supported JavaScript and TypeScript with a pinned bundled
 `@babel/parser`, but framework semantics remain deliberately narrow. The parser understanding a
 file does not mean every framework registration or authorization relationship in that file is
 understood.
 
 | Limitation | What users may observe | Current behavior | Required follow-up |
 |---|---|---|---|
-| Express factory and mount boundary | Routes registered through an aliased app object, a wrapper, a computed mount or an unresolved router relationship can be absent. | Direct `express()`/`Router()` registrations and statically resolved mounts are stable. A route-relevant unresolved relationship produces partial coverage and `js-route-security-evidence-incomplete / unknown`. | Read the route coverage reasons and manually inspect the named files. Do not treat the inventory as exhaustive when Express coverage is partial. |
+| Express factory, mount and registration boundary | Routes registered through an aliased app object, a computed mount, a dynamic wrapper or an unresolved router relationship can be absent. | Stable syntax includes variable-bound ESM/CommonJS `express()` and `Router()`, direct `require('express').Router()`, inline route calls, exact static router mounts and exact `app.use('/prefix', require('./local-router'))`. When an imported local registration function is invoked with a recognized Express receiver and structurally contains route/middleware registration, the unsupported relationship becomes `express_registration_function_unresolved`, partial coverage and `js-route-security-evidence-incomplete / unknown`; it cannot return a clean route result. | Read the route coverage reasons and manually inspect the named registration function. Do not treat the inventory as exhaustive when Express coverage is partial. |
 | NestJS decorator and application-control boundary | Computed controller or method paths, custom decorator composition and runtime global guards may not resolve. An `APP_GUARD` can exist without applying the expected policy to every route. | Static controller/method decorators, static controller option paths and supported Passport/custom guard syntax are stable. Application guards are listed once and are never copied into every route as authentication/authorization proof. | Review dynamic decorators, global module configuration, exemptions and runtime guard behavior in project context. |
 | Next.js App Router and Server Action export boundary | Wrapper/re-export patterns can hide route handlers or actions; an action has no static HTTP URL to report. | Direct named route exports and direct static async Server Actions with supported `"use server"` placement are represented separately. Unresolved exports produce partial coverage; the tool never invents an action URL. | Inspect named unresolved files/exports and the framework invocation path; record missing surfaces manually. |
 | Control signal is not control proof | Passport, a custom auth helper, middleware or a guard can be visible while its runtime behavior, order and policy remain unknown. | Authentication, route authorization and unclassified route controls are separate. `no_route_scoped_control_observed` is a review state, not a vulnerability. Application controls stay application-scoped. | Verify runtime middleware order, identity binding, role semantics, intentional public routes and data-layer owner/tenant constraints. |
@@ -37,6 +37,21 @@ The [v0.7.0 four-project review](docs/reviews/v0.7.0-access-control-review.md) i
 routes and 23 Server Actions and manually reviews 32 entries. It produced 12 partial chains and zero
 completed ordinary-project chains. This purposive sample exposes current reach and limits; it is not
 a production precision/recall measurement.
+
+## Evidence-output redaction
+
+Technical evidence is recursively sanitized before JSON, Markdown, HTML, SARIF, JUnit and
+additional report-bundle artifacts are written. Credential nouns are normalized across camelCase,
+snake_case and kebab-case and common singular/plural forms. High-confidence GitHub, Slack, AWS,
+Google, API-key and JWT formats are also removed from free text. Generic `key`/`keys` metadata stays
+visible, and the two documented authorization-evidence object shapes remain readable.
+
+This is bounded leak prevention, not a general secret scanner. A proprietary credential format,
+an encoded or split secret, or a value stored under an unrelated generic field can remain unless a
+high-confidence value pattern recognizes it. Strings are capped at 4,096 characters and arrays and
+objects at 200 entries/keys; report producers must not use technical evidence as a raw data-export
+channel. Review reports before external sharing and use Gitleaks or another dedicated scanner on
+the intended shareable files when the consequence of disclosure is high.
 
 ## Incremental audit
 
@@ -66,7 +81,7 @@ neither is a representative accuracy benchmark.
 
 ## MCP and future rule expansion
 
-No MCP server ships in v0.7.0. npm/npx, the ordinary CLI and the Claude plugin invoke the current
+No MCP server ships in v0.7.2. npm/npx, the ordinary CLI and the Claude plugin invoke the current
 runtime. The current count is 25 built-in risk rules, three evidence-integrity rules and 16 external
 adapter risk rules. The documented architecture gates require a permission model and client
 evidence for MCP, and positive/negative fixtures plus false-positive review for every future stable
@@ -116,6 +131,8 @@ The following are historical and covered by machine regressions; they are not cu
 | 0.6.0 | Route reason counts could describe internal relationship events instead of affected inputs, and Express `all` could be ranked as read-only. | Coverage reason-budget and `ALL` state-change priority regressions. |
 | 0.7.0 | A Nest application-level rate-limit guard could be copied onto every route as both authentication and authorization evidence, hiding routes with no route-scoped control. | Application-control-once, split auth/authz and `no_route_scoped_control_observed` regressions. |
 | 0.7.0 | Access-chain fingerprints could collide, standard Next monorepo app roots could be missed, and exact tsconfig aliases could stop one-hop analysis. | Entry/call fingerprint, monorepo-root and bounded alias-resolution regressions. |
+| 0.7.2 | Demo output could recursively delete an unowned directory, plural/camelCase credential keys could leak technical evidence, and two supported-looking Express shapes could return false-clean route coverage. | Ownership-marker deletion boundary, per-artifact secret sentinel, exact CommonJS route and imported registration-function fail-closed regressions. |
+| 0.7.2 | Shipped JSON Schemas could drift from handwritten validators, and the v0.7.0 ordinary-review aggregate was independently hand-maintained. | Offline Ajv/manual overlap gate plus recomputed project aggregates and record/semantic digest regressions. |
 
 Report new false-positive classes or minimized parser failures through
 [GitHub Issues](https://github.com/parousia8888/web-app-security-skill/issues). The handling and
