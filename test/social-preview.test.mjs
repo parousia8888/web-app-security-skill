@@ -22,7 +22,7 @@ assert.equal(metadata.width, 1280);
 assert.equal(metadata.height, 640);
 assert.equal(metadata.bytes, image.length);
 assert.equal(metadata.sha256, createHash('sha256').update(image).digest('hex'));
-assert.equal(metadata.command, 'npx --yes web-app-security-skill@0.7.1 audit . --fail-on never');
+assert.equal(metadata.command, 'npx --yes web-app-security-skill@0.7.2 audit . --fail-on never');
 assert.equal(metadata.liveUpload, 'external_validation_pending');
 assert.ok(image.length < 250_000, `social preview is unexpectedly large: ${image.length}`);
 console.log(`social preview ok: deterministic 1280x640 PNG, ${image.length} bytes`);

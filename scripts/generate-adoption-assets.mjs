@@ -484,7 +484,7 @@ add('docs/adoption/github-release-lead.md', [
   'security retesting from normal-behavior testing. The command does not edit the project or contact',
   'a deployment.',
   '',
-  `v${facts.publishedVersion} adds a framework-aware route review for bounded Express, NestJS and`,
+  `Release v${facts.publishedVersion} includes a framework-aware route review for bounded Express, NestJS and`,
   'Next.js App Router syntax. It keeps authentication, route authorization and object authorization',
   'separate, records unresolved syntax as incomplete evidence and orders review without turning',
   'missing visible controls into confirmed vulnerabilities. The direct Prisma object-authorization',

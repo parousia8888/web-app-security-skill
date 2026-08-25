@@ -102,7 +102,8 @@ npm run demo -- --out ./demo-output
 
 ## v0.7.2 新增内容
 
-v0.7.2 是限定范围的正确性与信任说明补丁，不增加检测器家族，也不扩大框架宣传：
+v0.7.2 是限定范围的正确性与信任说明补丁，不增加检测器家族，也不扩大框架宣传。签名 tag、
+GitHub Release、npm 包与 provenance 已公开；verified installer 与稳定 Action 仍按独立门禁晋级：
 
 - **Demo 输出有归属边界：** 重跑只清理带有效 owner marker 的 demo 目录和固定生成文件；未归属目录、
   symlink 与受保护路径全部拒绝。

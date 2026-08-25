@@ -15,7 +15,7 @@ artifacts and reproduced local behavior; they do not claim universal scanner cov
 | Local before/after demo | OS command injection lead (CWE-78); SUSPECTED HIGH -> security fixed; functional passed; side effect recorded | [Generated demo evidence](demo-evidence.md) |
 | Ordinary project review | 43 findings across 5 fixed commits -> 11 useful leads; 27 expected benign; 1 unknown; 4 confirmed facts | [v0.5.0 review](case-studies/journeys/v0.5.0-review.md) |
 | Source methodology studies | 5 fixed-commit studies, kept separate from CLI precision claims | [Study method](case-studies/README.md) |
-| Release | v0.7.1 signed tag, reproducible archive, SPDX SBOM, checksums, manifest and provenance | [v0.7.1 release](https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.7.1) |
+| Release | v0.7.2 signed tag, reproducible archive, SPDX SBOM, checksums, manifest and provenance | [v0.7.2 release](https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.7.2) |
 
 ## Ordinary project journeys
 

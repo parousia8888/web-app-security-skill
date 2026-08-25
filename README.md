@@ -108,7 +108,8 @@ For the complete install-to-uninstall path, follow the tested
 ## What's new in v0.7.2
 
 v0.7.2 is a bounded correctness and trust-language patch. It adds no detector family or framework
-claim:
+claim. The signed tag, GitHub Release, npm package and provenance are public; verified-installer
+and stable-Action promotion remain separately gated:
 
 - **Safe demo output:** reruns clean only a marked demo-owned directory and fixed generated files;
   unowned, symlinked and protected paths are refused.
