@@ -26,12 +26,12 @@
     }
   },
   "releaseBody": {
-    "tag": "v0.7.1",
+    "tag": "v0.7.2",
     "status": "completed",
-    "completedAt": "2026-08-24T16:53:30Z",
-    "source": "docs/releases/v0.7.1.md",
-    "url": "https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.7.1",
-    "bodySha256": "9d1a8b979c71278fe2d03d1f21703dc15ff26c510ac8fd5074965711a225ad22"
+    "completedAt": "2026-08-25T12:21:42Z",
+    "source": "docs/releases/v0.7.2.md",
+    "url": "https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.7.2",
+    "bodySha256": "c9f5bcb88d613019728cbe3bd448ab9d51411c25432705695eb234b8cda3ffff"
   },
   "topics": [
     "agent-skills",

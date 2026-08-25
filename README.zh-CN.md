@@ -103,7 +103,8 @@ npm run demo -- --out ./demo-output
 ## v0.7.2 新增内容
 
 v0.7.2 是限定范围的正确性与信任说明补丁，不增加检测器家族，也不扩大框架宣传。签名 tag、
-GitHub Release、npm 包与 provenance 已公开；verified installer 与稳定 Action 仍按独立门禁晋级：
+GitHub Release、npm 包、provenance 与 verified installer 已公开。不可变 consumer 和公开别名
+consumer 均通过后，签名的 `v1` 已指向不可变 v0.7.2 源码：
 
 - **Demo 输出有归属边界：** 重跑只清理带有效 owner marker 的 demo 目录和固定生成文件；未归属目录、
   symlink 与受保护路径全部拒绝。
@@ -369,8 +370,9 @@ Composite Action 保持 v0.3 crawl 输入与输出兼容。Crawl mode 默认被�
     fail-on: high
 ```
 
-需要可重复 CI 时使用上面的 v0.7.2 不可变 commit。签名的稳定大版本别名仍停在 v0.7.1，直到
-v0.7.2 不可变 consumer 和晋级后的读回验证通过：
+需要可重复 CI 时使用上面的 v0.7.2 不可变 commit。签名的稳定大版本别名现在也指向该源码；晋级后
+公开 consumer [`32846972801`](https://github.com/parousia8888/web-app-security-skill/actions/runs/32846972801)
+已经通过：
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1

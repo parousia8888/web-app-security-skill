@@ -108,8 +108,9 @@ For the complete install-to-uninstall path, follow the tested
 ## What's new in v0.7.2
 
 v0.7.2 is a bounded correctness and trust-language patch. It adds no detector family or framework
-claim. The signed tag, GitHub Release, npm package and provenance are public; verified-installer
-and stable-Action promotion remain separately gated:
+claim. The signed tag, GitHub Release, npm package, provenance and verified installer are public.
+The signed `v1` alias now resolves to the immutable v0.7.2 source after both immutable and
+public-alias consumers passed:
 
 - **Safe demo output:** reruns clean only a marked demo-owned directory and fixed generated files;
   unowned, symlinked and protected paths are refused.
@@ -404,8 +405,10 @@ requires deployment authorization acknowledgement:
     fail-on: high
 ```
 
-For repeatable CI, use the immutable v0.7.2 commit above. The signed stable major-version alias
-remains on v0.7.1 until the immutable v0.7.2 consumer and promotion read-back pass:
+For repeatable CI, use the immutable v0.7.2 commit above. The signed stable major-version alias now
+resolves to that source; its post-promotion public consumer
+[`32846972801`](https://github.com/parousia8888/web-app-security-skill/actions/runs/32846972801)
+passed:
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
