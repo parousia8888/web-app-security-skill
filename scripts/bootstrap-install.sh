@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-installer_commit='7f84917f5014b4f0f2eb532b7007394ad3123615'
-installer_sha256='38d40a706fc4e0c377657d5b49a4a8980811a2518104ac95c762278b87d7b804'
+installer_commit='87326f11c0aab3901ac5cb0783d9452e607e83c5'
+installer_sha256='662b7de3d596bb6faf8fac4bf69f325f44c1152c99cbbea5fc25184863b1c6d5'
 installer_url="https://raw.githubusercontent.com/parousia8888/web-app-security-skill/${installer_commit}/scripts/install-verified.mjs?immutable=${installer_commit}"
 
 if test -n "${WEB_APP_SECURITY_INSTALLER_URL:-}" || test -n "${WEB_APP_SECURITY_INSTALLER_SHA256:-}"; then

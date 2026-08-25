@@ -7,8 +7,8 @@ merely because they came from the same TLS origin as a checksum file.
    `25a37e476720ad8ef221e38c0e2842abf928a1db` and verifies SHA-256
    `ce37908a73bd9ffd004ec3c0a4d36dc88e3baa6187bd17df816a454a940bfe63` before `sh` runs it.
 2. The bootstrap fixes `install-verified.mjs` to commit
-   `7f84917f5014b4f0f2eb532b7007394ad3123615` and verifies SHA-256
-   `38d40a706fc4e0c377657d5b49a4a8980811a2518104ac95c762278b87d7b804` before Node runs it.
+   `87326f11c0aab3901ac5cb0783d9452e607e83c5` and verifies SHA-256
+   `662b7de3d596bb6faf8fac4bf69f325f44c1152c99cbbea5fc25184863b1c6d5` before Node runs it.
 3. The verifier selects one explicit version from its built-in trust map. It requires fixed SHA-256
    values for the archive, release manifest, SPDX SBOM and `SHA256SUMS`, then cross-checks repository,
    product, tag, source commit, version, asset sets, archive root and paths before invoking the
@@ -24,9 +24,9 @@ installation. SHA-256 and manifest verification always run and cannot be disable
 After downloading and verifying the bootstrap using the README command, retain it at a known path:
 
 ```bash
-sh ./bootstrap-install.sh --version 0.7.1 --target codex
-sh ./bootstrap-install.sh --version 0.7.1 --target claude
-sh ./bootstrap-install.sh --version 0.7.1 --target cli
+sh ./bootstrap-install.sh --version 0.7.2 --target codex
+sh ./bootstrap-install.sh --version 0.7.2 --target claude
+sh ./bootstrap-install.sh --version 0.7.2 --target cli
 ```
 
 The verifier rejects a version absent from its built-in trust map. It never resolves `latest`, a
@@ -38,17 +38,17 @@ Download these files on a connected machine and transfer them without renaming:
 
 ```text
 SHA256SUMS
-web-app-security-skill-0.7.1.release.json
-web-app-security-skill-0.7.1.spdx.json
-web-app-security-skill-0.7.1.tar.gz
+web-app-security-skill-0.7.2.release.json
+web-app-security-skill-0.7.2.spdx.json
+web-app-security-skill-0.7.2.tar.gz
 ```
 
 Also download `scripts/install-verified.mjs` from commit
-`7f84917f5014b4f0f2eb532b7007394ad3123615` and verify its SHA-256 against the value above. On the
+`87326f11c0aab3901ac5cb0783d9452e607e83c5` and verify its SHA-256 against the value above. On the
 offline machine, run:
 
 ```bash
-node ./install-verified.mjs --version 0.7.1 --from-dir ./release-assets --attestation skip
+node ./install-verified.mjs --version 0.7.2 --from-dir ./release-assets --attestation skip
 ```
 
 The offline path performs no HTTP request. `--attestation skip` records that the optional GitHub
@@ -58,8 +58,8 @@ verification.
 ## Upgrade, force and uninstall
 
 ```bash
-sh ./bootstrap-install.sh --version 0.7.1 --mode upgrade
-sh ./bootstrap-install.sh --version 0.7.1 --force
+sh ./bootstrap-install.sh --version 0.7.2 --mode upgrade
+sh ./bootstrap-install.sh --version 0.7.2 --force
 webapp-security uninstall
 ```
 
