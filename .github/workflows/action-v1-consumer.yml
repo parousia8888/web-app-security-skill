@@ -170,3 +170,73 @@ jobs:
           if test -f "$RUNNER_TEMP/action-v1-server.pid"; then
             kill "$(cat "$RUNNER_TEMP/action-v1-server.pid")" 2>/dev/null || true
           fi
+  live-verification:
+    needs: [immutable-route-consumer, consumer]
+    permissions:
+      contents: "write"
+    runs-on: "ubuntu-latest"
+    env:
+      GH_TOKEN: "${{ github.token }}"
+      WEBAPP_SECURITY_IMMUTABLE_CONSUMER_RESULT: "${{ needs.immutable-route-consumer.result }}"
+      WEBAPP_SECURITY_STABLE_CONSUMER_RESULT: "${{ needs.consumer.result }}"
+    steps:
+      - uses: "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803" # v6
+        with:
+          fetch-depth: 0
+      - uses: "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38" # v6
+        with:
+          node-version: "22"
+      - run: "npm ci --ignore-scripts"
+      - name: "Download and verify public release, package and moving alias"
+        shell: "bash"
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./docs/release-state.json').publishedRelease.version")"
+          tag="v$version"
+          mkdir -p live-evidence/release-assets
+          gh release download "$tag" --dir live-evidence/release-assets
+          node scripts/prepare-release-promotion.mjs \
+            --version "$version" --assets live-evidence/release-assets --live \
+            --out live-evidence/release-promotion.json
+          node scripts/check-public-release-state.mjs \
+            --out live-evidence/public-release-state.json
+          npm view "web-app-security-skill@$version" --json > live-evidence/npm-metadata.json
+          node scripts/check-public-package.mjs \
+            --metadata live-evidence/npm-metadata.json --out live-evidence/public-package.json
+      - name: "Exercise verified installer with required attestation"
+        shell: "bash"
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./docs/release-state.json').publishedRelease.version")"
+          mkdir -p "$RUNNER_TEMP/live-install-home"
+          HOME="$RUNNER_TEMP/live-install-home" node scripts/install-verified.mjs \
+            --version "$version" --from-dir live-evidence/release-assets \
+            --attestation required --target all | tee live-evidence/installer.log
+      - name: "Build and publish durable live-verification evidence"
+        shell: "bash"
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./docs/release-state.json').publishedRelease.version")"
+          tag="v$version"
+          record="live-evidence/web-app-security-skill-$version.live-verification.json"
+          node scripts/build-live-verification-record.mjs \
+            --promotion live-evidence/release-promotion.json \
+            --public-state live-evidence/public-release-state.json \
+            --package-state live-evidence/public-package.json \
+            --installer-log live-evidence/installer.log --out "$record"
+          local_digest="sha256:$(sha256sum "$record" | cut -d ' ' -f 1)"
+          remote_digest="$(gh release view "$tag" --json assets --jq \
+            ".assets[] | select(.name == \"$(basename "$record")\") | .digest" || true)"
+          if test -z "$remote_digest"; then
+            gh release upload "$tag" "$record"
+          elif test "$remote_digest" != "$local_digest"; then
+            echo "existing live-verification record differs from this verified rerun" >&2
+            exit 1
+          fi
+      - name: "Upload live-verification workflow evidence"
+        uses: "actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f" # v6
+        with:
+          name: "live-verification"
+          path: "live-evidence/"
+          if-no-files-found: "error"
+          retention-days: 90

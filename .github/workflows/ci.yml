@@ -1,5 +1,7 @@
 name: ci
 on: [push, pull_request]
+permissions:
+  contents: "read"
 jobs:
   test:
     strategy:
@@ -24,4 +26,12 @@ jobs:
         if: matrix.os == 'ubuntu-latest' && matrix.node == '22'
         env:
           WEBAPP_SECURITY_REAL_ADAPTER_TEST: "true"
+          WEBAPP_SECURITY_TEST_OUTCOME_FILE: "test-results/real-adapters.json"
         run: node test/real-adapters.test.mjs
+      - name: Upload test outcome inventory
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: "test-outcomes-${{ matrix.os }}-node-${{ matrix.node }}"
+          path: "test-results/"
+          if-no-files-found: "error"

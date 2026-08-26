@@ -134,7 +134,10 @@ try {
       throw new Error('public release identity or publication state mismatch');
     }
     const publicAssets = new Map((releaseResult.assets || []).map((asset) => [asset.name, asset]));
-    if ([...publicAssets.keys()].sort().join('\n') !== [...names].sort().join('\n')) {
+    const liveRecordName = `${prefix}.live-verification.json`;
+    const unexpected = [...publicAssets.keys()].filter((name) => !names.includes(name) && name !== liveRecordName);
+    const missing = names.filter((name) => !publicAssets.has(name));
+    if (unexpected.length || missing.length) {
       throw new Error('public release asset set mismatch');
     }
     for (const name of names) {

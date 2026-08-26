@@ -159,11 +159,13 @@ claude plugin marketplace add parousia8888/web-app-security-skill --scope user &
 
 ### 可信多入口安装
 
-如需签名与 checksum 验证的多入口安装，下面的命令会同时安装 Claude Code skill、Codex skill 和
+如需强制 checksum 验证、并在条件满足时验证 GitHub attestation 的多入口安装，下面的命令会同时安装 Claude Code skill、Codex skill 和
 `~/.local/bin/webapp-security` 普通 CLI。
 若已有安装会直接拒绝；只有显式加入 `--force` 才会先生成带时间戳的备份再替换。该命令下载不可变
 bootstrap 并在执行前验证 SHA-256，然后验证选定 release 的 manifest、checksums、SBOM、源码提交和
 归档，再进入安装。
+已安装且登录 GitHub CLI 时会执行 attestation 验证；需要把 attestation 缺失或失败作为安装失败时，
+显式传入 `--attestation required`。
 
 ```bash
 ( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/3f42fb70f99f6ccb3c8e8449b2c06749c3b53148/scripts/bootstrap-install.sh?immutable=3f42fb70f99f6ccb3c8e8449b2c06749c3b53148'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" '193ece72d2c7d2c4220a6164a4bb280853ffca1e8de5217535fe95010c146e8a'; sh "$p" )

@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { recordTestOutcome } from './helpers/test-outcome.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const temp = mkdtempSync(join(tmpdir(), 'web-app-security-distribution-'));
@@ -66,17 +67,28 @@ try {
 
   const pluginConfig = join(temp, 'claude-config');
   mkdirSync(pluginConfig);
-  const claudeVersion = spawnSync('claude', ['--version'], { encoding: 'utf8' });
-  let pluginResult = 'Claude CLI unavailable; manifest-only validation';
+  const claudeBin = process.env.WEBAPP_SECURITY_CLAUDE_BIN || 'claude';
+  const claudeVersion = spawnSync(claudeBin, ['--version'], { encoding: 'utf8' });
+  let pluginResult = 'Claude CLI unavailable; plugin install skipped';
+  let pluginStatus = 'skipped';
   if (claudeVersion.status === 0) {
     const env = { ...process.env, CLAUDE_CONFIG_DIR: pluginConfig };
-    run('claude', ['plugin', 'marketplace', 'add', ROOT, '--scope', 'user'], { env });
-    run('claude', ['plugin', 'install', 'web-app-security-skill@web-app-security', '--scope', 'user'], { env });
-    const installed = run('claude', ['plugin', 'list', '--json'], { env });
+    run(claudeBin, ['plugin', 'marketplace', 'add', ROOT, '--scope', 'user'], { env });
+    run(claudeBin, ['plugin', 'install', 'web-app-security-skill@web-app-security', '--scope', 'user'], { env });
+    const installed = run(claudeBin, ['plugin', 'list', '--json'], { env });
     assert.match(installed.stdout, /web-app-security-skill@web-app-security/);
     pluginResult = 'isolated Claude marketplace install';
+    pluginStatus = 'passed';
   }
-  console.log(`distribution ok: ${paths.length} npm files, offline npx audit, ${pluginResult}`);
+  recordTestOutcome({
+    surfaces: [
+      { id: 'npm-package-file-inventory', status: 'passed', reasonCode: null },
+      { id: 'offline-npx-audit', status: 'passed', reasonCode: null },
+      { id: 'claude-plugin-install', status: pluginStatus,
+        reasonCode: pluginStatus === 'skipped' ? 'claude_cli_unavailable' : null },
+    ],
+  });
+  console.log(`distribution ${pluginStatus === 'passed' ? 'ok' : 'partial'}: ${paths.length} npm files, offline npx audit, ${pluginResult}`);
 } finally {
   rmSync(temp, { recursive: true, force: true });
 }

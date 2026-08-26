@@ -28,5 +28,13 @@ export function validateReleaseTrustLanguage(documents) {
       || /verify-tag v0\.6\.0/.test(documents.readmeZh || '')) {
     errors.push('README tag verification example is stale');
   }
+  if (/signature- and checksum-verified/i.test(documents.readme || '')
+      || /签名与 checksum 验证/.test(documents.readmeZh || '')) {
+    errors.push('README must not describe optional attestation as verified by default');
+  }
+  if (!documents.readme?.includes('--attestation required')
+      || !documents.readmeZh?.includes('--attestation required')) {
+    errors.push('README must expose the fail-closed attestation option');
+  }
   return errors;
 }

@@ -17,6 +17,7 @@ usage() {
 # Options:
 #   --site URL             Required http(s) origin
 #   --host HOST            Override Host header for an origin/IP check
+#   --cacert FILE          Explicit CA certificate bundle for curl verification
 #   --http-site URL        HTTP origin used for redirect check (default: SITE with http scheme)
 #   --content-path PATH    Public content path (default /)
 #   --probe-path PATH      Probe path for active limiting (default /.env)
@@ -30,17 +31,18 @@ usage() {
 EOF
 }
 
-SITE="" HTTP_SITE="" HOST="" CONTENT="/" PROBE="/.env" N=30 ACTIVE_RATE_LIMIT=0 ACKNOWLEDGED=0
+SITE="" HTTP_SITE="" HOST="" CACERT="" CONTENT="/" PROBE="/.env" N=30 ACTIVE_RATE_LIMIT=0 ACKNOWLEDGED=0
 OUT_DIR="" REPORT_NAME="edge-report" FAIL_ON="high"
 CURL_BIN="${WEBAPP_SECURITY_CURL_BIN:-curl}"
 while [ $# -gt 0 ]; do
   case "$1" in
-    --site|--http-site|--host|--content-path|--probe-path|--n|--out|--report-name|--fail-on)
+    --site|--http-site|--host|--cacert|--content-path|--probe-path|--n|--out|--report-name|--fail-on)
       [ $# -ge 2 ] || { echo "error: $1 requires a value" >&2; exit 2; }
       case "$1" in
         --site) SITE="$2";;
         --http-site) HTTP_SITE="$2";;
         --host) HOST="$2";;
+        --cacert) CACERT="$2";;
         --content-path) CONTENT="$2";;
         --probe-path) PROBE="$2";;
         --n) N="$2";;
@@ -71,6 +73,7 @@ case "$PROBE" in /*) ;; *) echo "error: --probe-path must start with /" >&2; exi
 }
 case "$FAIL_ON" in critical|high|medium|low|never) ;; *) echo "error: --fail-on is invalid" >&2; exit 2;; esac
 case "$REPORT_NAME" in ''|*[!A-Za-z0-9._-]*) echo "error: --report-name contains unsupported characters" >&2; exit 2;; esac
+[ -z "$CACERT" ] || [ -r "$CACERT" ] || { echo "error: --cacert must be a readable file" >&2; exit 2; }
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 OBS_FILE="$(mktemp "${TMPDIR:-/tmp}/webapp-security-edge.XXXXXX")" || exit 2
@@ -103,7 +106,17 @@ if ! command -v "$CURL_BIN" >/dev/null 2>&1; then
 fi
 record edge-curl-capability passed "curl is available"
 
-hcurl() { if [ -n "$HOST" ]; then "$CURL_BIN" -H "Host: $HOST" "$@"; else "$CURL_BIN" "$@"; fi; }
+hcurl() {
+  if [ -n "$HOST" ] && [ -n "$CACERT" ]; then
+    "$CURL_BIN" --cacert "$CACERT" -H "Host: $HOST" "$@"
+  elif [ -n "$HOST" ]; then
+    "$CURL_BIN" -H "Host: $HOST" "$@"
+  elif [ -n "$CACERT" ]; then
+    "$CURL_BIN" --cacert "$CACERT" "$@"
+  else
+    "$CURL_BIN" "$@"
+  fi
+}
 
 pass=0; warn=0; unknown=0
 ok()      { echo "  [ok] $2"; record "$1" passed "$2"; pass=$((pass+1)); }
@@ -212,7 +225,7 @@ case "$SITE" in
     fi
 
     if [ -z "$HOST" ]; then
-      if "$CURL_BIN" -sS --connect-timeout 5 --max-time 15 -o /dev/null "$SITE$CONTENT"; then
+      if hcurl -sS --connect-timeout 5 --max-time 15 -o /dev/null "$SITE$CONTENT"; then
         ok edge-certificate-validation "TLS certificate chain and hostname validate"
       else
         bad edge-certificate-validation "TLS certificate chain or hostname validation failed"

@@ -24,4 +24,10 @@ conflated.trust = conflated.trust.replace('does not independently prove GitHub a
 assert.ok(validateReleaseTrustLanguage(conflated)
   .some((error) => error.includes('does not independently prove GitHub account ownership')));
 
+const overstated = structuredClone(documents);
+overstated.readme = overstated.readme.replace('checksum-verified multi-surface installation with optional GitHub attestation',
+  'signature- and checksum-verified multi-surface installation');
+assert.ok(validateReleaseTrustLanguage(overstated)
+  .includes('README must not describe optional attestation as verified by default'));
+
 console.log('release trust boundaries ok: local signer, GitHub and npm signals remain separate');

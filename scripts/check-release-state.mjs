@@ -114,14 +114,9 @@ if (!verifierSource.includes(`take('--version', '${installer.defaultVersion}')`)
 }
 
 if (existsSync(`${ROOT}/.git`)) {
-  for (const [name, expected] of [
-    [published.tag, published.sourceCommit],
-    [stable.tag, stable.sourceCommit],
-  ]) {
-    const resolved = spawnSync('git', ['rev-parse', `${name}^{}`], { cwd: ROOT, encoding: 'utf8' });
-    if (resolved.status !== 0 || resolved.stdout.trim() !== expected) {
-      fail(`${name} does not resolve to its recorded source commit`);
-    }
+  const resolved = spawnSync('git', ['rev-parse', `${published.tag}^{}`], { cwd: ROOT, encoding: 'utf8' });
+  if (resolved.status !== 0 || resolved.stdout.trim() !== published.sourceCommit) {
+    fail(`${published.tag} does not resolve to its recorded source commit`);
   }
 }
 

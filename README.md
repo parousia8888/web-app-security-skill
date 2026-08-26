@@ -171,12 +171,14 @@ Inside an existing Claude Code session, the equivalent commands are:
 
 ### Verified multi-surface installation
 
-For a signature- and checksum-verified multi-surface installation, the command below installs the
+For a checksum-verified multi-surface installation with optional GitHub attestation, the command below installs the
 skill for Claude Code and Codex, plus the ordinary CLI under
 `~/.local/bin`. Existing installs are refused unless you explicitly pass `--force`, which creates
 timestamped backups before replacement. It downloads an immutable bootstrap, verifies its SHA-256
 before execution, then verifies the selected release manifest, checksums, SBOM, source commit and
 archive before installation.
+Attestation runs when GitHub CLI is installed and authenticated; pass `--attestation required` to
+make an unavailable or failed attestation stop installation.
 
 ```bash
 ( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/3f42fb70f99f6ccb3c8e8449b2c06749c3b53148/scripts/bootstrap-install.sh?immutable=3f42fb70f99f6ccb3c8e8449b2c06749c3b53148'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" '193ece72d2c7d2c4220a6164a4bb280853ffca1e8de5217535fe95010c146e8a'; sh "$p" )

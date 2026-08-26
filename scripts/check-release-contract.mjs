@@ -30,6 +30,13 @@ function requireText(path, marker) {
 }
 
 for (const path of workflows) {
+  const workflow = read(path);
+  const jobsOffset = workflow.search(/^jobs:/m);
+  const permissionsOffset = workflow.search(/^permissions:/m);
+  if (permissionsOffset === -1 || (jobsOffset !== -1 && permissionsOffset > jobsOffset)) {
+    console.error(`release contract: ${path} lacks top-level least-privilege permissions`);
+    failed = true;
+  }
   for (const match of read(path).matchAll(/^\s*-?\s*uses:\s*["']?([^\s"']+)/gm)) {
     const action = match[1];
     if (action === 'parousia8888/web-app-security-skill@v1'
@@ -62,6 +69,9 @@ for (const [path, markers] of [
     'route-security.json',
     'acknowledge-authorization: "true"',
     'acknowledge-authorization: "false"',
+    'scripts/check-public-release-state.mjs',
+    'scripts/check-public-package.mjs',
+    'scripts/build-live-verification-record.mjs',
   ]],
   ['.github/workflows/npm-publish.yml', [
     'workflow_dispatch:',

@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const temp = mkdtempSync(join(tmpdir(), 'web-app-security-release-state-'));
 const candidate = join(temp, 'candidate');
+const clone = join(temp, 'clone');
 
 function run(program, commandArgs, options = {}) {
   const result = spawnSync(program, commandArgs, { cwd: ROOT, encoding: 'utf8', ...options });
@@ -33,6 +34,21 @@ try {
   assert.deepEqual(state.verifiedInstaller.trustedVersions,
     ['0.3.0', '0.4.0', '0.5.0', '0.5.1', '0.5.2', '0.5.3', '0.5.4', '0.6.0', '0.7.0', '0.7.1', '0.7.2']);
   run(process.execPath, [join(ROOT, 'scripts', 'check-release-state.mjs')]);
+  const publicRecord = join(temp, 'public-state.json');
+  run(process.execPath, [join(ROOT, 'scripts', 'check-public-release-state.mjs'), '--out', publicRecord]);
+  assert.equal(JSON.parse(readFileSync(publicRecord, 'utf8')).stableAction.sourceCommit,
+    state.stableAction.sourceCommit);
+
+  run('git', ['clone', '--quiet', '--no-hardlinks', ROOT, clone]);
+  run('git', ['tag', '-f', 'v1', 'HEAD'], { cwd: clone });
+  run(process.execPath, [join(ROOT, 'scripts', 'check-release-state.mjs'), '--root', clone], { cwd: clone });
+  let stale = spawnSync(process.execPath, [join(ROOT, 'scripts', 'check-public-release-state.mjs'), '--root', clone], {
+    cwd: clone, encoding: 'utf8',
+  });
+  assert.notEqual(stale.status, 0);
+  assert.match(stale.stderr, /v1 differs from the recorded stable Action source commit/);
+  run('git', ['checkout', '--quiet', '--detach', state.stableAction.sourceCommit], { cwd: clone });
+  run(process.execPath, [join(ROOT, 'scripts', 'check-release-state.mjs'), '--root', clone], { cwd: clone });
 
   cpSync(ROOT, candidate, {
     recursive: true,

@@ -8,8 +8,17 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { readStableRuleCorpus, validateCorpusObservations } from '../scripts/lib/rule-corpus.mjs';
+import { recordTestOutcome } from './helpers/test-outcome.mjs';
 
 if (process.env.WEBAPP_SECURITY_REAL_ADAPTER_TEST !== 'true') {
+  recordTestOutcome({
+    status: 'skipped',
+    reasonCode: 'opt_in_prerequisite_not_requested',
+    surfaces: [{
+      id: 'real-external-adapters', status: 'skipped',
+      reasonCode: 'pinned_adapters_not_requested',
+    }],
+  });
   console.log('real adapters skipped: set WEBAPP_SECURITY_REAL_ADAPTER_TEST=true with pinned binaries');
   process.exit(0);
 }
@@ -121,6 +130,9 @@ try {
       new RegExp(`missing positive/negative observation ${rule.ruleId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
   }
 
+  recordTestOutcome({
+    surfaces: [{ id: 'real-external-adapters', status: 'passed', reasonCode: null }],
+  });
   console.log('real adapters ok: 16 corpus-linked pinned adapters with 16 planted missing-observation failures');
 } finally {
   rmSync(temp, { recursive: true, force: true });

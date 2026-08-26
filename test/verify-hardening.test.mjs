@@ -68,10 +68,12 @@ const httpSite = `http://localhost:${redirect.address().port}`;
 
 const reportDir = join(temp, 'edge-report');
 const consoleSecret = 'M5_CONSOLE_SECRET_SENTINEL';
-const fixtureTrustEnv = { ...process.env, CURL_CA_BUNDLE: cert };
+const fixtureTrustEnv = { ...process.env };
+delete fixtureTrustEnv.CURL_CA_BUNDLE;
 delete fixtureTrustEnv.SSL_CERT_FILE;
 const passive = await command('/bin/bash', [
   SCRIPT, '--site', secureSite, '--http-site', httpSite, '--n', '1',
+  '--cacert', cert,
   '--content-path', `/?token=${consoleSecret}`,
   '--out', reportDir, '--report-name', 'edge-fixture',
 ], {
@@ -95,6 +97,7 @@ for (const name of ['edge-fixture.json', 'edge-fixture.md', 'edge-fixture.html',
 
 const active = await command('/bin/bash', [
   SCRIPT, '--site', secureSite, '--http-site', httpSite, '--active-rate-limit', '--acknowledge-authorization', '--n', '1',
+  '--cacert', cert,
 ], { env: fixtureTrustEnv });
 check('active rate-limit verification succeeds', active.code === 0, active.stdout + active.stderr);
 check('probe throttling is observed', /probe class is being throttled/.test(active.stdout));
@@ -107,6 +110,9 @@ for (const value of ['0', 'nope', '101']) {
 
 const noAck = await command('/bin/bash', [SCRIPT, '--site', secureSite, '--active-rate-limit', '--n', '1']);
 check('active rate-limit requires authorization acknowledgement', noAck.code === 2 && /requires --acknowledge-authorization/.test(noAck.stderr));
+
+const badCa = await command('/bin/bash', [SCRIPT, '--site', secureSite, '--cacert', join(temp, 'missing-ca.pem')]);
+check('unreadable explicit CA is rejected', badCa.code === 2 && /--cacert must be a readable file/.test(badCa.stderr));
 
 const unreachable = await command('/bin/bash', [SCRIPT, '--site', 'http://127.0.0.1:1', '--active-rate-limit', '--acknowledge-authorization', '--n', '1']);
 check('network failure exits 3', unreachable.code === 3, unreachable.stdout + unreachable.stderr);

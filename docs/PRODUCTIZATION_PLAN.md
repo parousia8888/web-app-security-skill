@@ -360,7 +360,7 @@ Current project gaps at program start:
   lockfile, and known `.env` template suffixes are excluded while real environment filenames stay
   filename-only suspected results. `scripts/run-case-journey.mjs` requires a clean Git checkout at
   the exact catalog commit, canonicalizes output containment through symlinked path ancestors,
-  refuses output inside the checkout, forces the deny-network preload, and compares discovery plus
+  refuses output inside the checkout, records the selected adapters' network prerequisites, and compares discovery plus
   selected finding fields against the structured evidence. The Open WebUI upstream tree was not
   edited; a minimal local representative changes `sourcemap: true` to `false` and required-baseline
   retest records the suspected lead as `fixed`.
