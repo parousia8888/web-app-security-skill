@@ -39,7 +39,7 @@ assert.deepEqual(resolveAdapterSelection([], 'deep'), DEEP_PROFILE_ADAPTERS);
 assert.throws(() => resolveAdapterSelection(['builtin'], 'deep'), /cannot be combined/);
 assert.throws(() => resolveAdapterSelection([], 'wide'), /unsupported profile/);
 assert.equal(sourceRuleset(['builtin', 'checkov', 'gitleaks', 'opengrep', 'osv']).digest,
-  '0df69ef52bcb84dd7223ca583d78ead2f3e39136cb0d7ea97d32072718a878ab');
+  'e86cb3c7764e097e74fef80b52e7ae9c4aa25af275fbbae695854818524d15a3');
 
 const docsOnly = clone();
 docsOnly[0].plainLanguage = 'Documentation-only wording changed.';

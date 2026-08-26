@@ -843,7 +843,7 @@ export const SOURCE_RULE_REGISTRY = [
     fixtures: { positive: [fixture('checkov-write-all-positive', 'test/fixtures/checkov-rules/vulnerable/.github/workflows/ci.yml')], negative: [fixture('checkov-write-all-safe', 'test/fixtures/checkov-rules/safe/.github/workflows/ci.yml')] },
   }),
   entry(gitleaks, {
-    id: 'gitleaks-committed-secret', kind: 'risk_detection', family: 'secret_management', languages: ['any'],
+    id: 'gitleaks-committed-secret', revision: '2', kind: 'risk_detection', family: 'secret_management', languages: ['any'],
     domain: 'supply_chain', severity: 'high', defaultState: 'suspected', rationale: 'committed_secret_material',
     technicalTerm: 'Committed secret-pattern lead', plainLanguage: 'A pinned Gitleaks rule matched secret-shaped material in Git history.',
     consequence: 'If the value is a live credential, anyone with repository history access may be able to use it.',
@@ -861,7 +861,7 @@ export const SOURCE_RULE_REGISTRY = [
     fixtures: { positive: [fixture('gitleaks-redacted-lead', 'test/external-adapters.test.mjs')], negative: [fixture('gitleaks-clean-output', 'test/real-adapters.test.mjs')] },
   }),
   entry(gitleaks, {
-    id: 'gitleaks-working-tree-secret', kind: 'risk_detection', family: 'secret_management', languages: ['any'],
+    id: 'gitleaks-working-tree-secret', revision: '2', kind: 'risk_detection', family: 'secret_management', languages: ['any'],
     domain: 'supply_chain', severity: 'high', defaultState: 'suspected', rationale: 'working_tree_secret_material',
     technicalTerm: 'Working-tree secret-pattern lead', plainLanguage: 'A pinned Gitleaks rule matched secret-shaped material in the current files.',
     consequence: 'If the value is live and later committed, built or shared, it may grant unauthorized access.',

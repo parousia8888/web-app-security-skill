@@ -207,7 +207,13 @@ export function parseGitleaksJson(stdout, projectRoot, scanMode) {
         || !Number.isInteger(item.StartLine) || item.StartLine < 1) throw new Error('malformed_output');
     const path = safeProjectPath(projectRoot, item.File);
     if (!path) throw new Error('unsafe_path');
+    const commit = scanMode === 'history' && /^[a-f0-9]{40,64}$/i.test(item.Commit || '')
+      ? item.Commit.toLowerCase() : null;
     const toolFingerprintDigest = digest(item.Fingerprint || `${path}:${item.StartLine}:${item.RuleID}`);
+    const subjectDigest = digest(JSON.stringify({
+      scanMode, path, line: item.StartLine, externalRuleId: item.RuleID,
+      toolFingerprintDigest, commit,
+    }));
     return {
       adapterId: GITLEAKS_ADAPTER.id,
       ruleId: scanMode === 'history' ? GITLEAKS_RULES[0].id : GITLEAKS_RULES[1].id,
@@ -217,12 +223,11 @@ export function parseGitleaksJson(stdout, projectRoot, scanMode) {
       summary: `Gitleaks matched rule ${item.RuleID} in ${scanMode === 'history' ? 'committed history' : 'the working tree'}; credential validity and exposure were not inferred.`,
       location: { path, line: item.StartLine },
       evidence: {
-        subject: `${scanMode}:${path}:${item.StartLine}:${item.RuleID}:${toolFingerprintDigest}`,
+        subject: `gitleaks:${scanMode}:${subjectDigest}`,
         scanMode,
         externalRuleId: item.RuleID,
         toolFingerprintDigest,
-        ...(scanMode === 'history' && /^[a-f0-9]{40,64}$/i.test(item.Commit || '')
-          ? { commit: item.Commit.toLowerCase() } : {}),
+        ...(commit ? { commit } : {}),
       },
       remediation: 'Revoke any live credential, remove it from the current tree and history as appropriate, and add a narrowly scoped prevention or suppression control.',
       retest: `Rerun the Gitleaks ${scanMode} adapter and confirm this fingerprint is absent or covered by an approved suppression.`,

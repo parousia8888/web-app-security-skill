@@ -10,6 +10,7 @@ import {
   annotationIdentity, classifyJourneyAuditExit, journeyAdapterDefinitions, journeyPrerequisites,
   reportSemanticDigest, sha256Bytes, sha256File, toolSourceIdentity,
 } from './lib/journey-contract.mjs';
+import { sanitizeEvidence } from './lib/evidence-writer.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const DEFAULT_CATALOG = `${ROOT}/docs/case-studies/journeys/evidence-v0.7.3.json`;
@@ -287,7 +288,8 @@ try {
   const scopePath = `${output}/audit/security-scope.yml`;
   const reportPath = `${output}/audit/report.json`;
   if (!existsSync(scopePath) || !existsSync(reportPath)) {
-    throw new Error(`audit exit ${exit.code}/${exit.classification} did not produce required scope and report artifacts`);
+    const detail = sanitizeEvidence(result.stderr.trim() || result.stdout.trim() || 'no diagnostic output');
+    throw new Error(`audit exit ${exit.code}/${exit.classification} did not produce required scope and report artifacts: ${detail}`);
   }
   let scope;
   let report;

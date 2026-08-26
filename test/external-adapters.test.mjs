@@ -114,6 +114,13 @@ if (mode === 'timeout') { setTimeout(() => {}, 5000); }
 else if (mode === 'internal') { console.error('${secret} raw stderr'); process.exit(2); }
 else if (mode === 'malformed') { console.log('{bad'); process.exit(1); }
 else if (mode === 'inconsistent') { console.log('[]'); process.exit(1); }
+else if (mode === 'history-duplicates' && command === 'git') {
+  console.log(JSON.stringify([
+    { RuleID: 'generic-api-key', StartLine: 2, File: 'config.txt', Fingerprint: 'first-history-fingerprint', Commit: 'a'.repeat(40) },
+    { RuleID: 'generic-api-key', StartLine: 2, File: 'config.txt', Fingerprint: 'second-history-fingerprint', Commit: 'b'.repeat(40) },
+  ]));
+  process.exit(1);
+}
 else if (mode === 'finding') {
   console.error('${secret} raw stderr');
   console.log(JSON.stringify([{
@@ -347,6 +354,15 @@ try {
   }));
   assert.equal(result.identity.status, 'unsupported_version');
   assert.ok(result.findings.every((finding) => finding.state === 'unknown'));
+
+  result = withEnv({ FAKE_GITLEAKS_MODE: 'history-duplicates' }, () => runGitleaks(project, {
+    binary: fakeGitleaks, timeoutSeconds: 1,
+  }));
+  const historical = result.findings.filter((finding) => finding.ruleId === 'gitleaks-committed-secret');
+  assert.equal(historical.length, 2);
+  assert.equal(new Set(historical.map((finding) => finding.evidence.subject)).size, 2);
+  assert.equal(new Set(historical.map((finding) => sanitizeEvidence(finding.evidence).subject)).size, 2,
+    'sanitization must not collapse distinct Gitleaks history identities');
 
   const nonGit = join(temp, 'non-git');
   mkdirSync(nonGit);
