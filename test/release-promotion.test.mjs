@@ -52,11 +52,48 @@ try {
     provenance: 'not_requested',
   });
 
+  const missingTagBin = join(temp, 'missing-tag-bin');
+  mkdirSync(missingTagBin);
+  const missingTagGit = join(missingTagBin, 'git');
+  writeFileSync(missingTagGit, '#!/bin/sh\nexit 1\n');
+  chmodSync(missingTagGit, 0o755);
   const premature = spawnSync(process.execPath, [
     PREPARE, '--version', version, '--assets', dist, '--live',
-  ], { cwd: ROOT, encoding: 'utf8' });
+  ], {
+    cwd: ROOT,
+    encoding: 'utf8',
+    env: { ...process.env, PATH: `${missingTagBin}:${process.env.PATH}` },
+  });
   assert.notEqual(premature.status, 0);
   assert.match(premature.stderr, /signed release tag does not exist/);
+
+  const gitPath = run('sh', ['-c', 'command -v git']).trim();
+  const tagOnlyBin = join(temp, 'tag-only-bin');
+  mkdirSync(tagOnlyBin);
+  const tagOnlyGit = join(tagOnlyBin, 'git');
+  writeFileSync(tagOnlyGit, `#!/bin/sh
+if [ "$1" = rev-parse ]; then printf '%s\\n' "$MOCK_TAG_COMMIT"; exit 0; fi
+if [ "$1" = -c ] && [ "$3" = verify-tag ]; then exit 0; fi
+exec "$REAL_GIT" "$@"
+`);
+  chmodSync(tagOnlyGit, 0o755);
+  const unavailableReleaseGh = join(tagOnlyBin, 'gh');
+  writeFileSync(unavailableReleaseGh, '#!/bin/sh\necho "release not found" >&2\nexit 1\n');
+  chmodSync(unavailableReleaseGh, 0o755);
+  const tagOnly = spawnSync(process.execPath, [
+    PREPARE, '--version', version, '--assets', dist, '--live',
+  ], {
+    cwd: ROOT,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      PATH: `${tagOnlyBin}:${process.env.PATH}`,
+      MOCK_TAG_COMMIT: record.sourceCommit,
+      REAL_GIT: gitPath,
+    },
+  });
+  assert.notEqual(tagOnly.status, 0);
+  assert.match(tagOnly.stderr, /release not found/);
 
   const state = JSON.parse(readFileSync(join(ROOT, 'docs', 'release-state.json'), 'utf8'));
   const publishedVersion = state.publishedRelease.version;
