@@ -56,7 +56,7 @@ try {
     PREPARE, '--version', version, '--assets', dist, '--live',
   ], { cwd: ROOT, encoding: 'utf8' });
   assert.notEqual(premature.status, 0);
-  assert.match(premature.stderr, /signed tag commit differs from release manifest/);
+  assert.match(premature.stderr, /signed release tag does not exist/);
 
   const state = JSON.parse(readFileSync(join(ROOT, 'docs', 'release-state.json'), 'utf8'));
   const publishedVersion = state.publishedRelease.version;

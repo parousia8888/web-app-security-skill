@@ -52,6 +52,16 @@ function run(program, commandArgs, options = {}) {
   return result.stdout.trim();
 }
 
+function resolveSignedTagCommit(tag) {
+  const result = spawnSync('git', ['rev-parse', '--verify', `${tag}^{}`], {
+    cwd: ROOT,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (result.status !== 0) throw new Error(`signed release tag does not exist: ${tag}`);
+  return result.stdout.trim();
+}
+
 function sha256(path) {
   return createHash('sha256').update(readFileSync(path)).digest('hex');
 }
@@ -102,7 +112,7 @@ try {
     provenance: live ? 'pending' : 'not_requested',
   };
   if (live) {
-    const tagCommit = run('git', ['rev-parse', `${tag}^{}`]);
+    const tagCommit = resolveSignedTagCommit(tag);
     if (tagCommit !== manifest.sourceCommit) throw new Error('signed tag commit differs from release manifest');
     run('git', ['-c', 'gpg.ssh.allowedSignersFile=.github/release-signers', 'verify-tag', tag]);
     gates.signedTag = 'verified';
