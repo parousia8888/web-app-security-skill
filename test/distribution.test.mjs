@@ -13,10 +13,11 @@ const temp = mkdtempSync(join(tmpdir(), 'web-app-security-distribution-'));
 const version = readFileSync(join(ROOT, 'VERSION'), 'utf8').trim();
 
 function run(program, args, options = {}) {
+  const { acceptedStatuses = [0], ...spawnOptions } = options;
   const result = spawnSync(program, args, {
-    cwd: ROOT, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, ...options,
+    cwd: ROOT, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, ...spawnOptions,
   });
-  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.ok(acceptedStatuses.includes(result.status), result.stderr || result.stdout);
   return result;
 }
 
@@ -33,7 +34,9 @@ try {
     'scripts/vendor/js-ts-parser.bundle.mjs', 'scripts/vendor/js-ts-parser.manifest.json',
     'references/phase-2-api.md', 'rules/opengrep-source.yml', 'docs/report-v3.schema.json',
     'docs/route-security-v1.schema.json', 'docs/route-security-v2.schema.json',
-    'docs/reviews/v0.6.0-route-review.json', 'docs/reviews/v0.7.0-access-control-review.json',
+    'docs/reviews/v0.6.0-route-review.json',
+    'docs/reviews/v0.6.0-route-review-provenance.json',
+    'docs/reviews/v0.7.0-access-control-review.json',
     'docs/regressions/v0.7.0-access-control-real-world-regressions.json',
   ]) assert.ok(paths.includes(required), `packed npm artifact is missing ${required}`);
   for (const forbidden of ['test/', 'docs/assets/', 'docs/adoption/', 'docs/V0.5.']) {
@@ -55,7 +58,7 @@ try {
   run('npx', [
     '--yes', '--offline', `--cache=${npmCache}`, `--package=${tarball}`, '--',
     'web-app-security-skill', 'audit', project, '--out', output, '--fail-on', 'never',
-  ]);
+  ], { acceptedStatuses: [0, 3] });
   assert.ok(existsSync(join(output, 'report.json')));
   const report = JSON.parse(readFileSync(join(output, 'report.json'), 'utf8'));
   assert.equal(report.schemaVersion, 3);

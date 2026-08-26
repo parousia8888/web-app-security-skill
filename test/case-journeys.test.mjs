@@ -1,15 +1,11 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import { chmodSync, cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import {
-  CHECKOV_RULES, GITLEAKS_RULES, OPENGREP_RULES, OSV_RULES,
-} from '../scripts/lib/adapter-definitions.mjs';
-import { SOURCE_RULES, sourceRuleset } from '../scripts/lib/source-rules.mjs';
+import { classifyJourneyAuditExit, toolSourceIdentity } from '../scripts/lib/journey-contract.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const CLI = join(ROOT, 'scripts', 'webapp-security.mjs');
@@ -33,28 +29,12 @@ function git(directory, args) {
   return result.stdout.trim();
 }
 
-const emptyFindingDigest = createHash('sha256').update('[]').digest('hex');
-const currentRuleset = sourceRuleset(['builtin', 'checkov', 'gitleaks', 'opengrep', 'osv']);
-const adapter = (id, status, findingDigests = false) => {
-  const identity = currentRuleset.adapters.find((item) => item.id === id);
-  return {
-    id, version: identity.version, status, rulesetDigest: identity.rulesetDigest,
-    ...(findingDigests ? {
-      deterministicFindingIdsDigest: emptyFindingDigest,
-      deterministicFindingContentDigest: emptyFindingDigest,
-    } : {}),
-  };
-};
-const currentCoverage = Object.fromEntries([
-  ...SOURCE_RULES, ...CHECKOV_RULES, ...GITLEAKS_RULES, ...OPENGREP_RULES, ...OSV_RULES,
-].map((rule) => [rule.id, 'completed']));
-for (const rule of OPENGREP_RULES.filter((item) => item.id.startsWith('opengrep-python-'))) {
-  currentCoverage[rule.id] = 'not_applicable';
-}
-for (const rule of CHECKOV_RULES) currentCoverage[rule.id] = 'not_applicable';
-currentCoverage['js-route-security-evidence-incomplete'] = 'not_applicable';
-
 try {
+  assert.equal(classifyJourneyAuditExit(0), 'complete');
+  assert.equal(classifyJourneyAuditExit(1), 'policy_threshold_reached');
+  assert.equal(classifyJourneyAuditExit(2), 'setup_or_usage_failed');
+  assert.equal(classifyJourneyAuditExit(3), 'evidence_incomplete');
+  assert.throws(() => classifyJourneyAuditExit(4), /undocumented exit/);
   let result = spawnSync(process.execPath, [CHECK], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /5 projects/);
@@ -159,9 +139,14 @@ else console.log('{"version":"1.27.0","results":[],"errors":[],"paths":{"scanned
   chmodSync(fakeOsv, 0o755);
   const catalogPath = join(temp, 'catalog.json');
   const catalog = {
+    schemaVersion: 3,
+    status: 'active',
+    toolSource: toolSourceIdentity(ROOT),
     journeys: [{
       id: 'local-case',
       commit,
+      adapterSelection: ['builtin', 'gitleaks', 'osv'],
+      mutableAdapters: ['osv'],
       discovery: {
         status: 'ambiguous',
         layout: 'single-root',
@@ -171,17 +156,7 @@ else console.log('{"version":"1.27.0","results":[],"errors":[],"paths":{"scanned
       },
       corpus: {
         runDate: '1970-01-01T00:00:00.000Z',
-        rulesetDigest: currentRuleset.digest,
-        adapters: [
-          adapter('builtin-source', 'built_in', true),
-          adapter('checkov', 'not_applicable', true),
-          adapter('gitleaks', 'available', true),
-          adapter('opengrep', 'available', true),
-          adapter('osv', 'available'),
-        ],
-        coverage: currentCoverage,
-        snapshot: { summary: { confirmed: 0 }, byRule: {} },
-        confirmedFindingIds: [],
+        adapters: [],
       },
     }],
   };
@@ -189,15 +164,25 @@ else console.log('{"version":"1.27.0","results":[],"errors":[],"paths":{"scanned
   const journeyOut = join(temp, 'journey-output');
   const runnerEnv = {
     ...process.env,
-    WEBAPP_SECURITY_CHECKOV_BIN: fakeCheckov,
     WEBAPP_SECURITY_GITLEAKS_BIN: fakeGitleaks,
-    WEBAPP_SECURITY_OPENGREP_BIN: fakeOpengrep,
     WEBAPP_SECURITY_OSV_SCANNER_BIN: fakeOsv,
   };
-  result = spawnSync(process.execPath, [RUN_JOURNEY, 'local-case', checkout, '--out', journeyOut, '--catalog', catalogPath], { encoding: 'utf8', env: runnerEnv });
+  result = spawnSync(process.execPath, [RUN_JOURNEY, 'local-case', checkout, '--out', journeyOut,
+    '--catalog', catalogPath, '--refresh'], { encoding: 'utf8', env: runnerEnv });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /refresh evidence recorded; no match claimed/);
+  const observed = JSON.parse(readFileSync(join(journeyOut, 'observed-corpus.json'), 'utf8'));
+  catalog.toolSource = observed.toolSource;
+  catalog.journeys[0].discovery = observed.discovery;
+  catalog.journeys[0].corpus = observed.corpus;
+  writeFileSync(catalogPath, `${JSON.stringify(catalog)}\n`);
+  const matchedOut = join(temp, 'journey-matched');
+  result = spawnSync(process.execPath, [RUN_JOURNEY, 'local-case', checkout, '--out', matchedOut,
+    '--catalog', catalogPath], { encoding: 'utf8', env: runnerEnv });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /checkout:\s+clean and unchanged/);
   assert.match(result.stdout, /catalog:\s+stable contract matched/);
+  assert.equal(JSON.parse(readFileSync(join(matchedOut, 'journey-run.json'), 'utf8')).auditExit.code, 0);
   assert.equal(git(checkout, ['status', '--porcelain', '--untracked-files=normal']), '');
 
   const contentDriftCatalog = structuredClone(catalog);
@@ -209,11 +194,62 @@ else console.log('{"version":"1.27.0","results":[],"errors":[],"paths":{"scanned
     encoding: 'utf8', env: runnerEnv,
   });
   assert.equal(result.status, 2);
-  assert.match(result.stderr, /observed evidence differs from catalog/);
+  assert.match(result.stderr, /builtin-source sanitized finding content changed/);
+
+  const fiveAdapterCatalog = structuredClone(catalog);
+  fiveAdapterCatalog.journeys[0].adapterSelection = ['builtin', 'checkov', 'gitleaks', 'opengrep', 'osv'];
+  fiveAdapterCatalog.journeys[0].corpus.adapters = [];
+  const fiveAdapterCatalogPath = join(temp, 'five-adapter-catalog.json');
+  writeFileSync(fiveAdapterCatalogPath, `${JSON.stringify(fiveAdapterCatalog)}\n`);
+  result = spawnSync(process.execPath, [RUN_JOURNEY, 'local-case', checkout, '--out',
+    join(temp, 'five-adapter-output'), '--catalog', fiveAdapterCatalogPath, '--refresh'], {
+    encoding: 'utf8', env: {
+      ...runnerEnv,
+      WEBAPP_SECURITY_CHECKOV_BIN: fakeCheckov,
+      WEBAPP_SECURITY_OPENGREP_BIN: fakeOpengrep,
+    },
+  });
+  assert.equal(result.status, 0, result.stderr);
+
+  const missingAdapterCatalog = structuredClone(catalog);
+  missingAdapterCatalog.journeys[0].corpus.adapters.pop();
+  const missingAdapterCatalogPath = join(temp, 'missing-adapter-catalog.json');
+  writeFileSync(missingAdapterCatalogPath, `${JSON.stringify(missingAdapterCatalog)}\n`);
+  result = spawnSync(process.execPath, [RUN_JOURNEY, 'local-case', checkout, '--out',
+    join(temp, 'missing-adapter-catalog-output'), '--catalog', missingAdapterCatalogPath], {
+    encoding: 'utf8', env: runnerEnv,
+  });
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /do not match adapterSelection/);
+
+  const reorderedCatalog = structuredClone(catalog);
+  reorderedCatalog.journeys[0].adapterSelection = ['gitleaks', 'builtin', 'osv'];
+  const reorderedCatalogPath = join(temp, 'reordered-catalog.json');
+  writeFileSync(reorderedCatalogPath, `${JSON.stringify(reorderedCatalog)}\n`);
+  result = spawnSync(process.execPath, [RUN_JOURNEY, 'local-case', checkout, '--out',
+    join(temp, 'reordered-output'), '--catalog', reorderedCatalogPath], {
+    encoding: 'utf8', env: runnerEnv,
+  });
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /canonical order/);
 
   result = spawnSync(process.execPath, [RUN_JOURNEY, 'local-case', checkout, '--out', join(temp, 'missing-binary-output'), '--catalog', catalogPath], { encoding: 'utf8' });
   assert.equal(result.status, 2);
-  assert.match(result.stderr, /set WEBAPP_SECURITY_CHECKOV_BIN.*WEBAPP_SECURITY_GITLEAKS_BIN/);
+  assert.match(result.stderr, /set WEBAPP_SECURITY_GITLEAKS_BIN/);
+
+  const incompatibleGitleaks = join(temp, 'incompatible-gitleaks.mjs');
+  writeFileSync(incompatibleGitleaks, `#!/usr/bin/env node
+if (process.argv[2] === 'version') console.log('0.0.0'); else console.log('[]');
+`);
+  chmodSync(incompatibleGitleaks, 0o755);
+  const incompleteOut = join(temp, 'incomplete-output');
+  result = spawnSync(process.execPath, [RUN_JOURNEY, 'local-case', checkout, '--out', incompleteOut,
+    '--catalog', catalogPath, '--refresh'], { encoding: 'utf8', env: {
+    ...runnerEnv, WEBAPP_SECURITY_GITLEAKS_BIN: incompatibleGitleaks,
+  } });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /audit exit: 3 \(evidence_incomplete\)/);
+  assert.equal(JSON.parse(readFileSync(join(incompleteOut, 'journey-run.json'), 'utf8')).auditExit.code, 3);
 
   writeFileSync(join(checkout, 'dirty.txt'), 'uncommitted\n');
   result = spawnSync(process.execPath, [RUN_JOURNEY, 'local-case', checkout, '--out', join(temp, 'dirty-output'), '--catalog', catalogPath], { encoding: 'utf8', env: runnerEnv });

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "evidenceType": "historical_route_review_provenance",
+  "release": "v0.6.0",
+  "lifecycle": "historical",
+  "historicalQualifier": "The published bytes and manual annotations are preserved. Current analyzer behavior is not claimed to reproduce because the original raw analyzer reports and exact analyzer invocation were not retained.",
+  "source": {
+    "publicationCommit": "309fa71c4108a0accbd41c7cae911cca05f9520c",
+    "releaseCommit": "7521e0699eefe26d23a7972fbee6fb37b46fdfe2",
+    "toolVersion": "0.6.0",
+    "targetCommits": {
+      "uptime-kuma": "6b5ea0155793e666666745fb8d6fef1e829543a2",
+      "nestjs-boilerplate": "9620f159eefe38f47747d02ab162852367c5472c",
+      "vercel-chatbot": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58"
+    }
+  },
+  "artifacts": {
+    "docs/reviews/v0.6.0-route-review.json": {
+      "sha256": "0859b6e53e73fe9529b391c72eea5a3aa94bddacb545fbd218dd5375fc140c0a"
+    },
+    "docs/reviews/v0.6.0-route-review.md": {
+      "sha256": "32393bcb9b3af2ef1a0fdf26d004174376c7180b3ba8074d40c22655b309b2b9"
+    },
+    "manualAnnotationIdentity": {
+      "sha256": "a52654ca802c2ed4efd866d77bee657e9dcfd25a29f021b80fa3b792ce453f7d"
+    }
+  },
+  "reproducibility": {
+    "byteGenerationCommand": "SOURCE_DATE_EPOCH=0 node scripts/generate-v060-route-review.mjs --check",
+    "byteIdentity": "reproducible",
+    "manualAnnotationIdentity": "reproducible",
+    "currentAnalyzerBehavior": "verification_pending",
+    "missingEvidence": [
+      "Original per-project route-security.json artifacts",
+      "Exact analyzer invocation and environment for each project",
+      "Sanitized raw comparison log connecting analyzer records to the 57 manual annotations"
+    ]
+  },
+  "refreshContract": {
+    "policy": "Do not overwrite v0.6.0 artifacts. Publish a new versioned review with exact tool commit, target commits, commands, exits, byte digests, semantic digests and raw sanitized artifacts.",
+    "command": "node scripts/generate-v070-access-review.mjs --check"
+  }
+}

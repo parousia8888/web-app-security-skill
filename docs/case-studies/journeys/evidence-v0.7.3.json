@@ -1,0 +1,342 @@
+{
+  "schemaVersion": 3,
+  "release": "v0.7.3",
+  "status": "refresh_pending",
+  "evidenceType": "active_ordinary_project_journey_contract",
+  "historicalSource": {
+    "path": "docs/case-studies/journeys/evidence.json",
+    "sha256": "b680a9e02072a99e1a31346d8ad0af5c09fb67c4bd2f23f7c21f68ff00a254ee",
+    "qualifier": "Immutable v2 historical snapshot; not an active current-tool reproduction gate."
+  },
+  "toolSource": {
+    "version": "0.7.2",
+    "commit": "1f365b272b0e17d362a19cbf04c5fa6a012495fe",
+    "sourceDigest": "604f49a717706d519d238166a04771fd93c26dd494e4421aa33130c0539d2d86"
+  },
+  "method": {
+    "sourceOnly": true,
+    "hostedInstancesProbed": false,
+    "projectDependenciesExecuted": false,
+    "osvPublicAdvisoryNetwork": true,
+    "externalMatchesAreLeads": true,
+    "starsUsedAsEvidence": false,
+    "auditExitRecordedSeparately": true,
+    "byteAndSemanticDigestsSeparated": true,
+    "manualAnnotationIdentitySeparated": true
+  },
+  "regressionInventory": "docs/regression-inventory.md",
+  "journeys": [
+    {
+      "id": "linkwarden",
+      "project": "Linkwarden",
+      "repository": "linkwarden/linkwarden",
+      "commit": "62f1b81ff7f66001b0f5f613202f87771f3186ee",
+      "license": "AGPL-3.0",
+      "document": "docs/case-studies/journeys/linkwarden.md",
+      "stack": "Node/Next.js monorepo",
+      "discovery": {
+        "status": "supported",
+        "layout": "monorepo",
+        "frameworks": [
+          "React@apps/mobile",
+          "Next.js@apps/web",
+          "React@apps/web",
+          "Next.js@packages/router",
+          "React@packages/router"
+        ],
+        "packageManagers": [
+          "yarn@."
+        ],
+        "lockfiles": [
+          "yarn.lock"
+        ]
+      },
+      "corpus": {
+        "runDate": "2026-08-26T12:09:57.878Z",
+        "adapters": []
+      },
+      "falsePositiveClosures": [
+        "Root yarn.lock covers package.json files selected by declared apps/* and packages/* workspaces.",
+        ".env.sample and .env.example are documented templates, not secret-bearing environment files by filename alone.",
+        "OSV advisory matches remain suspected package/version leads; the corpus does not infer reachability, deployed versions, or exploitability."
+      ],
+      "manualTrace": {
+        "classification": "not_applicable",
+        "lead": "Server-side URL fetching",
+        "conclusion": "The traced title-fetch path uses safeFetch, which validates schemes and resolved addresses, pins lookup at connection time for direct connections, and validates every redirect.",
+        "evidence": [
+          "https://github.com/linkwarden/linkwarden/blob/62f1b81ff7f66001b0f5f613202f87771f3186ee/apps/web/lib/shared/fetchTitleAndHeaders.ts#L1-L18",
+          "https://github.com/linkwarden/linkwarden/blob/62f1b81ff7f66001b0f5f613202f87771f3186ee/packages/lib/safeFetch.ts#L95-L128",
+          "https://github.com/linkwarden/linkwarden/blob/62f1b81ff7f66001b0f5f613202f87771f3186ee/packages/lib/ssrf.ts#L259-L329",
+          "https://github.com/linkwarden/linkwarden/blob/62f1b81ff7f66001b0f5f613202f87771f3186ee/packages/lib/ssrf.test.ts#L9-L49"
+        ]
+      },
+      "repair": {
+        "type": "tool-regression",
+        "summary": "The built-in audit rule was repaired so declared workspace packages inherit the workspace lockfile; no upstream patch was fabricated. External advisory leads were retained for triage rather than patched automatically."
+      },
+      "unreached": [
+        "Proxy-mode DNS and destination enforcement",
+        "Authorization boundaries on every URL-ingestion route",
+        "Dependency reachability, deployment package versions, hosted artifacts and runtime egress"
+      ],
+      "adapterSelection": [
+        "builtin",
+        "gitleaks",
+        "osv"
+      ],
+      "mutableAdapters": [
+        "osv"
+      ]
+    },
+    {
+      "id": "healthchecks",
+      "project": "Healthchecks",
+      "repository": "healthchecks/healthchecks",
+      "commit": "49653c350cddc47fc00a471bd1b08b5771a7967c",
+      "license": "BSD-3-Clause",
+      "document": "docs/case-studies/journeys/healthchecks.md",
+      "stack": "Python/Django",
+      "discovery": {
+        "status": "supported",
+        "layout": "single-root",
+        "frameworks": [
+          "Django@."
+        ],
+        "packageManagers": [
+          "pip@."
+        ],
+        "lockfiles": []
+      },
+      "corpus": {
+        "runDate": "2026-08-26T12:09:57.878Z",
+        "adapters": []
+      },
+      "falsePositiveClosures": [
+        "Pinned requirements.txt is a deployment dependency input and is not evidence of a missing adjacent lockfile.",
+        "docker/.env.example is a documented template; the audit did not read its values.",
+        "Gitleaks matches in documentation, migrations and tests remain suspected until credential validity and exposure are established."
+      ],
+      "manualTrace": {
+        "classification": "unknown",
+        "lead": "Development defaults for DEBUG and SECRET_KEY",
+        "conclusion": "Source shows explicit operator warnings and Django system checks, but source-only review cannot establish a third-party deployment's environment values.",
+        "evidence": [
+          "https://github.com/healthchecks/healthchecks/blob/49653c350cddc47fc00a471bd1b08b5771a7967c/hc/settings.py#L68-L79",
+          "https://github.com/healthchecks/healthchecks/blob/49653c350cddc47fc00a471bd1b08b5771a7967c/hc/front/templatetags/hc_extras.py#L99-L119",
+          "https://github.com/healthchecks/healthchecks/blob/49653c350cddc47fc00a471bd1b08b5771a7967c/hc/front/tests/test_basics.py#L13-L28",
+          "https://github.com/healthchecks/healthchecks/blob/49653c350cddc47fc00a471bd1b08b5771a7967c/hc/api/apps.py#L17-L82"
+        ]
+      },
+      "repair": {
+        "type": "tool-regression",
+        "summary": "The built-in rule was repaired so requirements files are not treated as manifests requiring another lockfile. Scanner leads were not promoted or automatically patched."
+      },
+      "unreached": [
+        "Actual production environment values",
+        "Reverse-proxy TLS and header configuration",
+        "Credential validity/exposure and authenticated integration or tenant boundaries"
+      ],
+      "adapterSelection": [
+        "builtin",
+        "gitleaks",
+        "osv"
+      ],
+      "mutableAdapters": [
+        "osv"
+      ]
+    },
+    {
+      "id": "open-webui",
+      "project": "Open WebUI",
+      "repository": "open-webui/open-webui",
+      "commit": "01f4282f1ffe0d6212f58d3afbeae21fffd0c4be",
+      "license": "Repository-specific terms; inspect LICENSE, LICENSE_HISTORY, and LICENSE_NOTICE",
+      "document": "docs/case-studies/journeys/open-webui.md",
+      "stack": "SvelteKit/Vite + Python/FastAPI split stack",
+      "discovery": {
+        "status": "supported",
+        "layout": "split-stack",
+        "frameworks": [
+          "FastAPI@backend",
+          "SvelteKit@.",
+          "Vite@.",
+          "Svelte@.",
+          "FastAPI@."
+        ],
+        "packageManagers": [
+          "pip@backend",
+          "npm@.",
+          "uv@."
+        ],
+        "lockfiles": [
+          "package-lock.json",
+          "uv.lock"
+        ]
+      },
+      "corpus": {
+        "runDate": "2026-08-26T12:09:57.878Z",
+        "adapters": []
+      },
+      "falsePositiveClosures": [
+        "Root .env.example is a template and is not treated as a secret-bearing file by filename alone.",
+        "backend/requirements.txt is not reported as missing a second adjacent lockfile; root pyproject.toml is covered by uv.lock.",
+        "OSV advisory matches remain suspected until dependency reachability, deployed version and project impact are established."
+      ],
+      "manualTrace": {
+        "classification": "suspected",
+        "lead": "Production source maps may be served with the frontend",
+        "conclusion": "Vite enables sourcemaps, the Docker build copies /app/build, and FastAPI mounts that directory. No build or hosted origin was inspected, so public delivery remains unknown.",
+        "evidence": [
+          "https://github.com/open-webui/open-webui/blob/01f4282f1ffe0d6212f58d3afbeae21fffd0c4be/vite.config.ts#L19-L31",
+          "https://github.com/open-webui/open-webui/blob/01f4282f1ffe0d6212f58d3afbeae21fffd0c4be/package.json#L5-L22",
+          "https://github.com/open-webui/open-webui/blob/01f4282f1ffe0d6212f58d3afbeae21fffd0c4be/Dockerfile#L26-L44",
+          "https://github.com/open-webui/open-webui/blob/01f4282f1ffe0d6212f58d3afbeae21fffd0c4be/Dockerfile#L179-L185",
+          "https://github.com/open-webui/open-webui/blob/01f4282f1ffe0d6212f58d3afbeae21fffd0c4be/backend/open_webui/main.py#L2866-L2878"
+        ]
+      },
+      "repair": {
+        "type": "local-representative-patch",
+        "summary": "A minimal local fixture changes sourcemap: true to false; required-baseline retest records the suspected lead as fixed without claiming the upstream or a deployment changed. External advisory leads remain unpatched triage input.",
+        "fixture": "test/fixtures/case-open-webui"
+      },
+      "unreached": [
+        "Whether a release build emits, packages and serves .map files",
+        "Dependency reachability and deployed package versions",
+        "Authentication, LLM, API, plugin, data and deployment boundaries"
+      ],
+      "adapterSelection": [
+        "builtin",
+        "gitleaks",
+        "osv"
+      ],
+      "mutableAdapters": [
+        "osv"
+      ]
+    },
+    {
+      "id": "uptime-kuma",
+      "project": "Uptime Kuma",
+      "repository": "louislam/uptime-kuma",
+      "commit": "6b5ea0155793e666666745fb8d6fef1e829543a2",
+      "license": "MIT",
+      "document": "docs/case-studies/journeys/uptime-kuma.md",
+      "stack": "Node/Express + Vue/Vite",
+      "discovery": {
+        "status": "supported",
+        "layout": "single-root",
+        "frameworks": [
+          "Express@.",
+          "Vite@.",
+          "Vue@."
+        ],
+        "packageManagers": [
+          "npm@."
+        ],
+        "lockfiles": [
+          "package-lock.json"
+        ]
+      },
+      "corpus": {
+        "runDate": "2026-08-26T12:09:57.878Z",
+        "adapters": []
+      },
+      "falsePositiveClosures": [
+        "Four built-in confirmations describe lockfile absence in independent extra/example tool directories; they are reproducible hygiene findings, not four application vulnerabilities.",
+        "The Gitleaks private-key match is retained as suspected in a manual TLS fixture; the corpus does not infer credential reuse or exposure.",
+        "OSV advisory matches remain suspected until dependency reachability, deployed version and project impact are established."
+      ],
+      "manualTrace": {
+        "classification": "not_applicable",
+        "lead": "Operator-configured webhook URL fetching",
+        "conclusion": "Outbound requests to operator-selected endpoints are core monitoring behavior, and the upstream disclosure policy excludes SSRF reports without a distinct trust-boundary bypass.",
+        "evidence": [
+          "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/server/notification-providers/webhook.js#L11-L64",
+          "https://github.com/louislam/uptime-kuma/blob/6b5ea0155793e666666745fb8d6fef1e829543a2/SECURITY.md#L6-L18"
+        ]
+      },
+      "repair": {
+        "type": "no-upstream-patch",
+        "summary": "The four lockfile facts and all external leads remain visible. No patch was applied because the corpus did not establish an application vulnerability or permission to change upstream source."
+      },
+      "unreached": [
+        "Whether the four extra/example tools are independently released or CI-enforced",
+        "Private-key validity/reuse and dependency reachability",
+        "Authenticated role boundaries, deployment egress and hosted runtime behavior"
+      ],
+      "adapterSelection": [
+        "builtin",
+        "gitleaks",
+        "osv"
+      ],
+      "mutableAdapters": [
+        "osv"
+      ]
+    },
+    {
+      "id": "mealie",
+      "project": "Mealie",
+      "repository": "mealie-recipes/mealie",
+      "commit": "2fc22cea43f2978533f3a89a1ddeb1e6a18b245f",
+      "license": "AGPL-3.0",
+      "document": "docs/case-studies/journeys/mealie.md",
+      "stack": "Nuxt/Vue + Python/FastAPI split stack",
+      "discovery": {
+        "status": "supported",
+        "layout": "split-stack",
+        "frameworks": [
+          "Nuxt@frontend",
+          "Vue@frontend",
+          "FastAPI@."
+        ],
+        "packageManagers": [
+          "yarn@frontend",
+          "yarn@tests/e2e",
+          "uv@."
+        ],
+        "lockfiles": [
+          "frontend/yarn.lock",
+          "tests/e2e/yarn.lock",
+          "uv.lock"
+        ]
+      },
+      "corpus": {
+        "runDate": "2026-08-26T12:09:57.878Z",
+        "adapters": []
+      },
+      "falsePositiveClosures": [
+        "The traced recipe-image URL path reaches an authenticated route and private-IP transport guard, so that limited sink-only lead is not a vulnerability finding.",
+        "Gitleaks matches are in test HTML and auth-cache test paths; they remain suspected because the corpus did not establish credential validity or exposure.",
+        "No external scanner match was promoted to confirmed or silently suppressed."
+      ],
+      "manualTrace": {
+        "classification": "not_applicable",
+        "lead": "Authenticated recipe image URL fetching",
+        "conclusion": "The limited path reaches AsyncSafeTransport, which resolves the hostname and rejects private addresses before the request; broader redirect, DNS-rebinding and deployment behavior remains unknown.",
+        "evidence": [
+          "https://github.com/mealie-recipes/mealie/blob/2fc22cea43f2978533f3a89a1ddeb1e6a18b245f/mealie/routes/recipe/recipe_crud_routes.py#L758-L774",
+          "https://github.com/mealie-recipes/mealie/blob/2fc22cea43f2978533f3a89a1ddeb1e6a18b245f/mealie/pkgs/safehttp/transport.py#L25-L74",
+          "https://github.com/mealie-recipes/mealie/blob/2fc22cea43f2978533f3a89a1ddeb1e6a18b245f/mealie/core/dependencies/dependencies.py#L88-L123",
+          "https://github.com/mealie-recipes/mealie/blob/2fc22cea43f2978533f3a89a1ddeb1e6a18b245f/mealie/core/security/hasher.py#L23-L45"
+        ]
+      },
+      "repair": {
+        "type": "no-upstream-patch",
+        "summary": "The traced URL-fetch lead was closed for the limited source path; Gitleaks leads remain visible as suspected. No upstream patch or scanner suppression was fabricated."
+      },
+      "unreached": [
+        "Credential validity/exposure for scanner matches",
+        "DNS rebinding, redirects, proxy/Flaresolverr behavior and deployment egress",
+        "Role permissions, hosted runtime behavior and other HTTP-client paths"
+      ],
+      "adapterSelection": [
+        "builtin",
+        "gitleaks",
+        "osv"
+      ],
+      "mutableAdapters": [
+        "osv"
+      ]
+    }
+  ]
+}

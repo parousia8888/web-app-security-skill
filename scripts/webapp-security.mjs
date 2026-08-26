@@ -161,6 +161,8 @@ const include = [
   'docs/regressions/v0.7.0-access-control-real-world-regressions.md',
   'docs/reviews/v0.6.0-route-review.json',
   'docs/reviews/v0.6.0-route-review.md',
+  'docs/reviews/v0.6.0-route-review-provenance.json',
+  'docs/reviews/v0.6.0-route-review-provenance.md',
   'docs/reviews/v0.7.0-access-control-review.json',
   'docs/reviews/v0.7.0-access-control-review.md',
   'docs/route-security-v1.schema.json',
