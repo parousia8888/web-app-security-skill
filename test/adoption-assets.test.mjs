@@ -98,7 +98,7 @@ try {
   assert.equal(share.ownedLocalDemo.retest.security, 'fixed');
   assert.equal(share.ownedLocalDemo.retest.functional, 'passed');
   assert.equal(share.firstRun.command,
-    'npx --yes web-app-security-skill@0.7.2 audit . --fail-on never');
+    'npx --yes web-app-security-skill@0.7.3 audit . --fail-on never');
   assert.equal(share.correctnessRegressions.count, 4);
   assert.equal(share.correctnessRegressions.fixCommit,
     'a0cb518da23043e549b84f6f4c9cc39726d7c602');
@@ -129,7 +129,7 @@ try {
   assert.match(generated, /Restoring the v0\.5\.1 renderer must make the golden Markdown and HTML assertions fail/);
   assert.match(generated, /Zenn への投稿と公開日時は owner の判断事項/);
   assert.match(generated, /external_validation_pending|Publication status: draft|发布状态：草稿/);
-  assert.match(generated, /npx --yes web-app-security-skill@0\.7\.2 audit \. --fail-on never/);
+  assert.match(generated, /npx --yes web-app-security-skill@0\.7\.3 audit \. --fail-on never/);
   assert.match(generated,
     /Scope, audit, harden, and retest web projects with AI coding agents and reproducible evidence\./);
 
