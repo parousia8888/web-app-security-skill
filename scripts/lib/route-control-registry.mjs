@@ -12,8 +12,11 @@ const CONTROL_PRIMITIVES = new Map([
   ['next-auth:getServerSession', { kind: 'next-auth-session', role: 'authentication' }],
   ['next-auth/next:getServerSession', { kind: 'next-auth-session', role: 'authentication' }],
   ['@clerk/nextjs/server:auth', { kind: 'clerk-auth', role: 'authentication' }],
+  ['@clerk/nextjs/server:auth.protect', { kind: 'clerk-auth-protect', role: 'authorization' }],
   ['@clerk/nextjs/server:currentUser', { kind: 'clerk-current-user', role: 'authentication' }],
+  ['@clerk/nextjs/server:clerkMiddleware', { kind: 'clerk-middleware-context', role: 'unknown' }],
   ['@auth0/nextjs-auth0:getSession', { kind: 'auth0-session', role: 'authentication' }],
+  ['next-auth/middleware:default', { kind: 'next-auth-middleware', role: 'authentication' }],
 ]);
 
 export function exactControlPrimitive(source, imported) {

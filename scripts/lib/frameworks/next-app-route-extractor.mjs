@@ -59,7 +59,8 @@ function handlerSignals(module, handler, imports) {
     if (!name) return;
     const root = name.split('.')[0];
     const binding = imports.get(root);
-    const imported = name.includes('.') ? name.split('.').slice(1).join('.') : binding?.imported;
+    const imported = name.includes('.') && binding
+      ? `${binding.imported}.${name.split('.').slice(1).join('.')}` : binding?.imported;
     const exact = binding ? signalForPrimitive(binding.source, imported,
       sourceLocation(module.path, node)) : null;
     if (exact) signals.push(exact);
@@ -71,11 +72,85 @@ function handlerSignals(module, handler, imports) {
   return signals;
 }
 
+function applicationModule(modulePath) {
+  const match = /(?:^|\/)(middleware|proxy)\.[cm]?[jt]sx?$/.exec(modulePath);
+  return match?.[1] || null;
+}
+
+function propertyName(node) {
+  if (node?.type !== 'ObjectProperty') return null;
+  return expressionName(node.key) || (node.key?.type === 'StringLiteral' ? node.key.value : null);
+}
+
+function staticMatcher(module) {
+  let config = null;
+  for (const raw of module.ast?.body || []) {
+    const declaration = raw.type === 'ExportNamedDeclaration' ? raw.declaration : null;
+    for (const item of declaration?.declarations || []) {
+      if (item.id?.type === 'Identifier' && item.id.name === 'config') config = item.init;
+    }
+  }
+  if (!config) return { state: 'absent', values: [] };
+  if (config.type !== 'ObjectExpression') return { state: 'unresolved', values: [] };
+  const matcher = config.properties.find((property) => propertyName(property) === 'matcher');
+  if (!matcher) return { state: 'absent', values: [] };
+  if (matcher.value?.type === 'StringLiteral') return { state: 'static', values: [matcher.value.value] };
+  if (matcher.value?.type === 'ArrayExpression'
+      && matcher.value.elements.every((item) => item?.type === 'StringLiteral')) {
+    return { state: 'static', values: matcher.value.elements.map((item) => item.value) };
+  }
+  return { state: 'unresolved', values: [] };
+}
+
+function nextApplicationContext(module) {
+  const surface = applicationModule(module.path);
+  if (!surface || !module.ast) return { controls: [], reasons: [], applicable: false };
+  const imports = importedBindings(module);
+  const signals = handlerSignals(module, module.ast, imports);
+  for (const node of module.ast.body || []) {
+    if (!node.source || node.source.value !== 'next-auth/middleware') continue;
+    const signal = signalForPrimitive('next-auth/middleware', 'default', sourceLocation(module.path, node));
+    if (signal) signals.push(signal);
+  }
+  const matcher = staticMatcher(module);
+  const reasons = [];
+  if (matcher.state === 'unresolved') {
+    reasons.push({ code: 'next_middleware_matcher_unresolved', path: module.path });
+  }
+  const unique = signals.filter((signal, index, items) => items.findIndex((candidate) =>
+    candidate.kind === signal.kind && candidate.location.line === signal.location.line) === index);
+  if (!unique.length) {
+    unique.push({ kind: `next-${surface}-candidate`, origin: surface,
+      location: sourceLocation(module.path, module.ast), exact: false, role: 'unknown' });
+    reasons.push({ code: 'next_application_control_unclassified', path: module.path });
+  }
+  const matcherText = matcher.state === 'static'
+    ? ` Static matcher evidence: ${matcher.values.join(', ') || '(empty)'}.`
+    : matcher.state === 'unresolved' ? ' The matcher shape was not statically resolved.'
+      : ' No explicit static matcher was declared.';
+  return {
+    controls: unique.map((signal) => ({
+      kind: signal.kind, origin: signal.origin, role: signal.role,
+      location: signal.location,
+      boundary: `A Next.js ${surface} application surface was observed.${matcherText} This is application context only; route applicability, denial behavior and runtime enforcement are not proved.`,
+    })),
+    reasons,
+    applicable: true,
+  };
+}
+
 export function extractNextAppRoutes(graph) {
   const routes = [];
+  const applicationControls = [];
   const reasons = [...structuralGraphReasons(graph)];
   let eligible = 0;
   for (const module of graph.modules.values()) {
+    const application = nextApplicationContext(module);
+    if (application.applicable) {
+      eligible += 1;
+      applicationControls.push(...application.controls);
+      reasons.push(...application.reasons);
+    }
     const routePath = nextRoutePath(module.path);
     if (!routePath) continue;
     eligible += 1;
@@ -103,6 +178,7 @@ export function extractNextAppRoutes(graph) {
   const frameworkReasons = reasons.filter((item) => item.path && graph.modules.has(item.path));
   return {
     routes,
+    applicationControls,
     coverage: { framework: 'next-app', status: frameworkReasons.length ? 'partial' : eligible ? 'completed' : 'not_applicable',
       counts: { discovered: graph.modules.size, eligible, parsed: eligible, incomplete: new Set(frameworkReasons.map((item) => item.path)).size },
       reasons: aggregateReasons(frameworkReasons) },

@@ -4,6 +4,7 @@ import {
   importedBindings, localModuleExport, sourceLocation,
 } from './frameworks/route-extractor-helpers.mjs';
 import { identityProviderSymbolsForHandler } from './js-ts-identity-evidence.mjs';
+import { accessControlKeyCategory } from './access-control-vocabulary.mjs';
 
 const FUNCTION_TYPES = new Set([
   'ArrowFunctionExpression', 'FunctionDeclaration', 'FunctionExpression', 'ClassMethod',
@@ -16,9 +17,6 @@ const PRISMA_OPERATIONS = new Set([
 const DRIZZLE_QUERY_OPERATIONS = new Set(['findFirst', 'findMany']);
 const DRIZZLE_BUILDERS = new Set(['select', 'update', 'delete', 'insert']);
 const SUPABASE_OPERATIONS = new Set(['select', 'insert', 'update', 'delete', 'upsert']);
-const PRINCIPAL_KEYS = /^(?:owner|user|account|member)(?:_?id)?$/i;
-const TENANT_KEYS = /^(?:tenant|organization|org)(?:_?id)?$/i;
-const OBJECT_KEYS = /^(?:id|.*Id|.*_id)$/;
 
 function unwrap(node) {
   let current = node;
@@ -142,11 +140,7 @@ function objectProperty(object, name, objectValues) {
 }
 
 function keyCategory(key) {
-  const normalized = String(key || '').split('.').at(-1);
-  if (TENANT_KEYS.test(normalized)) return 'tenant';
-  if (PRINCIPAL_KEYS.test(normalized)) return 'principal';
-  if (OBJECT_KEYS.test(normalized)) return 'object';
-  return null;
+  return accessControlKeyCategory(key);
 }
 
 function constraintsIn(node, facts, objectValues = new Map()) {
@@ -211,6 +205,7 @@ function moduleClientSymbols(graph, module, cache = new Map(), visiting = new Se
     const targetSymbols = moduleClientSymbols(graph, target, cache, visiting);
     if (targetSymbols.has(exported)) symbols.set(local, targetSymbols.get(exported));
   }
+  const candidates = [];
   walkJsTsAst(module.ast, (node) => {
     let name = null;
     let value = null;
@@ -220,15 +215,53 @@ function moduleClientSymbols(graph, module, cache = new Map(), visiting = new Se
     } else if (['ClassProperty', 'ClassPrivateProperty'].includes(node.type)) {
       name = `this.${safeName(node.key)}`;
       value = unwrap(node.value);
+    } else if (node.type === 'AssignmentExpression') {
+      name = safeName(node.left);
+      value = unwrap(node.right);
     }
     if (!name || !value) return;
-    if (value.type === 'NewExpression' && prismaConstructors.has(safeName(value.callee))) {
-      symbols.set(name, { provider: 'prisma' });
-    }
-    if (value.type === 'CallExpression' && drizzleFactories.has(safeName(value.callee))) {
-      symbols.set(name, { provider: 'drizzle' });
-    }
+    candidates.push({ name, value });
   });
+  const globalCache = (name) => /^(?:globalThis|global)\.[A-Za-z_$][\w$]*$/.test(name || '');
+  function prismaInitializer(node, target, depth = 0) {
+    const value = unwrap(node);
+    if (!value || depth > 8) return false;
+    if (value.type === 'NewExpression') return prismaConstructors.has(safeName(value.callee));
+    const name = safeName(value);
+    if (name && symbols.get(name)?.provider === 'prisma') return true;
+    if (value.type === 'AssignmentExpression') return prismaInitializer(value.right, target, depth + 1);
+    if (value.type === 'SequenceExpression') {
+      return prismaInitializer(value.expressions.at(-1), target, depth + 1);
+    }
+    if (value.type === 'ConditionalExpression') {
+      return prismaInitializer(value.consequent, target, depth + 1)
+        && prismaInitializer(value.alternate, target, depth + 1);
+    }
+    if (value.type !== 'LogicalExpression' || !['??', '||'].includes(value.operator)) return false;
+    const left = safeName(unwrap(value.left));
+    const right = safeName(unwrap(value.right));
+    const leftKnown = prismaInitializer(value.left, target, depth + 1);
+    const rightKnown = prismaInitializer(value.right, target, depth + 1);
+    if (leftKnown && rightKnown) return true;
+    if (rightKnown && (globalCache(left) || left === target)) return true;
+    if (leftKnown && (globalCache(right) || right === target)) return true;
+    return false;
+  }
+  for (let pass = 0; pass < 4; pass += 1) {
+    let changed = false;
+    for (const { name, value } of candidates) {
+      if (!symbols.has(name) && prismaInitializer(value, name)) {
+        symbols.set(name, { provider: 'prisma' });
+        changed = true;
+      }
+      if (!symbols.has(name) && value.type === 'CallExpression'
+          && drizzleFactories.has(safeName(value.callee))) {
+        symbols.set(name, { provider: 'drizzle' });
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
   visiting.delete(module.path);
   return symbols;
 }
@@ -336,23 +369,38 @@ export function analyzeDataOperations(graph, module, handler, options = {}) {
   for (const [name, descriptor] of identityProviderSymbolsForHandler(graph, module, handler)) {
     if (descriptor.instance === 'supabase') clients.set(name, { provider: 'supabase' });
   }
+  const prismaRelevant = [...importedBindings(module).values()].some((binding) =>
+    binding.source === '@prisma/client')
+    || [...clients.values()].some((descriptor) => descriptor.provider === 'prisma');
   const operations = [];
+  const incomplete = [];
   functionWalk(handler, (node) => {
     if (node.type !== 'CallExpression') return;
     const found = prismaEvidence(module, node, clients, facts)
       || drizzleEvidence(module, node, clients, facts)
       || supabaseEvidence(module, node, clients, facts);
     if (found) operations.push(found);
+    if (found) return;
+    const name = safeName(node.callee);
+    const parts = name?.split('.') || [];
+    if (parts.length === 3 && PRISMA_OPERATIONS.has(parts[2])
+        && /(?:^|_)(?:prisma|db|database)(?:$|_)/i.test(parts[0])
+        && !clients.has(parts[0]) && prismaRelevant) {
+      incomplete.push({ code: 'prisma_client_identity_unresolved', path: module.path,
+        location: sourceLocation(module.path, node) });
+    }
   });
   const unique = operations.filter((item, index, items) => items.findIndex((candidate) =>
     candidate.provider === item.provider && candidate.location.path === item.location.path
       && candidate.location.line === item.location.line && candidate.operation === item.operation) === index);
-  return { operations: unique, facts, clients };
+  return { operations: unique, facts, clients,
+    incomplete: incomplete.filter((item, index, items) => items.findIndex((candidate) =>
+      candidate.code === item.code && candidate.location.line === item.location.line) === index) };
 }
 
 export function dataProviderInventory() {
   return [
-    { provider: 'prisma', boundary: 'Exact PrismaClient construction or one local exported client.' },
+    { provider: 'prisma', boundary: 'Exact PrismaClient construction, bounded global singleton initialization or one local exported client.' },
     { provider: 'drizzle', boundary: 'Exact drizzle-orm factory construction or one local exported client.' },
     { provider: 'supabase', boundary: 'Exact @supabase/ssr server-client factory through the supported identity registry.' },
   ];

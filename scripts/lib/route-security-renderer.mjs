@@ -95,14 +95,19 @@ export function renderRouteSecurityMarkdown(document) {
     lines.push('');
   }
   const scopedReview = document.routes.filter((route) =>
-    route.routeScopedControl?.state === 'no_route_scoped_control_observed'
+    ['no_route_scoped_control_observed', 'unclassified_control_observed']
+      .includes(route.routeScopedControl?.state)
       && (route.stateChanging || route.objectAddressed));
   lines.push('## Route-scoped control review', '');
-  lines.push('This queue includes state-changing or object-addressed routes where no route/controller control was observed. Expected-public routes can be valid and still require owner classification.', '');
+  lines.push('This queue includes state-changing or object-addressed routes with no classified route/controller security control. Expected-public routes can be valid and still require owner classification.', '');
   if (!scopedReview.length) lines.push('No route matched this bounded review condition.', '');
   else {
     for (const route of scopedReview) {
-      lines.push(`- ${route.method} ${route.path ? code(route.path) : '(dynamic path)'} at ${code(`${route.location.path}:${route.location.line || '?'}`)} (${code(route.priority.level)}).`);
+      const state = route.routeScopedControl.state;
+      const guidance = state === 'unclassified_control_observed'
+        ? `Unclassified candidates: ${signalList(route.routeScopedControl.unclassifiedSignals)}; identify whether each one authenticates, authorizes, rate-limits or only observes the request.`
+        : 'No route-scoped control was observed; classify whether this route is intentionally public.';
+      lines.push(`- ${route.method} ${route.path ? code(route.path) : '(dynamic path)'} at ${code(`${route.location.path}:${route.location.line || '?'}`)} (${code(route.priority.level)}; ${code(state)}). ${guidance}`);
     }
     lines.push('');
   }

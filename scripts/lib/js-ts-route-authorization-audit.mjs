@@ -6,6 +6,7 @@ import { analyzeOneHopAccess } from './js-ts-one-hop-access.mjs';
 import { importedBindings } from './frameworks/route-extractor-helpers.mjs';
 import { prioritizeRoute } from './route-security-priority.mjs';
 import { accessChainRecord } from './route-security-model.mjs';
+import { isPrincipalExpressionName, isPrincipalOrTenantKey } from './access-control-vocabulary.mjs';
 
 export const ROUTE_AUTHORIZATION_RULE_ID = 'js-route-object-authorization-review';
 
@@ -13,11 +14,6 @@ const FUNCTION_TYPES = new Set([
   'ArrowFunctionExpression', 'FunctionDeclaration', 'FunctionExpression', 'ClassMethod',
   'ClassPrivateMethod', 'ObjectMethod',
 ]);
-const PRISMA_OPERATIONS = new Set([
-  'findUnique', 'findUniqueOrThrow', 'findFirst', 'findFirstOrThrow', 'findMany',
-  'update', 'updateMany', 'delete', 'deleteMany', 'upsert',
-]);
-const PRINCIPAL_KEYS = /^(?:owner|user|tenant|organization|account|member)Id$/i;
 const ID_ROUTE_PARAM = /(?:^|[_-])id$|Id$/;
 
 function unwrap(node) {
@@ -207,6 +203,35 @@ function routeExpression(node, aliases) {
   return false;
 }
 
+function containsRouteExpression(node, aliases) {
+  const stack = [unwrap(node)];
+  let visited = 0;
+  while (stack.length && visited < 2_000) {
+    const current = stack.pop();
+    if (!current || typeof current !== 'object') continue;
+    visited += 1;
+    if (routeExpression(current, aliases)) return true;
+    if (FUNCTION_TYPES.has(current.type)) continue;
+    for (const [key, value] of Object.entries(current)) {
+      if (['loc', 'start', 'end', 'extra', 'comments'].includes(key)) continue;
+      if (Array.isArray(value)) stack.push(...value);
+      else if (value && typeof value === 'object') stack.push(value);
+    }
+  }
+  return false;
+}
+
+function delegatedSelectorObserved(handler, aliases) {
+  let observed = false;
+  functionBodyNodes(handler, (node) => {
+    if (observed || node.type !== 'CallExpression') return;
+    const callee = safeName(node.callee);
+    if (!callee?.includes('.') || /^(?:res|response|console)\./.test(callee)) return;
+    if (node.arguments.some((argument) => containsRouteExpression(argument, aliases))) observed = true;
+  });
+  return observed;
+}
+
 function collectLocalFacts(handler, routeFacts) {
   const objectValues = new Map();
   const principalAliases = new Set();
@@ -243,7 +268,8 @@ function collectLocalFacts(handler, routeFacts) {
         && /(?:^|\.)(?:auth|getSession|getServerSession|currentUser)$/.test(safeName(init.callee) || '');
       if (authCall) {
         for (const property of declaration.id.properties) {
-          if (property.type !== 'ObjectProperty' || !PRINCIPAL_KEYS.test(propertyName(property) || '')) continue;
+          if (property.type !== 'ObjectProperty'
+              || !isPrincipalOrTenantKey(propertyName(property))) continue;
           const local = safeName(property.value);
           if (local && !principalAliases.has(local)) {
             principalAliases.add(local);
@@ -258,132 +284,7 @@ function collectLocalFacts(handler, routeFacts) {
 }
 
 function isPrincipalExpression(node, aliases = new Set()) {
-  const name = safeName(node);
-  if (!name) return false;
-  if (aliases.has(name)) return true;
-  if (PRINCIPAL_KEYS.test(name)) return true;
-  return /^(?:req|request|ctx|context|session|auth|principal|user)(?:\.[A-Za-z_$][\w$]*)*\.(?:id|userId|ownerId|tenantId|organizationId|accountId|memberId)$/i.test(name);
-}
-
-function resolveObject(node, objectValues) {
-  const current = unwrap(node);
-  if (current?.type === 'ObjectExpression') return current;
-  if (current?.type === 'Identifier') return objectValues.get(current.name) || null;
-  return null;
-}
-
-function objectPropertyValue(object, name, objectValues) {
-  for (const property of object?.properties || []) {
-    if (property.type === 'SpreadElement') continue;
-    if (propertyName(property) === name) return resolveObject(property.value, objectValues) || unwrap(property.value);
-  }
-  return null;
-}
-
-function objectContains(object, predicate, objectValues, depth = 0) {
-  if (!object || depth > 8) return false;
-  for (const property of object.properties || []) {
-    if (property.type === 'SpreadElement') continue;
-    if (predicate(propertyName(property), unwrap(property.value))) return true;
-    const nested = resolveObject(property.value, objectValues);
-    if (nested && objectContains(nested, predicate, objectValues, depth + 1)) return true;
-    if (property.value?.type === 'ArrayExpression') {
-      for (const element of property.value.elements) {
-        const child = resolveObject(element, objectValues);
-        if (child && objectContains(child, predicate, objectValues, depth + 1)) return true;
-      }
-    }
-  }
-  return false;
-}
-
-function prismaClients(module) {
-  const imports = importedBindings(module);
-  const constructors = new Set();
-  for (const [local, binding] of imports) {
-    if (binding.source !== '@prisma/client') continue;
-    if (binding.imported === 'PrismaClient') constructors.add(local);
-    if (binding.imported === '*') constructors.add(`${local}.PrismaClient`);
-  }
-  const clients = new Set();
-  walkJsTsAst(module.ast, (node) => {
-    let target = null;
-    let init = null;
-    if (node.type === 'VariableDeclarator' && node.id?.type === 'Identifier') {
-      target = node.id.name;
-      init = unwrap(node.init);
-    } else if (['ClassProperty', 'ClassPrivateProperty'].includes(node.type)) {
-      target = `this.${safeName(node.key)}`;
-      init = unwrap(node.value);
-    }
-    if (target && init?.type === 'NewExpression' && constructors.has(safeName(init.callee))) clients.add(target);
-  });
-  return clients;
-}
-
-function prismaOperation(call, clients) {
-  const name = safeName(call?.callee);
-  if (!name) return null;
-  for (const client of clients) {
-    if (!name.startsWith(`${client}.`)) continue;
-    const parts = name.slice(client.length + 1).split('.');
-    if (parts.length === 2 && PRISMA_OPERATIONS.has(parts[1])) {
-      return { model: parts[0], operation: parts[1] };
-    }
-  }
-  return null;
-}
-
-function nodeContainsRouteExpression(node, aliases) {
-  let matched = false;
-  const stack = [unwrap(node)];
-  let visited = 0;
-  while (stack.length && !matched && visited < 2_000) {
-    const current = stack.pop();
-    if (!current || typeof current !== 'object') continue;
-    visited += 1;
-    if (routeExpression(current, aliases)) {
-      matched = true;
-      break;
-    }
-    if (!FUNCTION_TYPES.has(current.type)) {
-      for (const [key, value] of Object.entries(current)) {
-        if (['loc', 'start', 'end', 'extra', 'comments'].includes(key)) continue;
-        if (Array.isArray(value)) stack.push(...value);
-        else if (value && typeof value === 'object') stack.push(value);
-      }
-    }
-  }
-  return matched;
-}
-
-function operationEvidence(module, route, handler, clients) {
-  const imports = importedBindings(module);
-  const routeFacts = initialRouteAliases(route, handler, imports);
-  const { objectValues, principalAliases } = collectLocalFacts(handler, routeFacts);
-  const operations = [];
-  const delegated = [];
-  functionBodyNodes(handler, (node) => {
-    if (node.type !== 'CallExpression') return;
-    const prisma = prismaOperation(node, clients);
-    if (prisma) {
-      const options = resolveObject(node.arguments[0], objectValues);
-      const where = objectPropertyValue(options, 'where', objectValues);
-      const whereObject = resolveObject(where, objectValues);
-      if (!whereObject || !objectContains(whereObject,
-        (_key, value) => routeExpression(value, routeFacts.aliases), objectValues)) return;
-      const principalConstraint = objectContains(whereObject,
-        (key, value) => PRINCIPAL_KEYS.test(key || '') && isPrincipalExpression(value, principalAliases),
-        objectValues);
-      operations.push({ ...prisma, call: node, principalConstraint });
-      return;
-    }
-    if (['String', 'Number', 'parseInt'].includes(safeName(node.callee))) return;
-    if (node.arguments.some((argument) => nodeContainsRouteExpression(argument, routeFacts.aliases))) {
-      delegated.push(node);
-    }
-  });
-  return { operations, delegated };
+  return isPrincipalExpressionName(safeName(node), aliases);
 }
 
 function directAccessChains(graph, module, route, handler) {
@@ -411,38 +312,25 @@ function directAccessChains(graph, module, route, handler) {
         : 'The request-selected object reaches a supported same-handler data operation. Visible query constraints do not prove runtime authorization, and missing visible constraints do not prove a vulnerability.',
     });
   });
+  const incompleteChains = analyzed.incomplete.map((reason) => accessChainRecord({
+    entryKind: 'route', entryId: route.id, status: 'partial', outcome: 'incomplete',
+    identity: identity.identity, objectSelectors, callEdges: [], dataOperation: null,
+    evidenceBoundary: `A Prisma-shaped data operation was observed at ${reason.location.path}:${reason.location.line || '?'} but the client identity could not be resolved to an imported PrismaClient. No authorization conclusion is available.`,
+  }));
   const oneHop = analyzeOneHopAccess({
     graph, module, handler, entry: { kind: 'route', id: route.id,
       name: route.handler || route.id, module },
     identity: identity.identity, objectAliases: routeFacts.aliases,
     principalAliases: identity.principalAliases, objectSelectors,
   });
+  const delegatedUnresolved = !directChains.length && !incompleteChains.length && !oneHop.length
+    && delegatedSelectorObserved(handler, routeFacts.aliases);
   return {
-    chains: [...directChains, ...oneHop.map(accessChainRecord)],
+    chains: [...directChains, ...incompleteChains, ...oneHop.map(accessChainRecord)],
     operations: [...analyzed.operations, ...oneHop.map((item) => item.dataOperation).filter(Boolean)],
-    limitations: oneHop.map((item) => item.reason).filter(Boolean),
-  };
-}
-
-function rawFinding(route, operation) {
-  const line = operation.call.loc?.start?.line ?? route.location.line;
-  const construct = `prisma_${operation.operation}_route_identifier`;
-  const subject = `${route.framework}:${route.method}:${route.path}:${route.location.path}:${line}:${construct}`;
-  return {
-    ruleId: ROUTE_AUTHORIZATION_RULE_ID,
-    title: 'Direct route-ID database operation needs object-authorization review',
-    severity: 'high',
-    state: 'suspected',
-    discriminator: subject,
-    summary: 'A request-selected route identifier reaches a direct Prisma operation, and this bounded check did not observe a supported owner or tenant constraint in the same operation.',
-    location: { path: route.location.path, line },
-    evidence: {
-      subject, line, construct, framework: route.framework, method: route.method,
-      routePath: route.path, dataOperation: `prisma.${operation.model}.${operation.operation}`,
-      principalConstraintObserved: false,
-    },
-    remediation: 'Review the actual authorization boundary before changing code. If this operation owns the boundary, require the authenticated principal or tenant in the query or in an equivalent centrally enforced policy.',
-    retest: 'Use two owned users or tenants to verify cross-owner access is rejected, verify legitimate and privileged workflows, then rerun the route audit.',
+    limitations: [...analyzed.incomplete.map((item) => item.code),
+      ...(delegatedUnresolved ? ['delegated-object-authorization-unresolved'] : []),
+      ...oneHop.map((item) => item.reason).filter(Boolean)],
   };
 }
 
@@ -460,7 +348,6 @@ function aggregateReasons(items) {
 }
 
 export function auditJsTsRouteAuthorization(graph, routes) {
-  const findings = [];
   const reasons = [...graph.reasons];
   const reviewedRoutes = [];
   let scanned = 0;
@@ -487,21 +374,13 @@ export function auditJsTsRouteAuthorization(graph, routes) {
       continue;
     }
     scanned += 1;
-    const evidence = operationEvidence(module, route, handler, prismaClients(module));
     const access = directAccessChains(graph, module, route, handler);
-    for (const operation of evidence.operations) {
-      if (!operation.principalConstraint) findings.push(rawFinding(route, operation));
-    }
-    const operations = [...evidence.operations.map((item) => `prisma-${item.operation.replace(/[A-Z]/g,
-      (character) => `-${character.toLowerCase()}`)}`),
-    ...access.operations.map((item) => `${item.provider}-${item.operation}`)];
+    const operations = access.operations.map((item) => `${item.provider}-${item.operation}`);
     const limitations = [...route.limitations];
     limitations.push(...access.limitations);
-    if (evidence.operations.some((item) => item.principalConstraint)) {
+    if (access.operations.some((item) => item.principalConstraint === 'observed'
+        || item.tenantConstraint === 'observed')) {
       limitations.push('principal-constraint-observed-not-validated');
-    }
-    if (!evidence.operations.length && evidence.delegated.length) {
-      limitations.push('delegated-object-authorization-unresolved');
     }
     reviewedRoutes.push(prioritizeRoute({ ...route,
       accessChains: [...(route.accessChains || []), ...access.chains],
@@ -513,7 +392,6 @@ export function auditJsTsRouteAuthorization(graph, routes) {
     items.findIndex((candidate) => candidate.code === item.code && candidate.path === item.path) === index);
   const status = !eligibleRoutes.length ? 'not_applicable' : uniqueReasons.length ? 'partial' : 'completed';
   return {
-    findings,
     routes: reviewedRoutes,
     coverage: {
       id: `source-${ROUTE_AUTHORIZATION_RULE_ID}`,

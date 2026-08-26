@@ -81,6 +81,16 @@ function normalizeFrameworkCoverage(coverage, hinted, inputCount, inputIssues = 
       reasons,
     };
   }
+  if (hinted && coverage.counts.eligible === 0) return {
+    ...coverage,
+    status: 'partial',
+    counts: {
+      discovered: Math.max(inputCount, 1), eligible: 1, parsed: 0, incomplete: 1,
+    },
+    reasons: mergeReasonGroups(coverage.reasons, [{
+      code: 'framework_hinted_no_eligible_module', count: 1, samplePaths: [],
+    }]),
+  };
   if (coverage.status !== 'partial') return { ...coverage, status: 'completed' };
   return coverage;
 }
@@ -121,15 +131,17 @@ function reportCoverage(frameworkCoverage, inputCount) {
       excluded: 0, skipped: 0, truncated: 0, errors: 0 },
     reasons: [],
   };
+  const effectiveInputCount = Math.max(inputCount,
+    frameworkCoverage.some((item) => item.status === 'partial') ? 1 : 0);
   const errors = Math.min(frameworkCoverage.filter((item) => item.status === 'partial')
-    .reduce((count, item) => count + item.counts.incomplete, 0), inputCount);
+    .reduce((count, item) => count + item.counts.incomplete, 0), effectiveInputCount);
   const reasons = mergedCoverageReasons(frameworkCoverage, errors);
-  const scanned = Math.max(0, inputCount - errors);
+  const scanned = Math.max(0, effectiveInputCount - errors);
   return {
     id: `source-${ROUTE_INTEGRITY_RULE_ID}`,
     adapterId: 'builtin-source', ruleId: ROUTE_INTEGRITY_RULE_ID, ruleRevision: '1',
     status: errors ? (scanned ? 'partial' : 'unavailable') : 'completed',
-    counts: { discovered: inputCount, eligible: inputCount, scanned,
+    counts: { discovered: effectiveInputCount, eligible: effectiveInputCount, scanned,
       excluded: 0, skipped: 0, truncated: 0, errors },
     reasons,
   };
@@ -198,12 +210,11 @@ export function analyzeRouteSecurity(sourceFiles, options = {}) {
     applicationControls,
     coverage: frameworkCoverage,
     reportCoverage: coverage,
-    experimentalFindings: authorization.findings,
     graph,
     limitations: [
       'Static route and control evidence does not prove deployed routing, runtime enforcement or authorization correctness.',
       'Dynamic registration, service-layer policy, database row-level security, GraphQL and unsupported framework syntax require manual review.',
-      'The direct Prisma object-authorization rule is experimental until its ordinary-project review is complete.',
+      'Access chains are bounded review evidence; they do not create standalone vulnerability findings.',
     ],
   };
 }

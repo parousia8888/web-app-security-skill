@@ -28,9 +28,13 @@ function directExpressFactory(node) {
 function receiverFactories(module) {
   const imports = importedBindings(module);
   const receivers = new Map();
+  const aliases = [];
   walkJsTsAst(module.ast, (node) => {
-    if (node.type !== 'VariableDeclarator' || node.id?.type !== 'Identifier'
-        || node.init?.type !== 'CallExpression') return;
+    if (node.type !== 'VariableDeclarator' || node.id?.type !== 'Identifier') return;
+    if (node.init?.type !== 'CallExpression') {
+      aliases.push({ local: node.id.name, target: expressionName(node.init) });
+      return;
+    }
     const name = callName(node.init);
     const directFactory = directExpressFactory(node.init);
     if (directFactory) {
@@ -45,12 +49,50 @@ function receiverFactories(module) {
     if (factory === 'default' || factory === '*' || factory === 'express') receivers.set(node.id.name, 'app');
     if (factory === 'Router') receivers.set(node.id.name, 'router');
   });
+  for (let pass = 0; pass < 4; pass += 1) {
+    let changed = false;
+    for (const alias of aliases) {
+      if (!receivers.has(alias.local) && receivers.has(alias.target)) {
+        receivers.set(alias.local, receivers.get(alias.target));
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
   return { imports, receivers };
+}
+
+function staticStringBindings(module) {
+  const bindings = new Map();
+  const declarations = [];
+  walkJsTsAst(module.ast, (node) => {
+    if (node.type === 'VariableDeclarator' && node.id?.type === 'Identifier') {
+      declarations.push({ name: node.id.name, value: node.init });
+    }
+  });
+  for (let pass = 0; pass < 4; pass += 1) {
+    let changed = false;
+    for (const declaration of declarations) {
+      const literal = literalString(declaration.value);
+      const alias = expressionName(declaration.value);
+      const value = literal !== null ? literal : bindings.get(alias);
+      if (value !== undefined && bindings.get(declaration.name) !== value) {
+        bindings.set(declaration.name, value);
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+  return bindings;
 }
 
 function middlewareSignal(module, imports, node) {
   const name = expressionName(node?.callee || node);
-  if (!name) return null;
+  if (!name) {
+    const required = requiredSource(node?.callee);
+    return required ? { kind: 'custom-middleware-candidate', origin: `require(${required})`,
+      location: sourceLocation(module.path, node), exact: false, role: 'unknown' } : null;
+  }
   const root = name.split('.')[0];
   const binding = imports.get(root);
   let imported = binding?.imported;
@@ -62,13 +104,19 @@ function middlewareSignal(module, imports, node) {
 }
 
 function mountTarget(module, imports, receivers, node, graph) {
+  function resolvedReceiver(path, exportedLocal) {
+    const targetModule = graph.modules.get(path);
+    if (!targetModule?.ast || !exportedLocal) return null;
+    return receiverFactories(targetModule).receivers.has(exportedLocal)
+      ? `${path}::${exportedLocal}` : null;
+  }
   const required = requiredSource(node);
   if (required) {
     const imported = module.imports.find((item) => item.source === required
       && item.resolution?.path && !item.resolution.reason);
     if (!imported) return null;
     const exportedLocal = localModuleExport(graph, imported.resolution.path, 'default');
-    return exportedLocal ? `${imported.resolution.path}::${exportedLocal}` : null;
+    return resolvedReceiver(imported.resolution.path, exportedLocal);
   }
   const name = expressionName(node);
   if (!name) return null;
@@ -76,7 +124,15 @@ function mountTarget(module, imports, receivers, node, graph) {
   const binding = imports.get(name);
   if (!binding?.resolvedPath || binding.resolutionReason) return null;
   const exportedLocal = localModuleExport(graph, binding.resolvedPath, binding.imported);
-  return exportedLocal ? `${binding.resolvedPath}::${exportedLocal}` : null;
+  return resolvedReceiver(binding.resolvedPath, exportedLocal);
+}
+
+function receiverRoot(node) {
+  let current = node;
+  while (current && ['MemberExpression', 'OptionalMemberExpression'].includes(current.type)) {
+    current = current.object;
+  }
+  return expressionName(current);
 }
 
 function localFunctionNode(graph, path, name) {
@@ -132,6 +188,7 @@ function routeChainBase(node) {
 
 function moduleFacts(module, graph) {
   const { imports, receivers } = receiverFactories(module);
+  const staticStrings = staticStringBindings(module);
   const routes = [];
   const mounts = [];
   const middleware = [];
@@ -139,31 +196,65 @@ function moduleFacts(module, graph) {
   walkJsTsAst(module.ast, (node) => {
     const registrationReason = registrationFunctionReason(module, imports, receivers, node, graph);
     if (registrationReason) reasons.push(registrationReason);
-    if (node.type !== 'CallExpression' || node.callee?.type !== 'MemberExpression') return;
-    const property = expressionName(node.callee.property);
+    if (!['CallExpression', 'OptionalCallExpression'].includes(node.type)
+        || !['MemberExpression', 'OptionalMemberExpression'].includes(node.callee?.type)) return;
+    const computedLiteral = node.callee.computed
+      ? literalString(node.callee.property) ?? staticStrings.get(expressionName(node.callee.property))
+      : null;
+    const property = node.callee.computed ? computedLiteral : expressionName(node.callee.property);
     const receiver = expressionName(node.callee.object);
+    const knownReceiver = receiver && receivers.has(receiver);
+    const relatedReceiver = receiverRoot(node.callee.object);
+    if ((node.optional || node.callee.optional) && (knownReceiver || receivers.has(relatedReceiver))) {
+      reasons.push({ code: 'express_optional_route_registration', path: module.path });
+      return;
+    }
+    if (node.callee.computed && knownReceiver && property === undefined) {
+      reasons.push({ code: 'express_computed_route_method_unresolved', path: module.path });
+      return;
+    }
+    if (!knownReceiver && receivers.has(relatedReceiver) && (METHODS.has(property) || property === 'use')) {
+      reasons.push({ code: 'express_route_receiver_unresolved', path: module.path });
+      return;
+    }
     if (property === 'use' && receiver && receivers.has(receiver)) {
       const staticPrefix = literalString(node.arguments[0]);
       const offset = staticPrefix !== null ? 1 : 0;
-      const possibleTarget = node.arguments[offset];
-      const target = mountTarget(module, imports, receivers, possibleTarget, graph);
-      if (target) mounts.push({ parent: `${module.path}::${receiver}`, target,
-        prefix: staticPrefix || '', order: node.start || 0 });
-      else {
-        const possibleBinding = imports.get(expressionName(possibleTarget));
+      const argumentsToClassify = node.arguments.slice(offset);
+      const targets = [];
+      for (const [index, argument] of argumentsToClassify.entries()) {
+        if (argument?.type === 'ArrayExpression') {
+          reasons.push({ code: 'express_middleware_array_unresolved', path: module.path });
+          continue;
+        }
+        const target = mountTarget(module, imports, receivers, argument, graph);
+        if (target) {
+          targets.push({ target, index });
+          continue;
+        }
+        const possibleBinding = imports.get(expressionName(argument));
         if (possibleBinding?.resolutionReason) {
           reasons.push({ code: 'express_router_mount_resolution_incomplete', path: module.path });
         }
-        for (const argument of node.arguments.slice(offset)) {
-          const signal = middlewareSignal(module, imports, argument);
-          if (signal) middleware.push({ receiver: `${module.path}::${receiver}`, signal,
-            order: node.start || 0 });
-        }
+        const signal = middlewareSignal(module, imports, argument);
+        if (signal) middleware.push({ receiver: `${module.path}::${receiver}`, signal,
+          order: (node.start || 0) + index / 100 });
+      }
+      if (targets.length === 1) {
+        mounts.push({ parent: `${module.path}::${receiver}`, target: targets[0].target,
+          prefix: staticPrefix || '', order: (node.start || 0) + targets[0].index / 100 });
+      } else if (targets.length > 1) {
+        reasons.push({ code: 'express_router_mount_ambiguous', path: module.path });
       }
       return;
     }
     const method = METHODS.get(property);
-    if (!method) return;
+    if (!method) {
+      if (node.callee.computed && knownReceiver) {
+        reasons.push({ code: 'express_computed_route_method_unsupported', path: module.path });
+      }
+      return;
+    }
     let routeReceiver = receiver;
     let pathNode = node.arguments[0];
     let handlerArgs = node.arguments.slice(1);

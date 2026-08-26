@@ -6,7 +6,7 @@ import { extractNextAppRoutes } from '../scripts/lib/frameworks/next-app-route-e
 import { auditJsTsRouteAuthorization } from '../scripts/lib/js-ts-route-authorization-audit.mjs';
 import { buildJsTsModuleGraph } from '../scripts/lib/js-ts-module-graph.mjs';
 import {
-  SOURCE_RULE_REGISTRY, sourceRuleExplanation, validateSourceRuleRegistry,
+  SOURCE_RULE_REGISTRY, validateSourceRuleRegistry,
 } from '../scripts/lib/source-rule-registry.mjs';
 
 const files = [
@@ -101,17 +101,8 @@ function runAudit(sourceFiles) {
 
 const { graph, routes, result } = runAudit(files);
 assert.equal(result.coverage.status, 'completed');
-assert.equal(result.findings.length, 3);
-assert.deepEqual(new Set(result.findings.map((finding) => finding.evidence.framework)),
-  new Set(['express', 'nestjs', 'next-app']));
-assert.ok(result.findings.every((finding) => finding.state === 'suspected'));
-assert.ok(result.findings.every((finding) => !/confirmed BOLA|authorization is missing/i.test(
-  `${finding.title} ${finding.summary} ${finding.remediation}`)));
-assert.equal(result.findings.some((finding) => finding.evidence.routePath === '/owned/:id'), false);
-assert.equal(result.findings.some((finding) => finding.evidence.routePath === '/constant/:id'), false);
 const delegated = result.routes.find((route) => route.path === '/delegated/:id');
 assert.ok(delegated.limitations.includes('delegated-object-authorization-unresolved'));
-assert.equal(result.findings.some((finding) => finding.evidence.routePath === '/delegated/:id'), false);
 assert.ok(result.routes.find((route) => route.path === '/projects/:id' && route.framework === 'nestjs')
   .operations.includes('prisma-find-unique'));
 const nestAccess = result.routes.find((route) => route.path === '/projects/:id'
@@ -137,29 +128,22 @@ assert.equal(hopAccess[0].dataOperation.provider, 'prisma');
 assert.equal(hopAccess[0].outcome, 'principal_constraint_observed');
 
 const disconnected = runAudit(files.map((file) => file.path === 'src/express.ts'
-  ? { ...file, text: file.text.replace('id: projectId', "id: 'server-owned-project'") } : file)).result;
-assert.equal(disconnected.findings.some((finding) => finding.evidence.routePath === '/projects/:id'
-  && finding.evidence.framework === 'express'), false);
+  ? { ...file, text: file.text.replace('where: { id: projectId }',
+    "where: { id: 'server-owned-project' }") } : file)).result;
+assert.equal(disconnected.routes.find((route) => route.path === '/projects/:id'
+  && route.framework === 'express').accessChains.length, 0);
 const ownerConstraintRemoved = runAudit(files.map((file) => file.path === 'src/express.ts'
   ? { ...file, text: file.text.replace('ownerId: req.user.id', 'displayName: req.user.id') } : file)).result;
-assert.equal(ownerConstraintRemoved.findings.some((finding) =>
-  finding.evidence.routePath === '/owned/:id'), true);
+assert.equal(ownerConstraintRemoved.routes.find((route) =>
+  route.path === '/owned/:id').accessChains[0].outcome, 'principal_constraint_not_observed');
 
-const rule = SOURCE_RULE_REGISTRY.find((entry) => entry.id === 'js-route-object-authorization-review');
-assert.equal(rule.maturity, 'experimental');
 assert.deepEqual(validateSourceRuleRegistry(SOURCE_RULE_REGISTRY), []);
-const explanation = sourceRuleExplanation('builtin-source', rule.id,
-  { state: 'suspected', summary: 'fixture', remediation: 'fixture', retest: 'fixture' });
-assert.match(explanation.plainLanguage, /caller select a record ID/i);
-assert.match(explanation.evidenceBoundary, /does not prove missing authorization/i);
-assert.ok(explanation.sideEffects.length && explanation.userDecisions.length);
 
 const incompleteGraph = buildJsTsModuleGraph([{ path: 'src/broken.ts', text: 'const broken = "' }]);
 const incomplete = auditJsTsRouteAuthorization(incompleteGraph, [{
   ...routes[0], location: { path: 'src/broken.ts', line: 1 },
 }]);
 assert.equal(incomplete.coverage.status, 'partial');
-assert.equal(incomplete.findings.length, 0);
 assert.ok(incomplete.coverage.reasons.some((reason) => reason.code === 'js_ts_ast_parse_error'));
 
 console.log('route authorization audit ok: three frameworks, direct Prisma boundary, safe neighbours and fail-closed coverage');
