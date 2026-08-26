@@ -184,9 +184,13 @@ function patchLine(path, text, match, replacement) {
 }
 
 function workspacePatterns(manifest) {
-  if (Array.isArray(manifest.workspaces)) return manifest.workspaces;
-  if (Array.isArray(manifest.workspaces?.packages)) return manifest.workspaces.packages;
-  return [];
+  if (manifest.workspaces === undefined) return { patterns: [], error: null };
+  if (Array.isArray(manifest.workspaces)) return { patterns: manifest.workspaces, error: null };
+  if (manifest.workspaces && typeof manifest.workspaces === 'object'
+      && Array.isArray(manifest.workspaces.packages)) {
+    return { patterns: manifest.workspaces.packages, error: null };
+  }
+  return { patterns: [], error: 'workspace_pattern_unsupported' };
 }
 
 function yamlContentBeforeComment(value) {
@@ -257,16 +261,89 @@ function parsePnpmWorkspacePatterns(text) {
   return patterns;
 }
 
-function globMatchesPath(pattern, path) {
-  if (typeof pattern !== 'string') return false;
-  const escaped = pattern.replace(/^!/, '').replace(/\\/g, '/').replace(/^\.\//, '').replace(/[.+^${}()|[\]\\]/g, '\\$&');
-  const expression = escaped.replace(/\*\*/g, '\u0000').replace(/\*/g, '[^/]*').replace(/\u0000/g, '.*');
-  return new RegExp(`^${expression}/?$`).test(path);
+function workspaceSegmentMatches(pattern, value) {
+  let patternIndex = 0;
+  let valueIndex = 0;
+  let starIndex = -1;
+  let starValueIndex = -1;
+  while (valueIndex < value.length) {
+    if (patternIndex < pattern.length
+        && (pattern[patternIndex] === '?' || pattern[patternIndex] === value[valueIndex])) {
+      patternIndex += 1;
+      valueIndex += 1;
+    } else if (pattern[patternIndex] === '*') {
+      starIndex = patternIndex;
+      starValueIndex = valueIndex;
+      patternIndex += 1;
+    } else if (starIndex >= 0) {
+      patternIndex = starIndex + 1;
+      starValueIndex += 1;
+      valueIndex = starValueIndex;
+    } else return false;
+  }
+  while (pattern[patternIndex] === '*') patternIndex += 1;
+  return patternIndex === pattern.length;
+}
+
+function compileWorkspacePattern(value) {
+  if (typeof value !== 'string' || !value || value.length > 1024
+      || /[\u0000-\u001f\u007f\\{}[\]()|]/.test(value)) {
+    throw new Error('unsupported workspace pattern');
+  }
+  const excluded = value.startsWith('!');
+  let clean = excluded ? value.slice(1) : value;
+  if (clean.startsWith('./')) clean = clean.slice(2);
+  clean = clean.replace(/\/$/, '');
+  if (!clean || clean.startsWith('/') || clean.split('/').some((segment) => !segment
+      || segment === '..' || (segment.includes('**') && segment !== '**'))) {
+    throw new Error('unsupported workspace pattern');
+  }
+  const segments = clean.split('/');
+  if (segments.length > 64) throw new Error('unsupported workspace pattern');
+  return { excluded, segments };
+}
+
+function globMatchesPath(compiled, path) {
+  const values = path.replace(/\/$/, '').split('/');
+  if (values.length > 64 || values.some((segment) => !segment || segment === '..')) return false;
+  const memo = new Map();
+  const match = (patternIndex, valueIndex) => {
+    const key = `${patternIndex}:${valueIndex}`;
+    if (memo.has(key)) return memo.get(key);
+    let result;
+    if (patternIndex === compiled.segments.length) result = valueIndex === values.length;
+    else if (compiled.segments[patternIndex] === '**') {
+      result = match(patternIndex + 1, valueIndex)
+        || (valueIndex < values.length && match(patternIndex, valueIndex + 1));
+    } else {
+      result = valueIndex < values.length
+        && workspaceSegmentMatches(compiled.segments[patternIndex], values[valueIndex])
+        && match(patternIndex + 1, valueIndex + 1);
+    }
+    memo.set(key, result);
+    return result;
+  };
+  return match(0, 0);
 }
 
 function workspaceIncludes(patterns, path) {
-  return patterns.some((pattern) => !pattern.startsWith('!') && globMatchesPath(pattern, path))
-    && !patterns.some((pattern) => pattern.startsWith('!') && globMatchesPath(pattern, path));
+  if (!Array.isArray(patterns) || patterns.length > 1000) {
+    throw new Error('unsupported workspace pattern list');
+  }
+  const compiled = patterns.map(compileWorkspacePattern);
+  return compiled.some((pattern) => !pattern.excluded && globMatchesPath(pattern, path))
+    && !compiled.some((pattern) => pattern.excluded && globMatchesPath(pattern, path));
+}
+
+function matchWorkspace(patterns, path, evidencePath) {
+  try {
+    return { covered: workspaceIncludes(patterns, path), uncertainty: null };
+  } catch {
+    return {
+      covered: false,
+      uncertainty: { outcome: 'errors', code: 'workspace_pattern_unsupported', path: evidencePath },
+    };
+  }
 }
 
 function coveredByWorkspace(manifest, parsedPackages, pnpmWorkspaces, lockRoots) {
@@ -282,12 +359,21 @@ function coveredByWorkspace(manifest, parsedPackages, pnpmWorkspaces, lockRoots)
     const ancestorManifestPath = ancestor === '.' ? 'package.json' : `${ancestor}/package.json`;
     const parsed = parsedPackages.get(ancestorManifestPath);
     const relativeRoot = ancestor === '.' ? manifestRoot : manifestRoot.slice(ancestor.length + 1);
-    if (parsed && workspaceIncludes(workspacePatterns(parsed), relativeRoot)) {
-      return { covered: true, uncertainty: null };
+    if (parsed) {
+      const npmPatterns = workspacePatterns(parsed);
+      if (npmPatterns.error) {
+        uncertainty ||= { outcome: 'errors', code: npmPatterns.error, path: ancestorManifestPath };
+      } else {
+        const npmMatch = matchWorkspace(npmPatterns.patterns, relativeRoot, ancestorManifestPath);
+        if (npmMatch.covered) return { covered: true, uncertainty: null };
+        uncertainty ||= npmMatch.uncertainty;
+      }
     }
     const pnpm = pnpmWorkspaces.get(ancestor);
-    if (pnpm?.outcome === 'scanned' && workspaceIncludes(pnpm.patterns, relativeRoot)) {
-      return { covered: true, uncertainty: null };
+    if (pnpm?.outcome === 'scanned') {
+      const pnpmMatch = matchWorkspace(pnpm.patterns, relativeRoot, pnpm.path);
+      if (pnpmMatch.covered) return { covered: true, uncertainty: null };
+      uncertainty ||= pnpmMatch.uncertainty;
     }
     if (pnpm && pnpm.outcome !== 'scanned') uncertainty ||= pnpm;
   }

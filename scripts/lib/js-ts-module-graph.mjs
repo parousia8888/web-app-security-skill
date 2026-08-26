@@ -3,6 +3,7 @@ import { parseJsTsAst, walkJsTsAst } from './js-ts-ast-parser.mjs';
 
 const EXTENSIONS = ['.js', '.jsx', '.mjs', '.cjs', '.ts', '.tsx', '.mts', '.cts'];
 const CONFIG_NAMES = new Set(['tsconfig.json', 'jsconfig.json']);
+const MAX_EXPRESSION_NAME_DEPTH = 64;
 
 export function literalString(node) {
   if (node?.type === 'StringLiteral') return node.value;
@@ -12,21 +13,37 @@ export function literalString(node) {
   return null;
 }
 
-export function expressionName(node) {
+export function expressionName(node, depth = 0) {
   if (!node) return null;
+  if (depth >= MAX_EXPRESSION_NAME_DEPTH) return null;
   if (node.type === 'ThisExpression') return 'this';
   if (node.type === 'Identifier') return node.name;
   if ((node.type === 'MemberExpression' || node.type === 'OptionalMemberExpression') && !node.computed) {
-    const left = expressionName(node.object);
-    const right = expressionName(node.property);
+    const left = expressionName(node.object, depth + 1);
+    const right = expressionName(node.property, depth + 1);
     return left && right ? `${left}.${right}` : null;
   }
   if ((node.type === 'MemberExpression' || node.type === 'OptionalMemberExpression') && node.computed) {
     const property = literalString(node.property);
-    const left = expressionName(node.object);
+    const left = expressionName(node.object, depth + 1);
     return left && property ? `${left}.${property}` : null;
   }
   return null;
+}
+
+function expressionNameDepthExceeded(node) {
+  const pending = [{ node, depth: 0 }];
+  while (pending.length) {
+    const current = pending.pop();
+    if (!current.node) continue;
+    const member = current.node.type === 'MemberExpression'
+      || current.node.type === 'OptionalMemberExpression';
+    if (!member) continue;
+    if (current.depth >= MAX_EXPRESSION_NAME_DEPTH) return true;
+    pending.push({ node: current.node.object, depth: current.depth + 1 });
+    if (!current.node.computed) pending.push({ node: current.node.property, depth: current.depth + 1 });
+  }
+  return false;
 }
 
 function safeModulePath(path) {
@@ -342,6 +359,8 @@ function collectModule(path, text, files, limits, context) {
   const exports = [];
   const reasons = [];
   const walked = walkJsTsAst(parsed.ast, (node, parent) => {
+    if ((node.type === 'MemberExpression' || node.type === 'OptionalMemberExpression')
+        && expressionNameDepthExceeded(node)) reasons.push('expression_name_depth_limit');
     if (node.type === 'ImportDeclaration') {
       const source = literalString(node.source);
       const bindings = node.specifiers.map((specifier) => ({
@@ -428,7 +447,14 @@ export function buildJsTsModuleGraph(sourceFiles, options = {}) {
       reasons.push({ code: 'module_graph_module_limit', path });
       break;
     }
-    const module = collectModule(path, text, fileMap, limits, context);
+    let module;
+    try {
+      module = collectModule(path, text, fileMap, limits, context);
+    } catch {
+      module = {
+        path, text, ast: null, imports: [], exports: [], reasons: ['js_ts_module_analysis_failed'],
+      };
+    }
     edgeCount += module.imports.length;
     if (edgeCount > limits.maxEdges) {
       module.reasons.push('module_graph_edge_limit');

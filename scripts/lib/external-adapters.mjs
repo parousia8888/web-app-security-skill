@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import {
   chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync,
-  statSync, writeFileSync,
+  realpathSync, statSync, writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
@@ -39,6 +39,26 @@ function safeCheckovPath(projectRoot, value) {
     return null;
   }
   return path;
+}
+
+function containedProjectFile(projectRoot, value) {
+  if (typeof value !== 'string' || !value || value.length > 4096 || isAbsolute(value)
+      || /[\u0000-\u001f\u007f\\]/.test(value)) return { path: null, reason: 'adapter_input_path_unsafe' };
+  const absolute = resolve(projectRoot, value);
+  const lexical = relative(resolve(projectRoot), absolute);
+  if (!lexical || lexical === '..' || lexical.startsWith(`..${sep}`) || isAbsolute(lexical)) {
+    return { path: null, reason: 'adapter_input_path_unsafe' };
+  }
+  try {
+    const realRoot = realpathSync(projectRoot);
+    const realFile = realpathSync(absolute);
+    const contained = relative(realRoot, realFile);
+    if (!contained || contained === '..' || contained.startsWith(`..${sep}`) || isAbsolute(contained)
+        || !statSync(realFile).isFile()) return { path: null, reason: 'adapter_input_path_unsafe' };
+    return { path: absolute, reason: null };
+  } catch {
+    return { path: null, reason: 'adapter_input_path_unavailable' };
+  }
 }
 
 function counts({
@@ -692,11 +712,20 @@ export function runOsv(projectRoot, lockfiles, { binary = 'osv-scanner', timeout
       identity.observedVersion ? { observedVersion: identity.observedVersion } : {},
     ), networkAccessPerformed: false };
   }
+  const resolvedLockfiles = lockfiles.map((lockfile) => containedProjectFile(projectRoot, lockfile));
+  const invalidInput = resolvedLockfiles.find((item) => item.reason);
+  if (invalidInput) {
+    return {
+      adapter: OSV_ADAPTER, identity,
+      ...unavailable(OSV_ADAPTER, OSV_RULES, invalidInput.reason),
+      networkAccessPerformed: false,
+    };
+  }
   const args = [
     'scan', 'source', '--format', 'json', '--verbosity', 'error',
     '--no-call-analysis', 'go', '--no-call-analysis', 'rust',
   ];
-  for (const lockfile of lockfiles) args.push('--lockfile', resolve(projectRoot, lockfile));
+  for (const lockfile of resolvedLockfiles) args.push('--lockfile', lockfile.path);
   const result = run(binary, args, { cwd: projectRoot, timeoutSeconds });
   if (result.kind !== 'completed' || ![0, 1].includes(result.status)) {
     const reason = result.kind === 'completed' ? 'adapter_internal_error' : `adapter_${result.kind}`;

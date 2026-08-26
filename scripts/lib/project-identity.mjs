@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import {
   existsSync, lstatSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync,
 } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join, posix, resolve } from 'node:path';
 
 export const PROJECT_IDENTITY_FILE = '.webapp-security/project.json';
 export const SUBJECT_ID = /^project-[a-f0-9]{32}$/;
@@ -138,6 +138,45 @@ export function ephemeralSubject(boundary = sourceAuditBoundary()) {
   };
 }
 
+function validateAbsoluteScopePath(value, label) {
+  if (typeof value !== 'string' || !value || value.length > 4096
+      || /[\u0000-\u001f\u007f]/.test(value) || !isAbsolute(value) || resolve(value) !== value) {
+    throw new Error(`scope target contains an invalid ${label}`);
+  }
+}
+
+function validateRelativeScopePath(value, label, { allowRoot = false } = {}) {
+  if (typeof value !== 'string' || !value || value.length > 4096
+      || /[\u0000-\u001f\u007f\\]/.test(value) || isAbsolute(value)) {
+    throw new Error(`scope target contains an invalid ${label}`);
+  }
+  const normalized = posix.normalize(value);
+  if (normalized !== value || normalized === '..' || normalized.startsWith('../')
+      || (!allowRoot && normalized === '.')) {
+    throw new Error(`scope target contains an invalid ${label}`);
+  }
+}
+
+function validateTargetPaths(target) {
+  if (!target || typeof target !== 'object' || Array.isArray(target)) {
+    throw new Error('scope does not contain a valid target');
+  }
+  validateAbsoluteScopePath(target.projectRoot, 'projectRoot');
+  for (const field of ['manifests', 'lockfiles', 'deploymentSurfaces', 'configSurfaces']) {
+    if (!Array.isArray(target[field])) throw new Error(`scope target contains an invalid ${field} list`);
+    for (const value of target[field]) validateRelativeScopePath(value, field);
+  }
+  for (const field of ['frameworks', 'packageManagers']) {
+    if (!Array.isArray(target[field])) throw new Error(`scope target contains an invalid ${field} list`);
+    for (const item of target[field]) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        throw new Error(`scope target contains an invalid ${field} entry`);
+      }
+      validateRelativeScopePath(item.root, `${field} root`, { allowRoot: true });
+    }
+  }
+}
+
 export function validatePersistedScope(scope) {
   if (scope?.schemaVersion !== 2 || scope?.generatedBy?.product !== 'Web App Security Skill') {
     throw new Error('scope is not a Web App Security Skill v2 scope');
@@ -160,6 +199,7 @@ export function validatePersistedScope(scope) {
       throw new Error('scope contains an invalid adapter timeout');
     }
   }
+  validateTargetPaths(scope.target);
   const actualDigest = scopeDigest(scope.auditBoundary);
   if (scope.subject.scopeDigest !== actualDigest) throw new Error('scope digest does not match its audit boundary');
   return scope;
