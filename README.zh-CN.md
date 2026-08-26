@@ -104,7 +104,9 @@ npm run demo -- --out ./demo-output
 
 v0.7.3 是限定范围的正确性与证据完整性 release，处理外部审计的 26 项完整台账，不增加检测器
 家族，也不扩大框架宣传。签名 GitHub Release、npm 包和可信 installer 已公开，签名 `v1` 现已指向
-v0.7.3；公开 Action consumer 与持久 live verification 仍是独立门禁：
+v0.7.3；公开 Action consumer 与持久 live verification 已在
+[v0.7.3 公开 consumer run](https://github.com/parousia8888/web-app-security-skill/actions/runs/32981490467)
+中通过：
 
 - **不可信输入有明确上限：** 持久化项目/lockfile 路径在进入 OSV 前会检查，包括 symlink 逃逸。
   过深 member expression、畸形 workspace 元数据和不支持的 workspace pattern 会变成显式不完整
@@ -403,6 +405,9 @@ Source mode 默认只用内置 adapter。v0.7.3 不可变 Action 运行 v3 源�
 - tag 必须同时匹配 `VERSION`、changelog 和该版本的证据文件；tag 带签名，release 记录来源 commit。
 - release 产物包含可复现源码包、SPDX 2.3 SBOM、`SHA256SUMS` 与 GitHub build provenance attestation。
   CI 会构建两次并逐字节比较全部产物，再在禁止网络的隔离 HOME 中从解包产物执行完整生命周期。
+- [v0.7.3 公开验证](https://github.com/parousia8888/web-app-security-skill/actions/runs/32981490467)
+  同时消费不可变 release commit 与签名 `v1`，强制验证 installer attestation，并把同一份
+  live-verification 记录作为 workflow artifact 与 Release asset 发布；两份字节一致。
 - [`SECURITY.md`](SECURITY.md)、[威胁模型](docs/threat-model.md)、
   [误报政策](docs/false-positive-policy.md)和[兼容矩阵](docs/compatibility.md)可供独立复核。
 

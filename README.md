@@ -110,7 +110,8 @@ For the complete install-to-uninstall path, follow the tested
 v0.7.3 is a bounded correctness and evidence-integrity release. It addresses the complete 26-item
 external-audit ledger without adding a detector family or framework claim. The signed GitHub
 Release, npm package and verified installer are public, and signed `v1` now targets v0.7.3. Public
-Action-consumer and durable live-verification results remain separate gates:
+Action-consumer and durable live-verification gates passed in the
+[v0.7.3 public consumer run](https://github.com/parousia8888/web-app-security-skill/actions/runs/32981490467):
 
 - **Untrusted input stays bounded:** persisted project/lockfile paths are checked before OSV use,
   including symlink escape. Deep member expressions, malformed workspace metadata and unsupported
@@ -445,6 +446,9 @@ commit above when the workflow must not move.
 - Release assets contain a reproducible source archive, SPDX 2.3 SBOM, `SHA256SUMS` and GitHub
   build-provenance attestation. CI builds the archive twice, compares every byte, then runs the
   lifecycle from the extracted archive in an isolated home with network access denied.
+- [Public v0.7.3 verification](https://github.com/parousia8888/web-app-security-skill/actions/runs/32981490467)
+  consumed both the immutable release commit and signed `v1`, required installer attestation, and
+  published one byte-matched live-verification record as a workflow artifact and Release asset.
 - [`SECURITY.md`](SECURITY.md), [threat model](docs/threat-model.md),
   [false-positive policy](docs/false-positive-policy.md) and
   [compatibility matrix](docs/compatibility.md) make the trust boundary reviewable.
