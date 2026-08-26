@@ -109,8 +109,8 @@ For the complete install-to-uninstall path, follow the tested
 
 v0.7.3 is a bounded correctness and evidence-integrity release. It addresses the complete 26-item
 external-audit ledger without adding a detector family or framework claim. The signed GitHub
-Release, npm package and verified installer are public; signed `v1` promotion remains a separate
-gate:
+Release, npm package and verified installer are public, and signed `v1` now targets v0.7.3. Public
+Action-consumer and durable live-verification results remain separate gates:
 
 - **Untrusted input stays bounded:** persisted project/lockfile paths are checked before OSV use,
   including symlink escape. Deep member expressions, malformed workspace metadata and unsupported
@@ -410,8 +410,8 @@ requires deployment authorization acknowledgement:
     fail-on: high
 ```
 
-For repeatable CI, use the immutable v0.7.3 commit above. The signed stable major-version alias
-remains on v0.7.2 until the v0.7.3 installer, immutable Action and guarded promotion gates pass:
+For repeatable CI, use the immutable v0.7.3 commit above. The signed stable major-version alias now
+targets the same v0.7.3 source commit; it remains intentionally movable:
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
@@ -432,9 +432,9 @@ installed and pinned by the caller; the Action never downloads them:
     fail-on: high
 ```
 
-The moving `v1` tag will be promoted with a guarded lease only after the versioned source and
-installation gates pass. Review release notes before accepting a future update; use the full commit
-above when the workflow must not move.
+The moving `v1` tag was promoted to v0.7.3 with a guarded lease after the versioned source and
+installation gates passed. Review release notes before accepting a future update; use the full
+commit above when the workflow must not move.
 
 ## Trust and release evidence
 

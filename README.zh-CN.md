@@ -103,8 +103,8 @@ npm run demo -- --out ./demo-output
 ## v0.7.3 新增内容
 
 v0.7.3 是限定范围的正确性与证据完整性 release，处理外部审计的 26 项完整台账，不增加检测器
-家族，也不扩大框架宣传。签名 GitHub Release、npm 包和可信 installer 已公开；签名 `v1` 晋级仍是
-独立门禁：
+家族，也不扩大框架宣传。签名 GitHub Release、npm 包和可信 installer 已公开，签名 `v1` 现已指向
+v0.7.3；公开 Action consumer 与持久 live verification 仍是独立门禁：
 
 - **不可信输入有明确上限：** 持久化项目/lockfile 路径在进入 OSV 前会检查，包括 symlink 逃逸。
   过深 member expression、畸形 workspace 元数据和不支持的 workspace pattern 会变成显式不完整
@@ -372,8 +372,8 @@ Composite Action 保持 v0.3 crawl 输入与输出兼容。Crawl mode 默认被�
     fail-on: high
 ```
 
-需要可重复 CI 时使用上面的 v0.7.3 不可变 commit。签名的稳定大版本别名在 v0.7.3 installer、
-不可变 Action 与 guarded promotion 门禁通过前仍指向 v0.7.2：
+需要可重复 CI 时使用上面的 v0.7.3 不可变 commit。签名的稳定大版本别名现在指向同一个 v0.7.3
+源码 commit；这个别名仍会有意移动：
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
@@ -393,8 +393,8 @@ Source mode 默认只用内置 adapter。v0.7.3 不可变 Action 运行 v3 源�
     fail-on: high
 ```
 
-移动的 `v1` tag 只会在版本化源码与安装门禁通过后用 guarded lease 提升。以后接受更新前应检查
-release note；工作流不能随版本移动时使用上面的完整 commit。
+移动的 `v1` tag 已在版本化源码与安装门禁通过后用 guarded lease 提升到 v0.7.3。以后接受更新前
+应检查 release note；工作流不能随版本移动时使用上面的完整 commit。
 
 ## 信任与 release 证据
 

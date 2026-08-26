@@ -23,7 +23,7 @@ try {
   const state = JSON.parse(readFileSync(join(ROOT, 'docs', 'release-state.json'), 'utf8'));
   assert.equal(state.publishedRelease.version, '0.7.3');
   assert.equal(state.stableAction.tag, 'v1');
-  assert.equal(state.stableAction.sourceCommit, '30402c866b86d78b66d0d4b495fee40ff6a6f160');
+  assert.equal(state.stableAction.sourceCommit, '28494afd3470897e9b25e7c90187eac35a016186');
   assert.equal(state.npmPackage.name, 'web-app-security-skill');
   assert.equal(state.npmPackage.version, '0.7.3');
   assert.equal(state.npmPackage.shasum, '478e9e5eac15fde316860e5278bc5a9a1b4e58b2');
