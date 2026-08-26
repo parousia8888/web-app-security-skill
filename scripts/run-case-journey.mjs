@@ -267,6 +267,12 @@ try {
   if (git(checkout, ['status', '--porcelain', '--untracked-files=normal'])) {
     throw new Error('checkout must be clean before a case journey runs');
   }
+  if (journey.adapterSelection.includes('gitleaks')) {
+    const shallow = git(checkout, ['rev-parse', '--is-shallow-repository']);
+    if (shallow !== 'false') {
+      throw new Error('checkout must contain complete Git history when the Gitleaks history adapter is selected');
+    }
+  }
   if (existsSync(output)) throw new Error(`output already exists: ${output}`);
   const runtimeBinaries = prerequisites.map((definition) => {
     const supplied = process.env[definition.envVariable];

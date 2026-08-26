@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
-import { chmodSync, cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -236,6 +238,17 @@ else console.log('{"version":"1.27.0","results":[],"errors":[],"paths":{"scanned
   result = spawnSync(process.execPath, [RUN_JOURNEY, 'local-case', checkout, '--out', join(temp, 'missing-binary-output'), '--catalog', catalogPath], { encoding: 'utf8' });
   assert.equal(result.status, 2);
   assert.match(result.stderr, /set WEBAPP_SECURITY_GITLEAKS_BIN/);
+
+  const shallowCheckout = join(temp, 'shallow-checkout');
+  result = spawnSync('git', ['clone', '--quiet', '--depth', '1', `file://${checkout}`, shallowCheckout],
+    { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(git(shallowCheckout, ['rev-parse', '--is-shallow-repository']), 'true');
+  result = spawnSync(process.execPath, [RUN_JOURNEY, 'local-case', shallowCheckout, '--out',
+    join(temp, 'shallow-output'), '--catalog', catalogPath], { encoding: 'utf8', env: runnerEnv });
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /complete Git history when the Gitleaks history adapter is selected/);
+  assert.equal(existsSync(join(temp, 'shallow-output')), false);
 
   const incompatibleGitleaks = join(temp, 'incompatible-gitleaks.mjs');
   writeFileSync(incompatibleGitleaks, `#!/usr/bin/env node
