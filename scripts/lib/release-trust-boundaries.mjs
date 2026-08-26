@@ -1,14 +1,15 @@
-export function validateReleaseTrustLanguage(documents) {
+export function validateReleaseTrustLanguage(documents, version) {
   const errors = [];
+  const releaseTag = `v${version}`;
   const required = {
     readme: [
       'repository-local signer policy',
-      'v0.7.2',
+      releaseTag,
       'npm OIDC provenance is a separate signal',
     ],
     readmeZh: [
       '仓库内 signer policy',
-      'v0.7.2',
+      releaseTag,
       'npm OIDC provenance 是另一条独立信号',
     ],
     security: ['release-trust-boundaries.md', 'repository-consistency check'],
@@ -24,8 +25,11 @@ export function validateReleaseTrustLanguage(documents) {
       if (!documents[name]?.includes(marker)) errors.push(`${name} is missing ${marker}`);
     }
   }
-  if (/verify-tag v0\.6\.0/.test(documents.readme || '')
-      || /verify-tag v0\.6\.0/.test(documents.readmeZh || '')) {
+  const verificationTags = [
+    ...(documents.readme || '').matchAll(/verify-tag (v\d+\.\d+\.\d+)/g),
+    ...(documents.readmeZh || '').matchAll(/verify-tag (v\d+\.\d+\.\d+)/g),
+  ].map((match) => match[1]);
+  if (!verificationTags.length || verificationTags.some((tag) => tag !== releaseTag)) {
     errors.push('README tag verification example is stale');
   }
   if (/signature- and checksum-verified/i.test(documents.readme || '')

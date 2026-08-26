@@ -89,7 +89,7 @@ neither is a representative accuracy benchmark.
 
 ## MCP and future rule expansion
 
-No MCP server ships in v0.7.2. npm/npx, the ordinary CLI and the Claude plugin invoke the current
+No MCP server ships in v0.7.3. npm/npx, the ordinary CLI and the Claude plugin invoke the current
 runtime. The current count is 25 built-in risk rules, three evidence-integrity rules and 16 external
 adapter risk rules. The documented architecture gates require a permission model and client
 evidence for MCP, and positive/negative fixtures plus false-positive review for every future stable
@@ -144,6 +144,8 @@ The following are historical and covered by machine regressions; they are not cu
 | 0.7.0 | Access-chain fingerprints could collide, standard Next monorepo app roots could be missed, and exact tsconfig aliases could stop one-hop analysis. | Entry/call fingerprint, monorepo-root and bounded alias-resolution regressions. |
 | 0.7.2 | Demo output could recursively delete an unowned directory, plural/camelCase credential keys could leak technical evidence, and two supported-looking Express shapes could return false-clean route coverage. | Ownership-marker deletion boundary, per-artifact secret sentinel, exact CommonJS route and imported registration-function fail-closed regressions. |
 | 0.7.2 | Shipped JSON Schemas could drift from handwritten validators, and the v0.7.0 ordinary-review aggregate was independently hand-maintained. | Offline Ajv/manual overlap gate plus recomputed project aggregates and record/semantic digest regressions. |
+| 0.7.3 | Deep member expressions and workspace patterns could abort analysis; persisted OSV lockfile paths could leave the project; supported-looking route shapes and unclassified controls could produce false-clean coverage. | Bounded expression/workspace handling, lexical and realpath containment, per-module isolation, framework-specific fail-closed route matrices and separated control roles. |
+| 0.7.3 | Compound HTML sinks and Python string booleans were misclassified; project-controlled Markdown could alter report structure; journey, test and release lifecycle evidence could blur incomplete, skipped or pre-public states. | Typed literal/operator regressions, context-specific Markdown encoding, reproducible journey contracts, four-state test accounting and separate candidate/public/live release gates. |
 
 Report new false-positive classes or minimized parser failures through
 [GitHub Issues](https://github.com/parousia8888/web-app-security-skill/issues). The handling and

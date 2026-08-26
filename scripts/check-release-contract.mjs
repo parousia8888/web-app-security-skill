@@ -108,7 +108,7 @@ for (const error of validateReleaseTrustLanguage({
   readmeZh: read('README.zh-CN.md'),
   security: read('SECURITY.md'),
   trust: read('docs/release-trust-boundaries.md'),
-})) {
+}, version)) {
   console.error(`release contract: ${error}`);
   failed = true;
 }

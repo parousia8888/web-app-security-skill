@@ -155,6 +155,21 @@ digest-bound and independently checkable. Exact public facts are in the
 [v0.7.2 release evidence](docs/releases/v0.7.2.md) and
 [patch plan](docs/V0.7.2_PATCH_PLAN.md).
 
+## v0.7.3 external-audit remediation candidate
+
+v0.7.3 addresses the full 26-item external-audit ledger across bounded input containment,
+fail-closed route and access-chain evidence, narrow source-rule correctness, reproducible ordinary-
+project journeys, test accounting, release-state separation and executable public documentation.
+It does not add a detector family, framework or production accuracy claim.
+
+The candidate retains actual historical and Phase 4 execution identities instead of relabelling
+them. Public v0.7.2 npm, installer and Action facts stay active until v0.7.3 passes exact-commit CI
+and CodeQL, signed immutable publication, npm trusted publishing, installer verification, immutable
+consumer, signed `v1` promotion and durable live verification. Exact issue dispositions and phase
+evidence are in the
+[v0.7.3 remediation plan](docs/V0.7.3_EXTERNAL_AUDIT_REMEDIATION_PLAN.md); candidate and later
+public facts are separated in the [release evidence](docs/releases/v0.7.3.md).
+
 ## Correctness backlog
 
 Included in the published v0.4.0 release:

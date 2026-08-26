@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#see-the-result">Demo</a> ·
-  <a href="#whats-new-in-v072">v0.7.2</a> ·
+  <a href="#whats-new-in-v073">v0.7.3</a> ·
   <a href="#install">Install</a> ·
   <a href="#run-the-first-project">First project</a> ·
   <a href="docs/tutorial.md">Tutorial</a> ·
@@ -105,44 +105,45 @@ check reruns the fixture and fails if any surface disagrees.
 For the complete install-to-uninstall path, follow the tested
 [first project tutorial](docs/tutorial.md).
 
-## What's new in v0.7.2
+## What's new in v0.7.3
 
-v0.7.2 is a bounded correctness and trust-language patch. It adds no detector family or framework
-claim. The signed tag, GitHub Release, npm package, provenance and verified installer are public.
-The signed `v1` alias now resolves to the immutable v0.7.2 source after both immutable and
-public-alias consumers passed:
+v0.7.3 is a bounded correctness and evidence-integrity candidate. It addresses the complete
+26-item external-audit ledger without adding a detector family or framework claim. Public v0.7.2
+npm, installer and Action examples remain in place until every v0.7.3 publication gate passes:
 
-- **Safe demo output:** reruns clean only a marked demo-owned directory and fixed generated files;
-  unowned, symlinked and protected paths are refused.
-- **Wider technical-evidence redaction:** camelCase, snake_case and kebab-case credential names,
-  singular/plural credential containers and common high-confidence token formats are sanitized in
-  every report-bundle renderer. Generic `key` metadata remains reviewable.
-- **Express false-clean paths closed:** direct CommonJS routers and exact local CommonJS mounts are
-  inventoried. Imported local route-registration functions that remain unsupported make coverage
-  partial and produce `unknown` evidence instead of a clean empty route result.
-- **Executable schema contracts:** all shipped JSON Schemas compile offline with Ajv, and a curated
-  corpus must agree with the handwritten validators.
-- **Recomputable ordinary review:** every v0.7.0 project record now carries fixed source/tool
-  commits, exact target/command, report digests and coverage reasons; aggregate totals are derived
-  from those records.
-- **Separated release trust signals:** repository-local tag policy, GitHub tag verification,
-  GitHub release-asset provenance and npm OIDC provenance have explicit independent boundaries.
+- **Untrusted input stays bounded:** persisted project/lockfile paths are checked before OSV use,
+  including symlink escape. Deep member expressions, malformed workspace metadata and unsupported
+  workspace patterns become explicit incomplete evidence instead of crashing or inventing a clean
+  result.
+- **Route review fails closed:** computed/unresolved Express shapes and framework hints with no
+  eligible module cannot produce completed empty coverage. Authentication, authorization,
+  rate-limit and unclassified controls remain separate; Next middleware/proxy is application
+  context, not proof that an individual route is protected.
+- **One authorization-analysis surface:** `accessChains` now carries the bounded principal, tenant,
+  Prisma/Drizzle and one-local-call evidence. A missing visible constraint remains a review lead,
+  never proof of BOLA/IDOR or runtime enforcement.
+- **Narrow source rules corrected:** compound `innerHTML`/`outerHTML` assignments are visible,
+  Python boolean settings require real boolean tokens, and project-controlled technical values
+  cannot inject Markdown headings or tasks into reports.
+- **Five-project evidence can be rerun:** the active journey contract pins target commits, adapter
+  versions and binary identities, and separates deterministic semantics, mutable OSV results and
+  manual annotations. The Phase 4 runs retain their actual v0.7.2 tool identity; unchanged detector
+  bytes are recorded as v0.7.3 candidate compatibility, not relabelled as a new run.
+- **Tests and releases stop overstating completion:** passed, failed, skipped and not-run work are
+  counted separately. Candidate, GitHub/npm publication, installer, immutable Action, moving `v1`
+  and durable live verification are independent gates.
+- **Executable public contracts:** current conformance uses stable paths and a VERSION-derived
+  label; schema path rules agree with runtime; roadmap, release procedure, historical provenance
+  and planned-versus-shipped artifacts are machine checked.
 
 The stable inventory remains 25 built-in risk rules, 3 evidence-integrity rules and 16 opt-in
-external-adapter risk rules. Pattern matches remain `suspected`; policy gating never upgrades
-evidence, and incomplete analysis never becomes pass. The v0.7.0
-[access-control review](docs/reviews/v0.7.0-access-control-review.md),
-[regressions](docs/regressions/v0.7.0-access-control-real-world-regressions.md) and
-[access-control-chain reference](references/access-control-chain.md) continue to define the route
-review boundary.
-
-The existing finding explanation contract remains: every v3 source finding includes the technical
-term, plain-language meaning, realistic consequence, evidence boundary, proposal, alternatives,
-side effects, owner decisions, separate security/functional retests and rollback. Stable rule
-inventory is now 25 built-in risk rules, 3 evidence-integrity rules and 16 opt-in external-adapter
-risk rules, for 44 total. Route records are not counted as vulnerability rules.
-The [current planted rule-contract conformance](docs/conformance/rule-contract-conformance.md)
-checks the 28 built-in contracts and remains explicitly separate from production accuracy.
+external-adapter risk rules, for 44 total. Pattern matches remain `suspected`; incomplete analysis
+remains `unknown` and may exit 3. Route records are not vulnerability rules. The
+[current rule-contract conformance](docs/conformance/rule-contract-conformance.md) checks the 28
+built-in contracts but is not a production precision/recall claim. Exact issue dispositions and
+remaining boundaries are in the
+[v0.7.3 remediation plan](docs/V0.7.3_EXTERNAL_AUDIT_REMEDIATION_PLAN.md) and
+[release evidence](docs/releases/v0.7.3.md).
 
 ## Install
 
@@ -454,7 +455,7 @@ Verify downloaded release assets:
 sha256sum -c SHA256SUMS
 gh attestation verify web-app-security-skill-*.tar.gz \
   --repo parousia8888/web-app-security-skill
-git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.7.2
+git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.7.3
 ```
 
 `.github/release-signers` is a repository-local signer policy: a successful local check proves that

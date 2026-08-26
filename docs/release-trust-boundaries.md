@@ -28,19 +28,19 @@ commit.
 
 ## Candidate verification
 
-After `v0.7.2` is public, verify the local tag policy and compare immutable identities:
+After `v0.7.3` is public, verify the local tag policy and compare immutable identities:
 
 ```bash
 git fetch --tags --force
-git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.7.2
-git rev-parse 'v0.7.2^{}'
-npm view web-app-security-skill@0.7.2 gitHead
+git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.7.3
+git rev-parse 'v0.7.3^{}'
+npm view web-app-security-skill@0.7.3 gitHead
 ```
 
 Inspect the exact tag object's GitHub verification separately:
 
 ```bash
-tag_object="$(git rev-parse v0.7.2)"
+tag_object="$(git rev-parse v0.7.3)"
 gh api "repos/parousia8888/web-app-security-skill/git/tags/$tag_object" \
   --jq '.verification | {verified,reason,verified_at}'
 ```

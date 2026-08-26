@@ -1,6 +1,6 @@
 {
   "name": "web-app-security-skill",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "private": false,
   "type": "module",
   "description": "Check, harden, and retest web projects with an AI coding agent and reproducible evidence.",

@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.3] — 2026-08-26
+
+### Fixed
+- Persisted project and lockfile paths are bounded lexically and through `realpath` before external
+  adapter use. Deep project-controlled member expressions, malformed workspace metadata and
+  unsupported workspace patterns now produce explicit incomplete evidence instead of aborting the
+  run or manufacturing a confirmed lockfile conclusion.
+- Express computed methods, sibling middleware mounts, unresolved registrations and framework-
+  hinted projects with no eligible route module fail closed. Authentication, authorization,
+  rate-limit and unclassified controls stay separate; unsupported Next.js middleware/proxy shapes
+  remain application context rather than route-enforcement proof.
+- Bounded Prisma singleton aliases and nullish initialization participate in access-chain review.
+  The dead parallel experimental authorization output was removed, leaving `accessChains` as the
+  sole public bounded authorization-analysis surface.
+- Direct `innerHTML`/`outerHTML` append assignment is covered; Python security settings require
+  actual boolean tokens rather than strings or numbers; project-controlled Markdown technical
+  values cannot create headings, tasks or injected report structure.
+- Journey runs record exits 0/1/2/3 separately and accept valid exit-3 artifacts as incomplete
+  evidence. Gitleaks historical identity uses opaque structured discriminators that cannot collapse
+  through evidence redaction.
+- Candidate, public-package, installer, immutable-Action, moving-`v1` and durable live-verification
+  states are separate. Test files and prerequisite surfaces end as `passed`, `failed`, `skipped` or
+  `not_run`; unavailable work is not summarized as passed.
+
+### Changed
+- Five fixed-commit ordinary-project journeys now use one active v0.7.3 contract with pinned adapter
+  identities, byte/semantic/manual-annotation digests and explicit mutable OSV evidence. Their
+  Phase 4 observations retain the actual 0.7.2 tool-version identity; candidate compatibility is
+  recorded separately when the detector-source digest is unchanged.
+- Current rule-contract conformance moved to stable version-independent paths and derives its label
+  from `VERSION`. Historical v0.6.0 review bytes remain immutable and have separate provenance;
+  unavailable original analyzer invocations stay `verification_pending`.
+- Public JSON Schema path constraints now agree with runtime validation. Documentation links,
+  historical-plan deviations, capability claims and release procedures have executable contracts.
+
+### Security boundary
+- Detector inventory remains 25 built-in risk rules, 3 evidence-integrity rules and 16 opt-in
+  external-adapter risk rules. v0.7.3 corrects false-clean, containment and evidence-integrity
+  paths; it does not add a framework, whole-program taint analysis, production precision/recall or
+  an automatic project-repair claim.
+- Source and external matches remain `suspected` unless independently reproduced. Incomplete
+  analysis remains `unknown` and may exit 3; explicit policy exclusions remain visible but are not
+  automatically treated as analyzer failures.
+
+Publication status: v0.7.3 candidate only until exact-commit CI and CodeQL, the signed tag, GitHub
+Release assets and provenance, npm trusted publishing, verified installer, immutable Action,
+signed `v1` promotion and durable live verification pass.
+
 ## [0.7.2] — 2026-08-25
 
 ### Fixed

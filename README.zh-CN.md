@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#查看结果">Demo</a> ·
-  <a href="#v072-新增内容">v0.7.2</a> ·
+  <a href="#v073-新增内容">v0.7.3</a> ·
   <a href="#安装">安装</a> ·
   <a href="#执行第一个项目">首个项目</a> ·
   <a href="docs/tutorial.zh-CN.md">完整教程</a> ·
@@ -100,37 +100,36 @@ npm run demo -- --out ./demo-output
 
 完整的安装到卸载流程见经过测试的[第一个项目教程](docs/tutorial.zh-CN.md)。
 
-## v0.7.2 新增内容
+## v0.7.3 新增内容
 
-v0.7.2 是限定范围的正确性与信任说明补丁，不增加检测器家族，也不扩大框架宣传。签名 tag、
-GitHub Release、npm 包、provenance 与 verified installer 已公开。不可变 consumer 和公开别名
-consumer 均通过后，签名的 `v1` 已指向不可变 v0.7.2 源码：
+v0.7.3 是限定范围的正确性与证据完整性候选版，处理外部审计的 26 项完整台账，不增加检测器家族，
+也不扩大框架宣传。v0.7.3 所有公开门禁通过前，npm、installer 与 Action 示例继续指向已发布的
+v0.7.2：
 
-- **Demo 输出有归属边界：** 重跑只清理带有效 owner marker 的 demo 目录和固定生成文件；未归属目录、
-  symlink 与受保护路径全部拒绝。
-- **技术证据脱敏更完整：** camelCase、snake_case、kebab-case、单复数凭据容器和常见高置信 token
-  格式会在全部报告 bundle renderer 中脱敏；普通 `key` 元数据仍可供审查。
-- **关闭 Express 假干净路径：** 直接 CommonJS router 和精确本地 CommonJS mount 会进入清单；发现
-  暂不支持的导入式本地路由注册函数时，覆盖率变成 partial 并输出 `unknown`，不会返回空白干净结果。
-- **Schema 可以独立执行：** 所有公开 JSON Schema 都必须离线通过 Ajv 编译，精选样例还必须与手写
-  validator 得出一致结果。
-- **普通项目审查可重算：** v0.7.0 的每个项目记录都包含固定源码/tool commit、精确 target/command、
-  报告摘要与 coverage reason，汇总数字由项目记录计算。
-- **release 信任信号分开：** 仓库内 tag policy、GitHub tag verification、GitHub release 资产
-  provenance 与 npm OIDC provenance 各自说明证据边界。
+- **不可信输入有明确上限：** 持久化项目/lockfile 路径在进入 OSV 前会检查，包括 symlink 逃逸。
+  过深 member expression、畸形 workspace 元数据和不支持的 workspace pattern 会变成显式不完整
+  证据，不会让整次检查崩溃或制造干净结果。
+- **路由审查默认保守：** 无法解析的 Express 结构，以及只有 framework hint、没有可分析 route module
+  的项目，不能返回 completed 空清单。认证、授权、限流和未分类 control 各自独立；Next middleware/
+  proxy 只算应用上下文，不代表某条路由已经被保护。
+- **授权分析只有一个公开出口：** `accessChains` 承载限定范围的 principal、tenant、Prisma/Drizzle 和
+  一次本地调用证据。没有看到约束只是待复查线索，不能证明存在 BOLA/IDOR 或运行时授权已经生效。
+- **窄范围源码规则更准确：** `innerHTML`/`outerHTML` 的 compound assignment 可以被看到；Python 安全
+  配置必须是真 boolean token；项目控制的技术值不能在 Markdown 报告里注入标题或任务列表。
+- **五项目证据可以重跑：** active journey 固定 target commit、adapter 版本和 binary identity，并把
+  确定性语义、可变化的 OSV 结果和人工标注分开。Phase 4 仍保留实际运行时的 0.7.2 tool identity；
+  detector 字节未变只记录为兼容 v0.7.3 candidate，不伪装成重新运行。
+- **测试和 release 不再把未完成写成成功：** passed、failed、skipped、not-run 分开统计。candidate、
+  GitHub/npm 发布、installer、不可变 Action、移动 `v1` 与持久 live verification 是独立门禁。
+- **公开合同可执行：** 当前 conformance 使用稳定路径并从 `VERSION` 生成标签；schema 路径规则与
+  runtime 一致；roadmap、release 流程、历史 provenance 和计划/实际文件映射都可机器检查。
 
-stable 清单仍是 25 条 built-in risk、3 条 evidence-integrity 和 16 条 opt-in 外部 adapter risk。
-模式命中继续保持 `suspected`，policy 阻断不会升级证据，不完整分析也不会变成 pass。v0.7.0 的
-[访问控制审查](docs/reviews/v0.7.0-access-control-review.md)、
-[真实回归](docs/regressions/v0.7.0-access-control-real-world-regressions.md)和
-[访问控制链参考](references/access-control-chain.md)继续定义路由审查边界。
-
-原有 finding 解释合同继续生效：每条 v3 源码 finding 都包含专业术语、白话解释、现实后果、证据
-边界、提案、替代方案、副作用、用户决策、安全复测、功能复测和回滚。稳定规则清单现为 25 条
-内置 risk、3 条 evidence-integrity 和 16 条 opt-in 外部 adapter risk，共 44 条。路由记录不计入
-漏洞规则数量。
-[当前 planted 规则合同一致性](docs/conformance/rule-contract-conformance.md)检查 28 条
-内置合同，仍明确不代表生产准确率。
+stable 清单仍是 25 条 built-in risk、3 条 evidence-integrity 和 16 条 opt-in 外部 adapter risk，
+共 44 条。模式命中继续保持 `suspected`；不完整分析保持 `unknown`，并可能退出 3。路由记录不计入
+漏洞规则数量。[当前规则合同一致性](docs/conformance/rule-contract-conformance.md)检查 28 条内置合同，
+不代表生产 precision/recall。精确 issue 处置与剩余边界见
+[v0.7.3 修复计划](docs/V0.7.3_EXTERNAL_AUDIT_REMEDIATION_PLAN.md)和
+[release 证据](docs/releases/v0.7.3.md)。
 
 ## 安装
 
@@ -413,7 +412,7 @@ Source mode 默认只用内置 adapter。v0.7.2 不可变 Action 运行 v3 源�
 sha256sum -c SHA256SUMS
 gh attestation verify web-app-security-skill-*.tar.gz \
   --repo parousia8888/web-app-security-skill
-git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.7.2
+git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.7.3
 ```
 
 `.github/release-signers` 是仓库内 signer policy：本地验签通过只证明 tag 与当前检出的仓库政策
