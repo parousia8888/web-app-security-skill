@@ -27,9 +27,9 @@ function start(project, root, id) {
   return join(root, id);
 }
 
-function audit(runDir, name = 'report') {
+function audit(runDir, name = 'report', expectedExit = 3) {
   const result = run(['audit', runDir, '--name', name, '--fail-on', 'never']);
-  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.status, expectedExit, result.stderr);
   return join(runDir, `${name}.json`);
 }
 
@@ -52,6 +52,11 @@ try {
   const runsB = join(temp, 'runs-b');
   const baselineRun = start(projectA, runsA, 'baseline');
   const baselinePath = audit(baselineRun);
+  const baselineEvidence = JSON.parse(readFileSync(baselinePath, 'utf8'));
+  assert.ok(baselineEvidence.findings.some((finding) =>
+    finding.rule.id === 'js-route-security-evidence-incomplete'
+      && finding.state === 'unknown'
+      && finding.evidence.reasons.framework_hinted_no_eligible_module === 1));
 
   const crossProjectRun = start(projectB, runsB, 'cross-project');
   let output = join(crossProjectRun, 'cross.json');
@@ -117,7 +122,7 @@ try {
 
   const ephemeralDir = join(temp, 'ephemeral');
   result = run(['audit', projectA, '--out', ephemeralDir, '--name', 'ephemeral', '--fail-on', 'never']);
-  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.status, 3, result.stderr);
   result = run(['retest', sameProjectRun, '--name', 'ephemeral-retest', '--baseline', join(ephemeralDir, 'ephemeral.json'), '--fail-on', 'never']);
   assert.equal(result.status, 2);
   assert.match(result.stderr, /baseline subject is not persisted/);
