@@ -117,8 +117,9 @@ v0.7.2：
 - **窄范围源码规则更准确：** `innerHTML`/`outerHTML` 的 compound assignment 可以被看到；Python 安全
   配置必须是真 boolean token；项目控制的技术值不能在 Markdown 报告里注入标题或任务列表。
 - **五项目证据可以重跑：** active journey 固定 target commit、adapter 版本和 binary identity，并把
-  确定性语义、可变化的 OSV 结果和人工标注分开。Phase 4 仍保留实际运行时的 0.7.2 tool identity；
-  detector 字节未变只记录为兼容 v0.7.3 candidate，不伪装成重新运行。
+  确定性语义、可变化的 OSV 结果和人工标注分开。v0.7.3 candidate 已在精确 tool commit
+  `0cd79fd` 上重跑；Gitleaks 历史只包含每个精确 target commit 可达的提交，不相关的 ref/tag 不会
+  改变历史输入。不完整的项目证据继续保持不完整。
 - **测试和 release 不再把未完成写成成功：** passed、failed、skipped、not-run 分开统计。candidate、
   GitHub/npm 发布、installer、不可变 Action、移动 `v1` 与持久 live verification 是独立门禁。
 - **公开合同可执行：** 当前 conformance 使用稳定路径并从 `VERSION` 生成标签；schema 路径规则与

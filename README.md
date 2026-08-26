@@ -127,8 +127,9 @@ npm, installer and Action examples remain in place until every v0.7.3 publicatio
   cannot inject Markdown headings or tasks into reports.
 - **Five-project evidence can be rerun:** the active journey contract pins target commits, adapter
   versions and binary identities, and separates deterministic semantics, mutable OSV results and
-  manual annotations. The Phase 4 runs retain their actual v0.7.2 tool identity; unchanged detector
-  bytes are recorded as v0.7.3 candidate compatibility, not relabelled as a new run.
+  manual annotations. The v0.7.3 candidate was rerun at exact tool commit `0cd79fd`; Gitleaks history
+  is bounded to commits reachable from each exact target commit, so unrelated refs and tags cannot
+  change the recorded history input. Incomplete project evidence remains incomplete.
 - **Tests and releases stop overstating completion:** passed, failed, skipped and not-run work are
   counted separately. Candidate, GitHub/npm publication, installer, immutable Action, moving `v1`
   and durable live verification are independent gates.

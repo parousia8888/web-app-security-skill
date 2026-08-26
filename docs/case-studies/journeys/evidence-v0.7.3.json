@@ -9,9 +9,9 @@
     "qualifier": "Immutable v2 historical snapshot; not an active current-tool reproduction gate."
   },
   "toolSource": {
-    "version": "0.7.2",
-    "commit": "fa324df4f764b9b8fafb1ba005a66b3d8eeb4353",
-    "sourceDigest": "08fc7e42b3e4279e08d86786ed7989f1c18f7d5e9675ce34bd49a2cddd1d6f65"
+    "version": "0.7.3",
+    "commit": "0cd79fd49c2d9aa5df925a443ea4cb2c40be9b1b",
+    "sourceDigest": "bfcedb4910de6fb61e081b84e774a1a25bc535648f7041c688ec4edb65c9ab6d"
   },
   "method": {
     "sourceOnly": true,
@@ -22,7 +22,8 @@
     "starsUsedAsEvidence": false,
     "auditExitRecordedSeparately": true,
     "byteAndSemanticDigestsSeparated": true,
-    "manualAnnotationIdentitySeparated": true
+    "manualAnnotationIdentitySeparated": true,
+    "gitleaksHistoryBoundary": "target_commit_reachable_history"
   },
   "regressionInventory": "docs/regression-inventory.md",
   "journeys": [
@@ -63,7 +64,7 @@
           "osv"
         ],
         "digests": {
-          "reportBytes": "cc04789a60d4300dd64cae7f130483433ae14b192e3fe819d4d3b6cee0decac6",
+          "reportBytes": "14588e3c6bb49449047443e0477d2b87e73f803a2289071c9ce547c31f849109",
           "reportSemantics": "2119625e2d0a6b0dcdf0f4d1721a4313ea0a0f9745e624b0b1c7cd64ab1c9f4d",
           "stableReportSemantics": "c3b87f72c2a530f5e9b4578670145be73db9ac2faaf205ad2113d933a86085a5",
           "manualAnnotationIdentity": "5c32567f39d2e051c4fe94b95d4bd53143daefdf757eeba366ab9518edd2e677"
@@ -181,7 +182,12 @@
       ],
       "mutableAdapters": [
         "osv"
-      ]
+      ],
+      "historyBoundary": {
+        "adapter": "gitleaks",
+        "ref": "62f1b81ff7f66001b0f5f613202f87771f3186ee",
+        "semantics": "commits_reachable_from_exact_target_commit"
+      }
     },
     {
       "id": "healthchecks",
@@ -214,9 +220,9 @@
           "osv"
         ],
         "digests": {
-          "reportBytes": "cb5e16b790ae1734ea79080c641f7a42f4147437ad9697a28f0e4e6cd30ba5e4",
-          "reportSemantics": "323753ed45355bc1693376e7a5badc179733c9f6b362086be469bf53772eb6ec",
-          "stableReportSemantics": "620c64fd2f7a6e986ae9aa5d5ecac92de4b9fba31fb25033e043bf0611e98a3f",
+          "reportBytes": "f0237b13f8e7f9984585f721f47a394a96494e854aa6f2f767c30150d7cdf766",
+          "reportSemantics": "dee3c440f55132a5dd147363f729ca55e7c5e4d3bc1b0b2ec0e04ac9a431aab1",
+          "stableReportSemantics": "acb871fc43f3825932d097f36ef3787f6e95a21b1a87f8a5c0a3d68737fad1f2",
           "manualAnnotationIdentity": "fa99afb1f406413ef7eb0106ebca4c0923a019a7152341e00d01fd272bac0df0"
         },
         "adapters": [
@@ -235,8 +241,8 @@
             "observedVersion": "8.30.1",
             "rulesetDigest": "932d1f6d5cbf6d0d2a83bd2ffeb2023ddfd4fefd437435689c7bc7ca0eea268b",
             "binarySha256": "ba52fb1bfabbcde42f032afad3d6e0b19dff8ed105229a16e7caa338bbc0e84f",
-            "deterministicFindingIdsDigest": "60abbce35410ea3e5467069bb6fb1580508fade22ab24910db489bbad5730d86",
-            "deterministicFindingContentDigest": "36f50d3a06bfa19f010b6ac9c9d41b9454f4181b0d8dd0a5795113dc7eb916e4"
+            "deterministicFindingIdsDigest": "cc4880f5707c911ee78e1e6b511c9dfccf210f92fd1c2d4bdba3f7049cf1a719",
+            "deterministicFindingContentDigest": "a178dab200b7435a38eb70b430d65a65963a6a155ae1e239392f2c84c5a53e1a"
           },
           {
             "id": "osv",
@@ -332,7 +338,12 @@
       ],
       "mutableAdapters": [
         "osv"
-      ]
+      ],
+      "historyBoundary": {
+        "adapter": "gitleaks",
+        "ref": "49653c350cddc47fc00a471bd1b08b5771a7967c",
+        "semantics": "commits_reachable_from_exact_target_commit"
+      }
     },
     {
       "id": "open-webui",
@@ -374,7 +385,7 @@
           "osv"
         ],
         "digests": {
-          "reportBytes": "98c6a457e7b9fed142c8738e8187e103a01a738c7a68b31927d761207c27ca44",
+          "reportBytes": "ffd4ad63eb212ca8c51ed195058f0725f31311dc4340ef361b3047f34fe6baaf",
           "reportSemantics": "8f1dc4ca081f2cbc5474d8edbe725249269a33235bb9b1987d67a7a0831966b8",
           "stableReportSemantics": "734c2e099521eff355fd3921c8f38de3cedeb428d1c4cc94dda0a367d0d0db29",
           "manualAnnotationIdentity": "386953b6f5d4c1617d2d530818166cd6cdb04d703bb3f947b2aac17ccf1433d8"
@@ -496,7 +507,12 @@
       ],
       "mutableAdapters": [
         "osv"
-      ]
+      ],
+      "historyBoundary": {
+        "adapter": "gitleaks",
+        "ref": "01f4282f1ffe0d6212f58d3afbeae21fffd0c4be",
+        "semantics": "commits_reachable_from_exact_target_commit"
+      }
     },
     {
       "id": "uptime-kuma",
@@ -533,9 +549,9 @@
           "osv"
         ],
         "digests": {
-          "reportBytes": "1cffffe4565ee05c652c38b82aa4a31280889713ae9031fbc2d580544ef8f1b3",
-          "reportSemantics": "22b0479c11fc24c53a459516e4e738948796a23e9fdbf5c07d47a5fc8f63245e",
-          "stableReportSemantics": "b4d8c20dd3ae9e074dd970a3d6b4ea8f4f925c5d8c29e0046b1f7120db74ffb2",
+          "reportBytes": "eda818accb92c04a78832b59e76d0fced6e3816b40aee1a89a632473073ef3f6",
+          "reportSemantics": "1813e3828f6a17f167ffe9a3e95402c7b6cf0f4a241cddae9c3cf05c9da618f7",
+          "stableReportSemantics": "041fdffbbcd953a97999fccf38ea321f133dd49b30c39d7c04bf3468655f9c67",
           "manualAnnotationIdentity": "a96ecdf3f740d6892818aef73a73004a0a35870b9e6c8ee93215d6e0c541befb"
         },
         "adapters": [
@@ -554,8 +570,8 @@
             "observedVersion": "8.30.1",
             "rulesetDigest": "932d1f6d5cbf6d0d2a83bd2ffeb2023ddfd4fefd437435689c7bc7ca0eea268b",
             "binarySha256": "ba52fb1bfabbcde42f032afad3d6e0b19dff8ed105229a16e7caa338bbc0e84f",
-            "deterministicFindingIdsDigest": "26d55a047894238b64eac9cf5c866ebba885be52582d3a102a895fba2c16a3ca",
-            "deterministicFindingContentDigest": "fcd27e77caddf763e5a34444c0b5ad65705f660159841c6ca552c108401fb7e9"
+            "deterministicFindingIdsDigest": "5e937b1f656930acc59b3748498d09ef7871c19eb451bd11a22f02997e49a2a0",
+            "deterministicFindingContentDigest": "52dcb248bc9b6dbbc992b0a44af14b2f37148500511d608b468d099bd32c83c5"
           },
           {
             "id": "osv",
@@ -656,7 +672,12 @@
       ],
       "mutableAdapters": [
         "osv"
-      ]
+      ],
+      "historyBoundary": {
+        "adapter": "gitleaks",
+        "ref": "6b5ea0155793e666666745fb8d6fef1e829543a2",
+        "semantics": "commits_reachable_from_exact_target_commit"
+      }
     },
     {
       "id": "mealie",
@@ -697,9 +718,9 @@
           "osv"
         ],
         "digests": {
-          "reportBytes": "9d18ccc01576d2498f1a9da5afac571100f70493ad11b2ab6b7591dcbd510c64",
-          "reportSemantics": "17ee433ebe33a5cdf3984939caf7356058216f3f64462143e72899807da0ff77",
-          "stableReportSemantics": "bbf8a322089347ab337d87ee277b0fe6ae5060783af811c6218999ba8e110b25",
+          "reportBytes": "230ad935d575f7067b1757c4e49c2a51e9e5bb7d7e95e7e9712171b1ea8bca49",
+          "reportSemantics": "15daf9b9590612c16531a8763a5ee5c54b848624e580ba21dc329878e33800e4",
+          "stableReportSemantics": "6cdfa6172377d8afe4c3403c0744948f0b7dc2be4b05e06b27f9d8c9a2774415",
           "manualAnnotationIdentity": "a32dcc71d1130f2363b8b28d169fbe09b3de5fb6b868002e7604a164c5b5320c"
         },
         "adapters": [
@@ -718,8 +739,8 @@
             "observedVersion": "8.30.1",
             "rulesetDigest": "932d1f6d5cbf6d0d2a83bd2ffeb2023ddfd4fefd437435689c7bc7ca0eea268b",
             "binarySha256": "ba52fb1bfabbcde42f032afad3d6e0b19dff8ed105229a16e7caa338bbc0e84f",
-            "deterministicFindingIdsDigest": "e81486a620379e73e69d157ab58b979869e49ad1f96c3cbf581dade22c7ea1f5",
-            "deterministicFindingContentDigest": "cf27cd1e78bdc61ad2ff5b617517e6b3ba054b6e3bc467eb5f32aedd1d0961b3"
+            "deterministicFindingIdsDigest": "c7aefb6fbe02ef32bde76410d4c99854f66b4d6374be04b271bb4c567f5f822b",
+            "deterministicFindingContentDigest": "bee746be4b285d60f836dae188c225ef1426bb911fb62f23557a937b12d19d6b"
           },
           {
             "id": "osv",
@@ -765,13 +786,13 @@
         },
         "snapshot": {
           "summary": {
-            "total": 41,
+            "total": 37,
             "confirmed": 0,
-            "suspected": 41,
+            "suspected": 37,
             "unknown": 0
           },
           "byRule": {
-            "gitleaks-committed-secret": 26,
+            "gitleaks-committed-secret": 22,
             "gitleaks-working-tree-secret": 15
           },
           "externalStates": [
@@ -812,7 +833,12 @@
       ],
       "mutableAdapters": [
         "osv"
-      ]
+      ],
+      "historyBoundary": {
+        "adapter": "gitleaks",
+        "ref": "2fc22cea43f2978533f3a89a1ddeb1e6a18b245f",
+        "semantics": "commits_reachable_from_exact_target_commit"
+      }
     }
   ]
 }

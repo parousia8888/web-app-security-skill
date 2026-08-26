@@ -26,16 +26,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   values cannot create headings, tasks or injected report structure.
 - Journey runs record exits 0/1/2/3 separately and accept valid exit-3 artifacts as incomplete
   evidence. Gitleaks historical identity uses opaque structured discriminators that cannot collapse
-  through evidence redaction.
+  through evidence redaction. Journey runs reject shallow repositories and bound Gitleaks history
+  to commits reachable from each exact target commit instead of the checkout's mutable ref set.
 - Candidate, public-package, installer, immutable-Action, moving-`v1` and durable live-verification
   states are separate. Test files and prerequisite surfaces end as `passed`, `failed`, `skipped` or
   `not_run`; unavailable work is not summarized as passed.
 
 ### Changed
 - Five fixed-commit ordinary-project journeys now use one active v0.7.3 contract with pinned adapter
-  identities, byte/semantic/manual-annotation digests and explicit mutable OSV evidence. Their
-  Phase 4 observations retain the actual 0.7.2 tool-version identity; candidate compatibility is
-  recorded separately when the detector-source digest is unchanged.
+  identities, exact target-history boundaries, byte/semantic/manual-annotation digests and explicit
+  mutable OSV evidence. All five were rerun with v0.7.3 tool commit `0cd79fd`; valid incomplete
+  exits remain visible rather than being promoted to complete evidence.
 - Current rule-contract conformance moved to stable version-independent paths and derives its label
   from `VERSION`. Historical v0.6.0 review bytes remain immutable and have separate provenance;
   unavailable original analyzer invocations stay `verification_pending`.
