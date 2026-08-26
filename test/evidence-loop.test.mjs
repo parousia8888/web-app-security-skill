@@ -56,14 +56,19 @@ try {
   assert.equal(baseline.generatedAt, '1970-01-01T00:00:00.000Z');
   assert.equal(baseline.subject.binding, 'persisted');
   assert.equal(JSON.stringify(baseline).includes(temp), false, 'v2 report must not contain local absolute paths');
-  assert.equal(baseline.summary.byBaseline.new, 4);
+  assert.equal(baseline.summary.byBaseline.new, 5);
   assert.equal(baseline.summary.byState.confirmed, 1);
   assert.equal(baseline.summary.byState.suspected, 3);
+  assert.equal(baseline.summary.byState.unknown, 1);
   assert.equal(baseline.coverage.length, SOURCE_RULES.length);
   assert.equal(baseline.coverage.find((entry) => entry.ruleId === 'tracked-sensitive-env-file').status,
     'not_applicable');
-  assert.ok(baseline.coverage.filter((entry) => entry.ruleId !== 'tracked-sensitive-env-file')
+  assert.ok(baseline.coverage.filter((entry) => ![
+    'tracked-sensitive-env-file', 'js-route-security-evidence-incomplete',
+  ].includes(entry.ruleId))
     .every((entry) => entry.status === 'completed'));
+  assert.equal(baseline.coverage.find((entry) =>
+    entry.ruleId === 'js-route-security-evidence-incomplete').status, 'unavailable');
   assert.ok(baseline.findings.every((finding) => finding.baseline.coverageRef));
   assert.equal(baseline.policy.thresholds.find((entry) => entry.domain === 'security_exposure').failOn, 'high');
   assert.equal(baseline.policy.thresholds.find((entry) => entry.domain === 'supply_chain').failOn, 'high');
@@ -75,7 +80,11 @@ try {
   assert.equal(lockFinding.state, 'confirmed');
   const sarifRules = JSON.parse(readFileSync(join(baselineDir, 'baseline.sarif'), 'utf8'))
     .runs[0].tool.driver.rules;
-  assert.ok(sarifRules.every((rule) => rule.helpUri === 'https://github.com/parousia8888/web-app-security-skill/blob/main/docs/stable-source-rules.json'));
+  assert.equal(sarifRules.find((rule) =>
+    rule.id === 'js-route-security-evidence-incomplete').helpUri,
+  'https://github.com/parousia8888/web-app-security-skill/blob/main/KNOWN_LIMITATIONS.md');
+  assert.ok(sarifRules.filter((rule) => rule.id !== 'js-route-security-evidence-incomplete')
+    .every((rule) => rule.helpUri === 'https://github.com/parousia8888/web-app-security-skill/blob/main/docs/stable-source-rules.json'));
 
   const patch = readFileSync(join(baselineDir, 'proposed.patch'), 'utf8');
   assert.match(patch, /Proposed changes only/);
@@ -85,7 +94,7 @@ try {
   result = run(['audit', baselineDir, '--name', 'baseline', '--fail-on', 'never']);
   assert.equal(result.status, 2);
   assert.match(result.stderr, /refusing to overwrite existing evidence/);
-  assert.equal(report(baselinePath).findings.length, 4);
+  assert.equal(report(baselinePath).findings.length, 5);
 
   result = run(['explain', sourceMapFinding.id, '--report', baselinePath]);
   assert.equal(result.status, 0, result.stderr);
@@ -101,7 +110,13 @@ try {
   assert.equal(result.status, 1, result.stderr);
   const unchanged = report(join(unchangedDir, 'unchanged.json'));
   assert.equal(unchanged.summary.byBaseline.unchanged, 4);
-  assert.ok(unchanged.findings.every((finding) => finding.baseline.state === 'unchanged'));
+  assert.equal(unchanged.summary.byBaseline.unretested, 1);
+  assert.ok(unchanged.findings.filter((finding) =>
+    finding.rule.id !== 'js-route-security-evidence-incomplete')
+    .every((finding) => finding.baseline.state === 'unchanged'));
+  assert.equal(unchanged.findings.find((finding) =>
+    finding.rule.id === 'js-route-security-evidence-incomplete').baseline.reasonCode,
+  'current_check_incomplete');
 
   writeFileSync(join(project, 'package-lock.json'), '{"lockfileVersion":3}\n');
   writeFileSync(join(project, 'next.config.mjs'), 'export default { productionBrowserSourceMaps: false };\n');
@@ -112,15 +127,27 @@ try {
 
   const fixedDir = start('fixed');
   result = run(['retest', fixedDir, '--name', 'fixed', '--baseline', baselinePath, '--fail-on', 'low']);
-  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.status, 3, result.stderr);
   const fixedPath = join(fixedDir, 'fixed.json');
   const fixed = report(fixedPath);
   assert.equal(fixed.mode, 'retest');
   assert.equal(fixed.summary.byBaseline.fixed, 4);
-  assert.ok(fixed.findings.every((finding) => finding.baseline.state === 'fixed'));
-  assert.ok(fixed.findings.every((finding) => finding.baseline.reasonCode === 'condition_absent_after_completed_check'));
-  assert.equal(JSON.parse(readFileSync(join(fixedDir, 'fixed.sarif'), 'utf8')).runs[0].results.length, 0);
-  assert.match(readFileSync(join(fixedDir, 'fixed.junit.xml'), 'utf8'), /failures="0" skipped="4"/);
+  assert.equal(fixed.summary.byBaseline.unretested, 1);
+  assert.ok(fixed.findings.filter((finding) =>
+    finding.rule.id !== 'js-route-security-evidence-incomplete')
+    .every((finding) => finding.baseline.state === 'fixed'));
+  assert.ok(fixed.findings.filter((finding) =>
+    finding.rule.id !== 'js-route-security-evidence-incomplete')
+    .every((finding) => finding.baseline.reasonCode === 'condition_absent_after_completed_check'));
+  const incompleteRouteFinding = fixed.findings.find((finding) =>
+    finding.rule.id === 'js-route-security-evidence-incomplete');
+  assert.equal(incompleteRouteFinding.state, 'unknown');
+  assert.equal(incompleteRouteFinding.baseline.state, 'unretested');
+  assert.equal(incompleteRouteFinding.baseline.reasonCode, 'current_check_incomplete');
+  const fixedSarifResults = JSON.parse(readFileSync(join(fixedDir, 'fixed.sarif'), 'utf8')).runs[0].results;
+  assert.deepEqual(fixedSarifResults.map((entry) => entry.ruleId), ['js-route-security-evidence-incomplete']);
+  assert.match(readFileSync(join(fixedDir, 'fixed.junit.xml'), 'utf8'),
+    /tests="5" failures="0" skipped="5"/);
 
   writeFileSync(join(project, 'next.config.mjs'), originalConfig);
   const regressedDir = start('regressed');
@@ -143,7 +170,7 @@ try {
   cpSync(originalFixture, join(hostile, 'app'), { recursive: true });
   const hostileDir = join(temp, 'hostile-report');
   result = run(['audit', hostile, '--out', hostileDir, '--name', 'hostile', '--fail-on', 'never']);
-  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.status, 3, result.stderr);
   const html = readFileSync(join(hostileDir, 'hostile.html'), 'utf8');
   assert.equal(html.includes('<img src=x onerror=alert(1)>'), false);
   assert.equal(readFileSync(join(hostileDir, 'hostile.json'), 'utf8').includes(hostile), false);
