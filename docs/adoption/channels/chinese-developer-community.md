@@ -13,7 +13,7 @@ Web App Security Skill 是一个开源 Skill 与 CLI，用一条命令生成本�
 ## 正文
 
 ```bash
-npx --yes web-app-security-skill@0.7.2 audit . --fail-on never
+npx --yes web-app-security-skill@0.7.3 audit . --fail-on never
 ```
 
 第一次报告会同时给出安全术语和白话解释，并区分“代码里看到了什么”与“还没有证明什么”。修改建议默认只供审查，同时列出替代方案、可能副作用、回滚条件、安全复测和产品功能复测。

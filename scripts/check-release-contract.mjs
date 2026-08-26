@@ -15,11 +15,11 @@ const workflows = [
   '.github/workflows/action-v1-consumer.yml',
   '.github/workflows/npm-publish.yml',
 ];
-const RELEASE_ACTION_COMMIT = '30402c866b86d78b66d0d4b495fee40ff6a6f160';
-const BOOTSTRAP_COMMIT = '3f42fb70f99f6ccb3c8e8449b2c06749c3b53148';
-const BOOTSTRAP_SHA256 = '193ece72d2c7d2c4220a6164a4bb280853ffca1e8de5217535fe95010c146e8a';
-const VERIFIER_COMMIT = '87326f11c0aab3901ac5cb0783d9452e607e83c5';
-const VERIFIER_SHA256 = '662b7de3d596bb6faf8fac4bf69f325f44c1152c99cbbea5fc25184863b1c6d5';
+const RELEASE_ACTION_COMMIT = '28494afd3470897e9b25e7c90187eac35a016186';
+const BOOTSTRAP_COMMIT = '5de57e8a974247a2f519ac93cea580923aaaff6a';
+const BOOTSTRAP_SHA256 = '2226efeed8127d2cd33fb05cbb0a3197952f8686d8ea9cf497bba1c6d33e6ef9';
+const VERIFIER_COMMIT = 'ab80e144171b0e3ff350514c5d342e07737604fc';
+const VERIFIER_SHA256 = '74d166797fb3630dd3764fad4feee9f8dacee23acc9f1a22ef22bc039a54c44a';
 let failed = false;
 
 function requireText(path, marker) {

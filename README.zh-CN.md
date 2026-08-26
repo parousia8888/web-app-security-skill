@@ -102,9 +102,9 @@ npm run demo -- --out ./demo-output
 
 ## v0.7.3 新增内容
 
-v0.7.3 是限定范围的正确性与证据完整性候选版，处理外部审计的 26 项完整台账，不增加检测器家族，
-也不扩大框架宣传。v0.7.3 所有公开门禁通过前，npm、installer 与 Action 示例继续指向已发布的
-v0.7.2：
+v0.7.3 是限定范围的正确性与证据完整性 release，处理外部审计的 26 项完整台账，不增加检测器
+家族，也不扩大框架宣传。签名 GitHub Release、npm 包和可信 installer 已公开；签名 `v1` 晋级仍是
+独立门禁：
 
 - **不可信输入有明确上限：** 持久化项目/lockfile 路径在进入 OSV 前会检查，包括 symlink 逃逸。
   过深 member expression、畸形 workspace 元数据和不支持的 workspace pattern 会变成显式不完整
@@ -168,7 +168,7 @@ bootstrap 并在执行前验证 SHA-256，然后验证选定 release 的 manifes
 显式传入 `--attestation required`。
 
 ```bash
-( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/3f42fb70f99f6ccb3c8e8449b2c06749c3b53148/scripts/bootstrap-install.sh?immutable=3f42fb70f99f6ccb3c8e8449b2c06749c3b53148'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" '193ece72d2c7d2c4220a6164a4bb280853ffca1e8de5217535fe95010c146e8a'; sh "$p" )
+( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/5de57e8a974247a2f519ac93cea580923aaaff6a/scripts/bootstrap-install.sh?immutable=5de57e8a974247a2f519ac93cea580923aaaff6a'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" '2226efeed8127d2cd33fb05cbb0a3197952f8686d8ea9cf497bba1c6d33e6ef9'; sh "$p" )
 ```
 
 也可以只装单一入口：
@@ -364,7 +364,7 @@ Composite Action 保持 v0.3 crawl 输入与输出兼容。Crawl mode 默认被�
 
 ```yaml
 - name: Audit public crawl boundary
-  uses: parousia8888/web-app-security-skill@30402c866b86d78b66d0d4b495fee40ff6a6f160
+  uses: parousia8888/web-app-security-skill@28494afd3470897e9b25e7c90187eac35a016186
   with:
     site: https://example.com
     acknowledge-authorization: true
@@ -372,21 +372,20 @@ Composite Action 保持 v0.3 crawl 输入与输出兼容。Crawl mode 默认被�
     fail-on: high
 ```
 
-需要可重复 CI 时使用上面的 v0.7.2 不可变 commit。签名的稳定大版本别名现在也指向该源码；晋级后
-公开 consumer [`32846972801`](https://github.com/parousia8888/web-app-security-skill/actions/runs/32846972801)
-已经通过：
+需要可重复 CI 时使用上面的 v0.7.3 不可变 commit。签名的稳定大版本别名在 v0.7.3 installer、
+不可变 Action 与 guarded promotion 门禁通过前仍指向 v0.7.2：
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
 ```
 
-Source mode 默认只用内置 adapter。v0.7.2 不可变 Action 运行 v3 源码合同、25 条 built-in risk、
+Source mode 默认只用内置 adapter。v0.7.3 不可变 Action 运行 v3 源码合同、25 条 built-in risk、
 3 条证据完整性规则、有边界的 Express/NestJS/Next.js 路由与 Server Action 清单，以及有边界的
 访问控制链审查。外部二进制必须由调用方固定版本并安装，Action 不会下载：
 
 ```yaml
 - name: Audit source
-  uses: parousia8888/web-app-security-skill@30402c866b86d78b66d0d4b495fee40ff6a6f160
+  uses: parousia8888/web-app-security-skill@28494afd3470897e9b25e7c90187eac35a016186
   with:
     mode: source
     project: .
@@ -394,8 +393,8 @@ Source mode 默认只用内置 adapter。v0.7.2 不可变 Action 运行 v3 源�
     fail-on: high
 ```
 
-移动的 `v1` tag 已在版本化源码、安装与不可变 Action 门禁通过后用 guarded lease 提升。以后接受
-更新前应检查 release note；工作流不能随版本移动时使用上面的完整 commit。
+移动的 `v1` tag 只会在版本化源码与安装门禁通过后用 guarded lease 提升。以后接受更新前应检查
+release note；工作流不能随版本移动时使用上面的完整 commit。
 
 ## 信任与 release 证据
 

@@ -34,10 +34,13 @@ becomes mandatory only with `--attestation required`.
 
 ## 4. Promote and verify `v1`
 
-1. Run the immutable Action consumer before moving `v1`.
-2. Move the SSH-signed annotated `v1` tag only with the recorded guarded lease. Consumers needing
-   immutability must use the full release commit rather than `v1`.
-3. Dispatch `.github/workflows/action-v1-consumer.yml`. Its post-public job verifies Release assets,
+1. Pin the immutable Action consumer to the release source and verify that pin through the ordinary
+   repository gates. The combined public consumer workflow is not dispatched yet because it also
+   creates the version-named live-verification record.
+2. Move the SSH-signed annotated `v1` tag only with a guarded lease against the exact prior tag
+   object. Consumers needing immutability must use the full release commit rather than `v1`.
+3. Dispatch `.github/workflows/action-v1-consumer.yml` once after promotion. It verifies both the
+   immutable source and the promoted `v1`; its post-public job verifies Release assets,
    tag signature, GitHub and npm provenance, verified installation, immutable and `v1` Action
    consumers, and moving-alias state.
 4. Publish exactly one version-named live-verification record as both a workflow artifact and a

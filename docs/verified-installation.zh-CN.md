@@ -4,11 +4,11 @@ README 推荐命令包含三个可独立审查的阶段，不会因为代码和 
 执行代码。
 
 1. README 把 `bootstrap-install.sh` 固定到提交
-   `3f42fb70f99f6ccb3c8e8449b2c06749c3b53148`，并在交给 `sh` 前验证 SHA-256
-   `193ece72d2c7d2c4220a6164a4bb280853ffca1e8de5217535fe95010c146e8a`。
+   `5de57e8a974247a2f519ac93cea580923aaaff6a`，并在交给 `sh` 前验证 SHA-256
+   `2226efeed8127d2cd33fb05cbb0a3197952f8686d8ea9cf497bba1c6d33e6ef9`。
 2. bootstrap 把 `install-verified.mjs` 固定到提交
-   `87326f11c0aab3901ac5cb0783d9452e607e83c5`，并在交给 Node 前验证 SHA-256
-   `662b7de3d596bb6faf8fac4bf69f325f44c1152c99cbbea5fc25184863b1c6d5`。
+   `ab80e144171b0e3ff350514c5d342e07737604fc`，并在交给 Node 前验证 SHA-256
+   `74d166797fb3630dd3764fad4feee9f8dacee23acc9f1a22ef22bc039a54c44a`。
 3. verifier 只从内置信任表选择显式版本；要求 archive、release manifest、SPDX SBOM 和
    `SHA256SUMS` 各自匹配固定 SHA-256，并交叉检查仓库、产品、tag、源码提交、版本、资产集合、
    归档根目录和路径，最后才调用现有原子 lifecycle installer。
@@ -22,9 +22,9 @@ SBOM 和归档验证始终执行，不能关闭。
 使用 README 命令下载并验证 bootstrap 后，可把它保留在已知路径：
 
 ```bash
-sh ./bootstrap-install.sh --version 0.7.2 --target codex
-sh ./bootstrap-install.sh --version 0.7.2 --target claude
-sh ./bootstrap-install.sh --version 0.7.2 --target cli
+sh ./bootstrap-install.sh --version 0.7.3 --target codex
+sh ./bootstrap-install.sh --version 0.7.3 --target claude
+sh ./bootstrap-install.sh --version 0.7.3 --target cli
 ```
 
 内置信任表中不存在的版本会被拒绝。安装器不会解析 `latest`、移动分支或移动 major tag。
@@ -35,16 +35,16 @@ sh ./bootstrap-install.sh --version 0.7.2 --target cli
 
 ```text
 SHA256SUMS
-web-app-security-skill-0.7.2.release.json
-web-app-security-skill-0.7.2.spdx.json
-web-app-security-skill-0.7.2.tar.gz
+web-app-security-skill-0.7.3.release.json
+web-app-security-skill-0.7.3.spdx.json
+web-app-security-skill-0.7.3.tar.gz
 ```
 
-另从提交 `87326f11c0aab3901ac5cb0783d9452e607e83c5` 下载
+另从提交 `ab80e144171b0e3ff350514c5d342e07737604fc` 下载
 `scripts/install-verified.mjs`，用上方固定值验证其 SHA-256。然后在离线机器运行：
 
 ```bash
-node ./install-verified.mjs --version 0.7.2 --from-dir ./release-assets --attestation skip
+node ./install-verified.mjs --version 0.7.3 --from-dir ./release-assets --attestation skip
 ```
 
 离线路径不会发出 HTTP 请求。`--attestation skip` 只记录有意跳过可选 GitHub attestation，
@@ -53,8 +53,8 @@ node ./install-verified.mjs --version 0.7.2 --from-dir ./release-assets --attest
 ## 升级、强制替换和卸载
 
 ```bash
-sh ./bootstrap-install.sh --version 0.7.2 --mode upgrade
-sh ./bootstrap-install.sh --version 0.7.2 --force
+sh ./bootstrap-install.sh --version 0.7.3 --mode upgrade
+sh ./bootstrap-install.sh --version 0.7.3 --force
 webapp-security uninstall
 ```
 
