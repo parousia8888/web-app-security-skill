@@ -34,21 +34,30 @@ try {
   assert.deepEqual(state.verifiedInstaller.trustedVersions,
     ['0.3.0', '0.4.0', '0.5.0', '0.5.1', '0.5.2', '0.5.3', '0.5.4', '0.6.0', '0.7.0', '0.7.1', '0.7.2']);
   run(process.execPath, [join(ROOT, 'scripts', 'check-release-state.mjs')]);
+  const candidatePublic = spawnSync(process.execPath, [join(ROOT, 'scripts', 'check-public-release-state.mjs')], {
+    cwd: ROOT, encoding: 'utf8',
+  });
+  assert.notEqual(candidatePublic.status, 0);
+  assert.match(candidatePublic.stderr,
+    /public-state verification requires VERSION 0\.7\.2, got 0\.7\.3/);
+
+  const candidateCommit = run('git', ['rev-parse', 'HEAD']).trim();
+  run('git', ['clone', '--quiet', '--no-hardlinks', ROOT, clone]);
+  run('git', ['checkout', '--quiet', '--detach', state.publishedRelease.sourceCommit], { cwd: clone });
+  writeFileSync(join(clone, 'docs', 'release-state.json'), `${JSON.stringify(state, null, 2)}\n`);
   const publicRecord = join(temp, 'public-state.json');
-  run(process.execPath, [join(ROOT, 'scripts', 'check-public-release-state.mjs'), '--out', publicRecord]);
+  run(process.execPath, [
+    join(ROOT, 'scripts', 'check-public-release-state.mjs'), '--root', clone, '--out', publicRecord,
+  ], { cwd: clone });
   assert.equal(JSON.parse(readFileSync(publicRecord, 'utf8')).stableAction.sourceCommit,
     state.stableAction.sourceCommit);
 
-  run('git', ['clone', '--quiet', '--no-hardlinks', ROOT, clone]);
-  run('git', ['tag', '-f', 'v1', 'HEAD'], { cwd: clone });
-  run(process.execPath, [join(ROOT, 'scripts', 'check-release-state.mjs'), '--root', clone], { cwd: clone });
+  run('git', ['tag', '-f', 'v1', candidateCommit], { cwd: clone });
   let stale = spawnSync(process.execPath, [join(ROOT, 'scripts', 'check-public-release-state.mjs'), '--root', clone], {
     cwd: clone, encoding: 'utf8',
   });
   assert.notEqual(stale.status, 0);
   assert.match(stale.stderr, /v1 differs from the recorded stable Action source commit/);
-  run('git', ['checkout', '--quiet', '--detach', state.stableAction.sourceCommit], { cwd: clone });
-  run(process.execPath, [join(ROOT, 'scripts', 'check-release-state.mjs'), '--root', clone], { cwd: clone });
 
   cpSync(ROOT, candidate, {
     recursive: true,
