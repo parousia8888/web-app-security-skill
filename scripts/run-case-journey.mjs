@@ -284,7 +284,19 @@ try {
   mkdirSync(output, { recursive: true, mode: 0o700 });
   const epoch = Date.parse(journey.corpus.runDate);
   if (!Number.isFinite(epoch)) throw new Error('catalog runDate is invalid');
-  const env = { ...process.env, SOURCE_DATE_EPOCH: String(epoch / 1000) };
+  const historyBoundary = journey.adapterSelection.includes('gitleaks') ? {
+    adapter: 'gitleaks',
+    ref: head,
+    semantics: 'commits_reachable_from_exact_target_commit',
+  } : null;
+  if (!refresh && JSON.stringify(journey.historyBoundary || null) !== JSON.stringify(historyBoundary)) {
+    throw new Error('catalog Gitleaks history boundary does not match the exact journey target commit');
+  }
+  const env = {
+    ...process.env,
+    SOURCE_DATE_EPOCH: String(epoch / 1000),
+    ...(historyBoundary ? { WEBAPP_SECURITY_GITLEAKS_HISTORY_REF: historyBoundary.ref } : {}),
+  };
   for (const binary of runtimeBinaries) env[binary.definition.envVariable] = binary.path;
   const auditArgs = ['audit', checkout, '--out', `${output}/audit`, '--name', 'report',
     ...journey.adapterSelection.flatMap((adapter) => ['--adapter', adapter]), '--fail-on', 'never'];
@@ -320,6 +332,7 @@ try {
     command: [process.execPath, CLI, ...auditArgs],
     auditExit: exit,
     adapterSelection: journey.adapterSelection,
+    historyBoundary,
     adapters: observed.adapters.map((adapter) => ({
       id: adapter.id, version: adapter.version, status: adapter.status,
       observedVersion: adapter.observedVersion || null, binarySha256: adapter.binarySha256 || null,
@@ -342,6 +355,7 @@ try {
   if (refresh) {
     writeFileSync(`${output}/observed-corpus.json`, `${JSON.stringify({
       id, commit: head, discovery: actualDiscovery, corpus: observed, toolSource: toolIdentity,
+      historyBoundary,
     }, null, 2)}\n`, { mode: 0o600 });
   } else {
     errors.push(...compareReport(catalog, journey, report, observed, toolIdentity));

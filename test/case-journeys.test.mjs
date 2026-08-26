@@ -122,7 +122,24 @@ try {
   const fakeOpengrep = join(temp, 'fake-opengrep.mjs');
   const fakeOsv = join(temp, 'fake-osv.mjs');
   writeFileSync(fakeGitleaks, `#!/usr/bin/env node
-if (process.argv[2] === 'version') console.log('8.30.1'); else console.log('[]');
+import { spawnSync } from 'node:child_process';
+const args = process.argv.slice(2);
+if (args[0] === 'version') {
+  console.log('8.30.1');
+} else if (args[0] === 'git') {
+  const logOpts = args.indexOf('--log-opts');
+  const revisions = logOpts === -1 ? ['rev-list', '--all'] : ['rev-list', args[logOpts + 1]];
+  const result = spawnSync('git', revisions, { encoding: 'utf8' });
+  if (result.status !== 0) process.exit(2);
+  const findings = result.stdout.trim().split('\\n').filter(Boolean).map((revision) => ({
+    RuleID: 'generic-api-key', StartLine: 1, File: 'source.js',
+    Fingerprint: 'history-' + revision, Commit: revision,
+  }));
+  console.log(JSON.stringify(findings));
+  if (findings.length) process.exit(1);
+} else {
+  console.log('[]');
+}
 `);
   writeFileSync(fakeCheckov, `#!/usr/bin/env node
 if (process.argv[2] === '--version') console.log('3.3.9'); else console.log('{}');
@@ -177,6 +194,7 @@ else console.log('{"version":"1.27.0","results":[],"errors":[],"paths":{"scanned
   catalog.toolSource = observed.toolSource;
   catalog.journeys[0].discovery = observed.discovery;
   catalog.journeys[0].corpus = observed.corpus;
+  catalog.journeys[0].historyBoundary = observed.historyBoundary;
   writeFileSync(catalogPath, `${JSON.stringify(catalog)}\n`);
   const matchedOut = join(temp, 'journey-matched');
   result = spawnSync(process.execPath, [RUN_JOURNEY, 'local-case', checkout, '--out', matchedOut,
@@ -184,8 +202,21 @@ else console.log('{"version":"1.27.0","results":[],"errors":[],"paths":{"scanned
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /checkout:\s+clean and unchanged/);
   assert.match(result.stdout, /catalog:\s+stable contract matched/);
-  assert.equal(JSON.parse(readFileSync(join(matchedOut, 'journey-run.json'), 'utf8')).auditExit.code, 0);
+  const matchedRun = JSON.parse(readFileSync(join(matchedOut, 'journey-run.json'), 'utf8'));
+  assert.equal(matchedRun.auditExit.code, 0);
+  assert.deepEqual(matchedRun.historyBoundary, {
+    adapter: 'gitleaks', ref: commit, semantics: 'commits_reachable_from_exact_target_commit',
+  });
   assert.equal(git(checkout, ['status', '--porcelain', '--untracked-files=normal']), '');
+
+  const unrelatedCommit = git(checkout, ['commit-tree', `${commit}^{tree}`, '-m', 'unrelated ref']);
+  git(checkout, ['update-ref', 'refs/tags/unrelated-history', unrelatedCommit]);
+  assert.equal(git(checkout, ['rev-list', '--all', '--count']), '2');
+  const extraRefOut = join(temp, 'journey-extra-ref');
+  result = spawnSync(process.execPath, [RUN_JOURNEY, 'local-case', checkout, '--out', extraRefOut,
+    '--catalog', catalogPath], { encoding: 'utf8', env: runnerEnv });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /stable contract matched/);
 
   const contentDriftCatalog = structuredClone(catalog);
   contentDriftCatalog.journeys[0].corpus.adapters[0].deterministicFindingContentDigest = '0'.repeat(64);

@@ -87,6 +87,7 @@ const failOnDomains = takeAll('--fail-on-domain');
 const profile = take('--profile');
 const adapterValues = takeAll('--adapter');
 const adapterTimeoutArg = take('--adapter-timeout');
+const gitleaksHistoryRef = process.env.WEBAPP_SECURITY_GITLEAKS_HISTORY_REF || null;
 const acknowledgeAlertPolicy = args.includes('--acknowledge-alert-policy');
 if (acknowledgeAlertPolicy) args.splice(args.indexOf('--acknowledge-alert-policy'), 1);
 const failOnRouteRegression = args.includes('--fail-on-route-regression');
@@ -110,6 +111,9 @@ if (sinceRef !== null && staged) usage(2, '--since and --staged are mutually exc
 if ((sinceRef !== null || staged) && mode !== 'audit') usage(2, 'diff scope is only supported by audit');
 if ((sinceRef !== null || staged) && baselinePath) usage(2, 'diff scope cannot be combined with --baseline');
 if (profile !== null && adapterValues.length) usage(2, '--profile cannot be combined with --adapter');
+if (gitleaksHistoryRef !== null && !/^[a-f0-9]{40}$/.test(gitleaksHistoryRef)) {
+  usage(2, 'WEBAPP_SECURITY_GITLEAKS_HISTORY_REF must be an exact 40-character commit');
+}
 
 function timestamp() {
   const now = process.env.SOURCE_DATE_EPOCH ? new Date(Number(process.env.SOURCE_DATE_EPOCH) * 1000) : new Date();
@@ -208,6 +212,9 @@ try {
   if (selectedAdapters.some((adapter) => adapter !== 'builtin') && externalGateEnabled && !acknowledgeAlertPolicy) {
     throw new Error('external adapter gating requires --acknowledge-alert-policy; use --fail-on never for evidence-only execution');
   }
+  if (gitleaksHistoryRef !== null && !selectedAdapters.includes('gitleaks')) {
+    throw new Error('WEBAPP_SECURITY_GITLEAKS_HISTORY_REF requires the gitleaks adapter');
+  }
   const routeEnabled = selectedAdapters.includes('builtin');
   const conflicts = evidenceConflicts(output, name, routeEnabled);
   if (conflicts.length) throw new Error(`refusing to overwrite existing evidence: ${conflicts.join(', ')}`);
@@ -218,7 +225,9 @@ try {
     : { findings: [], coverage: {}, traversal: null };
   const rawFindings = diffScope ? selectDiffFindings(audit, diffScope) : audit.findings;
   const external = diffScope ? [] : runExternalAdapters(
-    projectRoot, localScope.target.lockfiles || [], selectedAdapters, { timeoutSeconds: adapterTimeoutSeconds },
+    projectRoot, localScope.target.lockfiles || [], selectedAdapters, {
+      timeoutSeconds: adapterTimeoutSeconds, gitleaksHistoryRef,
+    },
   );
   const coverage = [
     ...(selectedAdapters.includes('builtin') ? sourceCoverage(audit) : []),
@@ -286,6 +295,9 @@ try {
         ? 'OSV-Scanner may query the public OSV service and Checkov may query PyPI for version metadata when selected; no project dependency was executed and Checkov was not given project source over the network.'
         : 'No network request or dependency execution was performed.',
       'Suspected findings require deployment or runtime evidence before confirmation.',
+      ...(gitleaksHistoryRef ? [
+        `Gitleaks committed-history evidence was bounded to commits reachable from exact commit ${gitleaksHistoryRef}; unrelated repository refs were excluded.`,
+      ] : []),
       ...(diffScope ? [
         `This ${diffScope.selection.mode} report filters built-in findings to changed inputs; a clean result does not establish whole-repository safety.`,
         diffScope.selection.mode === 'since'

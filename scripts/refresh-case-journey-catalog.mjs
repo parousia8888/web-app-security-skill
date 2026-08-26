@@ -48,12 +48,18 @@ function initialize() {
       auditExitRecordedSeparately: true,
       byteAndSemanticDigestsSeparated: true,
       manualAnnotationIdentitySeparated: true,
+      gitleaksHistoryBoundary: 'target_commit_reachable_history',
     },
     regressionInventory: historical.regressionInventory,
     journeys: historical.journeys.map((journey) => ({
       ...journey,
       adapterSelection: ['builtin', 'gitleaks', 'osv'],
       mutableAdapters: ['osv'],
+      historyBoundary: {
+        adapter: 'gitleaks',
+        ref: journey.commit,
+        semantics: 'commits_reachable_from_exact_target_commit',
+      },
       corpus: {
         runDate,
         adapters: [],
@@ -74,8 +80,11 @@ function promote(catalog, directory) {
     if (JSON.stringify(observed.discovery) !== JSON.stringify(journey.discovery)) {
       throw new Error(`${journey.id} discovery changed; review it before promotion`);
     }
+    if (JSON.stringify(observed.historyBoundary) !== JSON.stringify(journey.historyBoundary)) {
+      throw new Error(`${journey.id} Gitleaks history boundary changed`);
+    }
     toolIdentities.add(JSON.stringify(observed.toolSource));
-    return { ...journey, corpus: observed.corpus };
+    return { ...journey, historyBoundary: observed.historyBoundary, corpus: observed.corpus };
   });
   if (toolIdentities.size !== 1) throw new Error('observations do not share one tool source identity');
   return {

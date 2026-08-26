@@ -4,8 +4,9 @@ These five project records preserve the original v2 source journeys against ordi
 web projects at exact commits. That dated `2026-08-14` evidence is historical: it is not presented
 as a current-tool reproduction gate. The separate
 [`evidence-v0.7.3.json`](evidence-v0.7.3.json) catalog records current source identity, exact adapter
-selection, audit exit, byte digest, stable semantic digest and manual-annotation identity. Neither
-catalog is a vulnerability leaderboard or precision benchmark.
+selection, the exact target-commit boundary used for Gitleaks history, audit exit, byte digest,
+stable semantic digest and manual-annotation identity. Neither catalog is a vulnerability
+leaderboard or precision benchmark.
 
 The [v0.5.0 built-in review](v0.5.0-review.md) is a separate, additive evidence set. It keeps these
 same five commits but runs the broader v3 built-in JavaScript/TypeScript and Python path, then
@@ -58,10 +59,13 @@ git -C /tmp/linkwarden-case checkout 62f1b81ff7f66001b0f5f613202f87771f3186ee
 node scripts/run-case-journey.mjs linkwarden /tmp/linkwarden-case --out /tmp/linkwarden-evidence
 ```
 
-The runner refuses missing caller-provided binaries, a dirty checkout, mismatched `HEAD`, an
-existing output path, or output inside the checkout. It scans the fixed clean checkout directly so
-Gitleaks history coverage remains real, writes evidence outside it, and verifies the checkout is
-unchanged. It never downloads tools, executes project dependencies, or contacts a hosted project.
+The runner refuses missing caller-provided binaries, a dirty checkout, mismatched `HEAD`, a shallow
+repository, an existing output path, or output inside the checkout. It scans the fixed clean checkout
+directly and bounds Gitleaks committed-history evidence to commits reachable from the journey's exact
+target commit; unrelated local refs and tags are excluded. The boundary is recorded in
+`journey-run.json` and the active catalog. The runner writes evidence outside the checkout and
+verifies that the checkout remains unchanged. It never downloads tools, executes project
+dependencies, or contacts a hosted project.
 OSV-Scanner may query the public OSV service; this is the only project-journey network exception.
 An audit exit `3` is recorded as incomplete evidence and is not converted to an invocation failure.
 Missing or malformed report artifacts still stop the journey. Use `--refresh` only to collect a

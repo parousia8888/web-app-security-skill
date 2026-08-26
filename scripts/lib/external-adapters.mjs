@@ -245,7 +245,12 @@ function unavailable(adapter, rules, reasonCode, detail = {}) {
   };
 }
 
-export function runGitleaks(projectRoot, { binary = 'gitleaks', timeoutSeconds = 120 } = {}) {
+export function runGitleaks(projectRoot, {
+  binary = 'gitleaks', timeoutSeconds = 120, historyRef = null,
+} = {}) {
+  if (historyRef !== null && !/^[a-f0-9]{40}$/.test(historyRef)) {
+    throw new Error('gitleaks historyRef must be an exact 40-character commit');
+  }
   const gitApplicable = existsSync(resolve(projectRoot, '.git'))
     && !lstatSync(resolve(projectRoot, '.git')).isSymbolicLink();
   const identity = probeGitleaks(binary, timeoutSeconds);
@@ -289,7 +294,8 @@ export function runGitleaks(projectRoot, { binary = 'gitleaks', timeoutSeconds =
     }
     const result = run(binary, [item.command, '--no-banner', '--no-color', '--redact=100',
       '--log-level', 'error', '--timeout', String(timeoutSeconds), '--report-format', 'json',
-      '--report-path', '-', projectRoot], { cwd: projectRoot, timeoutSeconds });
+      '--report-path', '-', ...(item.mode === 'history' && historyRef
+        ? ['--log-opts', historyRef] : []), projectRoot], { cwd: projectRoot, timeoutSeconds });
     if (result.kind !== 'completed' || ![0, 1].includes(result.status)) {
       const reason = result.kind === 'completed' ? 'adapter_internal_error' : `adapter_${result.kind}`;
       findings.push(unknownFinding(GITLEAKS_ADAPTER, item.rule, reason));
@@ -769,6 +775,7 @@ export function runExternalAdapters(projectRoot, lockfiles, selected, options = 
   if (selected.includes('gitleaks')) results.push(runGitleaks(projectRoot, {
     binary: process.env.WEBAPP_SECURITY_GITLEAKS_BIN || 'gitleaks',
     timeoutSeconds: options.timeoutSeconds,
+    historyRef: options.gitleaksHistoryRef || null,
   }));
   if (selected.includes('opengrep')) results.push(runOpengrep(projectRoot, {
     binary: process.env.WEBAPP_SECURITY_OPENGREP_BIN || 'opengrep',

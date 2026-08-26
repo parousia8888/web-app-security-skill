@@ -38,7 +38,8 @@ fail(catalog.method?.sourceOnly === true && catalog.method?.hostedInstancesProbe
   && catalog.method?.projectDependenciesExecuted === false
   && catalog.method?.auditExitRecordedSeparately === true
   && catalog.method?.byteAndSemanticDigestsSeparated === true
-  && catalog.method?.manualAnnotationIdentitySeparated === true,
+  && catalog.method?.manualAnnotationIdentitySeparated === true
+  && catalog.method?.gitleaksHistoryBoundary === 'target_commit_reachable_history',
 'active method boundary is incomplete');
 fail(catalog.journeys?.length === 5, 'exactly five active journeys are required');
 
@@ -50,6 +51,12 @@ for (const journey of catalog.journeys || []) {
   }
   selections.add(JSON.stringify(journey.adapterSelection));
   fail(/^[a-f0-9]{40}$/.test(journey.commit || ''), `${journey.id} target commit is invalid`);
+  if (journey.adapterSelection?.includes('gitleaks')) {
+    fail(journey.historyBoundary?.adapter === 'gitleaks'
+      && journey.historyBoundary.ref === journey.commit
+      && journey.historyBoundary.semantics === 'commits_reachable_from_exact_target_commit',
+    `${journey.id} Gitleaks history boundary is invalid`);
+  }
   fail(Array.isArray(journey.mutableAdapters)
     && journey.mutableAdapters.every((id) => journey.adapterSelection.includes(id)),
   `${journey.id} mutable adapter declaration is invalid`);

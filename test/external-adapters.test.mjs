@@ -336,6 +336,13 @@ try {
   }));
   assert.ok(result.coverage.every((entry) => entry.status === 'completed'));
   assert.equal(result.findings.length, 0);
+  assert.throws(() => runGitleaks(project, {
+    binary: fakeGitleaks, timeoutSeconds: 1, historyRef: 'HEAD',
+  }), /exact 40-character commit/);
+  result = withEnv({ FAKE_GITLEAKS_MODE: 'clean' }, () => runGitleaks(project, {
+    binary: fakeGitleaks, timeoutSeconds: 1, historyRef: 'a'.repeat(40),
+  }));
+  assert.ok(result.coverage.every((entry) => entry.status === 'completed'));
 
   for (const [mode, reason] of [
     ['malformed', 'adapter_malformed_json'], ['inconsistent', 'adapter_inconsistent_exit'],
