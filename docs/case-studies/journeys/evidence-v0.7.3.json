@@ -1,7 +1,7 @@
 {
   "schemaVersion": 3,
   "release": "v0.7.3",
-  "status": "refresh_pending",
+  "status": "active",
   "evidenceType": "active_ordinary_project_journey_contract",
   "historicalSource": {
     "path": "docs/case-studies/journeys/evidence.json",
@@ -10,7 +10,7 @@
   },
   "toolSource": {
     "version": "0.7.2",
-    "commit": "3b49b59e5590323080b7e26f000cc6aaef7f10d7",
+    "commit": "fa324df4f764b9b8fafb1ba005a66b3d8eeb4353",
     "sourceDigest": "08fc7e42b3e4279e08d86786ed7989f1c18f7d5e9675ce34bd49a2cddd1d6f65"
   },
   "method": {
@@ -52,8 +52,102 @@
         ]
       },
       "corpus": {
-        "runDate": "2026-08-26T12:17:44.945Z",
-        "adapters": []
+        "runDate": "2026-08-26T12:18:11.673Z",
+        "reportSchemaVersion": 3,
+        "auditExit": {
+          "code": 3,
+          "classification": "evidence_incomplete"
+        },
+        "rulesetDigest": "6198ed37c2818d062d6f1ed89dcac8a8288dc871008ba6e48e54347da1eea799",
+        "mutableAdapters": [
+          "osv"
+        ],
+        "digests": {
+          "reportBytes": "cc04789a60d4300dd64cae7f130483433ae14b192e3fe819d4d3b6cee0decac6",
+          "reportSemantics": "2119625e2d0a6b0dcdf0f4d1721a4313ea0a0f9745e624b0b1c7cd64ab1c9f4d",
+          "stableReportSemantics": "c3b87f72c2a530f5e9b4578670145be73db9ac2faaf205ad2113d933a86085a5",
+          "manualAnnotationIdentity": "5c32567f39d2e051c4fe94b95d4bd53143daefdf757eeba366ab9518edd2e677"
+        },
+        "adapters": [
+          {
+            "id": "builtin-source",
+            "version": "1.1.1",
+            "status": "built_in",
+            "rulesetDigest": "441a7bcbd5548d2a33fb9943b701dcd5d776df9c0694f560cf7853db0771e1f9",
+            "deterministicFindingIdsDigest": "d080ce94c00649e3e9ee51d1213b56c4fae5bfeb48d8f45d517c0bdc46ad4493",
+            "deterministicFindingContentDigest": "69ba418b6944f9b3d3471e86d0b83c39ec8ff6cf17b7ac536d759937ef59e3c6"
+          },
+          {
+            "id": "gitleaks",
+            "version": "8.30.1",
+            "status": "available",
+            "observedVersion": "8.30.1",
+            "rulesetDigest": "932d1f6d5cbf6d0d2a83bd2ffeb2023ddfd4fefd437435689c7bc7ca0eea268b",
+            "binarySha256": "ba52fb1bfabbcde42f032afad3d6e0b19dff8ed105229a16e7caa338bbc0e84f",
+            "deterministicFindingIdsDigest": "c1b28585f4a8df88a4ff0e5ed32903a57dc40e75c04d4a376748f3cdc5db0b92",
+            "deterministicFindingContentDigest": "82adeef3275fb4a9179617a1bab0267d5bb0ad6e2ec8ca280d7eed0d7b52de4f"
+          },
+          {
+            "id": "osv",
+            "version": "2.5.0",
+            "status": "available",
+            "observedVersion": "2.5.0",
+            "rulesetDigest": "0e0d7d61d9a883eef12ffceb296d1fe706c38f1139efb76dea67b82b259dbbe2",
+            "binarySha256": "fff5a2e351b7f0a60001e87cbf862e82fb82e2792d368b533fec7a5865a73da2"
+          }
+        ],
+        "coverage": {
+          "dependency-lockfile-missing": "completed",
+          "sensitive-env-file-present": "completed",
+          "tracked-sensitive-env-file": "completed",
+          "node-inspector-public-bind": "completed",
+          "production-source-map-enabled": "completed",
+          "js-dynamic-code-execution": "completed",
+          "node-child-process-shell-execution": "completed",
+          "react-dangerous-html-sink": "completed",
+          "browser-html-injection-sink": "completed",
+          "cors-wildcard-with-credentials": "completed",
+          "node-tls-verification-disabled": "completed",
+          "jwt-unsafe-verification-options": "completed",
+          "hardcoded-auth-secret": "completed",
+          "js-inline-session-secret": "completed",
+          "js-insecure-cookie-options": "completed",
+          "python-dynamic-code-execution": "completed",
+          "python-shell-command-execution": "completed",
+          "python-unsafe-deserialization": "completed",
+          "python-unsafe-yaml-load": "completed",
+          "python-tls-verification-disabled": "completed",
+          "python-framework-debug-enabled": "completed",
+          "python-hardcoded-framework-secret": "completed",
+          "python-cors-wildcard-with-credentials": "completed",
+          "python-insecure-session-cookie-settings": "completed",
+          "python-csrf-protection-disabled": "completed",
+          "source-stack-unsupported": "completed",
+          "source-evidence-incomplete": "completed",
+          "js-route-security-evidence-incomplete": "partial",
+          "gitleaks-committed-secret": "completed",
+          "gitleaks-working-tree-secret": "completed",
+          "osv-known-vulnerability": "completed"
+        },
+        "snapshot": {
+          "summary": {
+            "total": 278,
+            "confirmed": 0,
+            "suspected": 277,
+            "unknown": 1
+          },
+          "byRule": {
+            "browser-html-injection-sink": 4,
+            "gitleaks-committed-secret": 1,
+            "js-route-security-evidence-incomplete": 1,
+            "osv-known-vulnerability": 270,
+            "react-dangerous-html-sink": 2
+          },
+          "externalStates": [
+            "suspected"
+          ]
+        },
+        "confirmedFindingIds": []
       },
       "falsePositiveClosures": [
         "Root yarn.lock covers package.json files selected by declared apps/* and packages/* workspaces.",
@@ -109,8 +203,102 @@
         "lockfiles": []
       },
       "corpus": {
-        "runDate": "2026-08-26T12:17:44.945Z",
-        "adapters": []
+        "runDate": "2026-08-26T12:18:11.673Z",
+        "reportSchemaVersion": 3,
+        "auditExit": {
+          "code": 0,
+          "classification": "complete"
+        },
+        "rulesetDigest": "6198ed37c2818d062d6f1ed89dcac8a8288dc871008ba6e48e54347da1eea799",
+        "mutableAdapters": [
+          "osv"
+        ],
+        "digests": {
+          "reportBytes": "cb5e16b790ae1734ea79080c641f7a42f4147437ad9697a28f0e4e6cd30ba5e4",
+          "reportSemantics": "323753ed45355bc1693376e7a5badc179733c9f6b362086be469bf53772eb6ec",
+          "stableReportSemantics": "620c64fd2f7a6e986ae9aa5d5ecac92de4b9fba31fb25033e043bf0611e98a3f",
+          "manualAnnotationIdentity": "fa99afb1f406413ef7eb0106ebca4c0923a019a7152341e00d01fd272bac0df0"
+        },
+        "adapters": [
+          {
+            "id": "builtin-source",
+            "version": "1.1.1",
+            "status": "built_in",
+            "rulesetDigest": "441a7bcbd5548d2a33fb9943b701dcd5d776df9c0694f560cf7853db0771e1f9",
+            "deterministicFindingIdsDigest": "6f02a386b38517017f26a050aebd4871ad8f1010682475ecbc3bd25b27d54554",
+            "deterministicFindingContentDigest": "58d260d51b550dddfca5a5bd070a63db439346b7e4344ba04d244766ea4d6589"
+          },
+          {
+            "id": "gitleaks",
+            "version": "8.30.1",
+            "status": "available",
+            "observedVersion": "8.30.1",
+            "rulesetDigest": "932d1f6d5cbf6d0d2a83bd2ffeb2023ddfd4fefd437435689c7bc7ca0eea268b",
+            "binarySha256": "ba52fb1bfabbcde42f032afad3d6e0b19dff8ed105229a16e7caa338bbc0e84f",
+            "deterministicFindingIdsDigest": "60abbce35410ea3e5467069bb6fb1580508fade22ab24910db489bbad5730d86",
+            "deterministicFindingContentDigest": "36f50d3a06bfa19f010b6ac9c9d41b9454f4181b0d8dd0a5795113dc7eb916e4"
+          },
+          {
+            "id": "osv",
+            "version": "2.5.0",
+            "status": "not_applicable",
+            "observedVersion": null,
+            "rulesetDigest": "0e0d7d61d9a883eef12ffceb296d1fe706c38f1139efb76dea67b82b259dbbe2",
+            "binarySha256": "fff5a2e351b7f0a60001e87cbf862e82fb82e2792d368b533fec7a5865a73da2"
+          }
+        ],
+        "coverage": {
+          "dependency-lockfile-missing": "completed",
+          "sensitive-env-file-present": "completed",
+          "tracked-sensitive-env-file": "completed",
+          "node-inspector-public-bind": "completed",
+          "production-source-map-enabled": "completed",
+          "js-dynamic-code-execution": "completed",
+          "node-child-process-shell-execution": "completed",
+          "react-dangerous-html-sink": "completed",
+          "browser-html-injection-sink": "completed",
+          "cors-wildcard-with-credentials": "completed",
+          "node-tls-verification-disabled": "completed",
+          "jwt-unsafe-verification-options": "completed",
+          "hardcoded-auth-secret": "completed",
+          "js-inline-session-secret": "completed",
+          "js-insecure-cookie-options": "completed",
+          "python-dynamic-code-execution": "completed",
+          "python-shell-command-execution": "completed",
+          "python-unsafe-deserialization": "completed",
+          "python-unsafe-yaml-load": "completed",
+          "python-tls-verification-disabled": "completed",
+          "python-framework-debug-enabled": "completed",
+          "python-hardcoded-framework-secret": "completed",
+          "python-cors-wildcard-with-credentials": "completed",
+          "python-insecure-session-cookie-settings": "completed",
+          "python-csrf-protection-disabled": "completed",
+          "source-stack-unsupported": "completed",
+          "source-evidence-incomplete": "completed",
+          "js-route-security-evidence-incomplete": "not_applicable",
+          "gitleaks-committed-secret": "completed",
+          "gitleaks-working-tree-secret": "completed",
+          "osv-known-vulnerability": "not_applicable"
+        },
+        "snapshot": {
+          "summary": {
+            "total": 149,
+            "confirmed": 0,
+            "suspected": 149,
+            "unknown": 0
+          },
+          "byRule": {
+            "browser-html-injection-sink": 4,
+            "gitleaks-committed-secret": 76,
+            "gitleaks-working-tree-secret": 49,
+            "python-csrf-protection-disabled": 19,
+            "python-shell-command-execution": 1
+          },
+          "externalStates": [
+            "suspected"
+          ]
+        },
+        "confirmedFindingIds": []
       },
       "falsePositiveClosures": [
         "Pinned requirements.txt is a deployment dependency input and is not evidence of a missing adjacent lockfile.",
@@ -175,8 +363,104 @@
         ]
       },
       "corpus": {
-        "runDate": "2026-08-26T12:17:44.945Z",
-        "adapters": []
+        "runDate": "2026-08-26T12:18:11.673Z",
+        "reportSchemaVersion": 3,
+        "auditExit": {
+          "code": 3,
+          "classification": "evidence_incomplete"
+        },
+        "rulesetDigest": "6198ed37c2818d062d6f1ed89dcac8a8288dc871008ba6e48e54347da1eea799",
+        "mutableAdapters": [
+          "osv"
+        ],
+        "digests": {
+          "reportBytes": "98c6a457e7b9fed142c8738e8187e103a01a738c7a68b31927d761207c27ca44",
+          "reportSemantics": "8f1dc4ca081f2cbc5474d8edbe725249269a33235bb9b1987d67a7a0831966b8",
+          "stableReportSemantics": "734c2e099521eff355fd3921c8f38de3cedeb428d1c4cc94dda0a367d0d0db29",
+          "manualAnnotationIdentity": "386953b6f5d4c1617d2d530818166cd6cdb04d703bb3f947b2aac17ccf1433d8"
+        },
+        "adapters": [
+          {
+            "id": "builtin-source",
+            "version": "1.1.1",
+            "status": "built_in",
+            "rulesetDigest": "441a7bcbd5548d2a33fb9943b701dcd5d776df9c0694f560cf7853db0771e1f9",
+            "deterministicFindingIdsDigest": "c513007df32127f2a2ebfc2513b377d904a4499c0c396d9b9d4687eaece22863",
+            "deterministicFindingContentDigest": "8ce3e35439457dab780085827658744db1648b0f04b1b2219d76e6fec67eb407"
+          },
+          {
+            "id": "gitleaks",
+            "version": "8.30.1",
+            "status": "available",
+            "observedVersion": "8.30.1",
+            "rulesetDigest": "932d1f6d5cbf6d0d2a83bd2ffeb2023ddfd4fefd437435689c7bc7ca0eea268b",
+            "binarySha256": "ba52fb1bfabbcde42f032afad3d6e0b19dff8ed105229a16e7caa338bbc0e84f",
+            "deterministicFindingIdsDigest": "d26f9009bde9b2ca75b4df874f8b190d8550b31442a04b79c980d4d0544ef0b4",
+            "deterministicFindingContentDigest": "d6915fc88762891436c6cb4f8526037fe7f097310575bb5109edad9bd3a29687"
+          },
+          {
+            "id": "osv",
+            "version": "2.5.0",
+            "status": "available",
+            "observedVersion": "2.5.0",
+            "rulesetDigest": "0e0d7d61d9a883eef12ffceb296d1fe706c38f1139efb76dea67b82b259dbbe2",
+            "binarySha256": "fff5a2e351b7f0a60001e87cbf862e82fb82e2792d368b533fec7a5865a73da2"
+          }
+        ],
+        "coverage": {
+          "dependency-lockfile-missing": "completed",
+          "sensitive-env-file-present": "completed",
+          "tracked-sensitive-env-file": "completed",
+          "node-inspector-public-bind": "completed",
+          "production-source-map-enabled": "completed",
+          "js-dynamic-code-execution": "partial",
+          "node-child-process-shell-execution": "partial",
+          "react-dangerous-html-sink": "partial",
+          "browser-html-injection-sink": "partial",
+          "cors-wildcard-with-credentials": "partial",
+          "node-tls-verification-disabled": "partial",
+          "jwt-unsafe-verification-options": "partial",
+          "hardcoded-auth-secret": "partial",
+          "js-inline-session-secret": "partial",
+          "js-insecure-cookie-options": "partial",
+          "python-dynamic-code-execution": "completed",
+          "python-shell-command-execution": "completed",
+          "python-unsafe-deserialization": "completed",
+          "python-unsafe-yaml-load": "completed",
+          "python-tls-verification-disabled": "completed",
+          "python-framework-debug-enabled": "completed",
+          "python-hardcoded-framework-secret": "completed",
+          "python-cors-wildcard-with-credentials": "completed",
+          "python-insecure-session-cookie-settings": "completed",
+          "python-csrf-protection-disabled": "completed",
+          "source-stack-unsupported": "completed",
+          "source-evidence-incomplete": "partial",
+          "js-route-security-evidence-incomplete": "not_applicable",
+          "gitleaks-committed-secret": "completed",
+          "gitleaks-working-tree-secret": "completed",
+          "osv-known-vulnerability": "completed"
+        },
+        "snapshot": {
+          "summary": {
+            "total": 159,
+            "confirmed": 0,
+            "suspected": 158,
+            "unknown": 1
+          },
+          "byRule": {
+            "browser-html-injection-sink": 2,
+            "gitleaks-committed-secret": 5,
+            "node-child-process-shell-execution": 1,
+            "osv-known-vulnerability": 147,
+            "production-source-map-enabled": 1,
+            "python-dynamic-code-execution": 2,
+            "source-evidence-incomplete": 1
+          },
+          "externalStates": [
+            "suspected"
+          ]
+        },
+        "confirmedFindingIds": []
       },
       "falsePositiveClosures": [
         "Root .env.example is a template and is not treated as a secret-bearing file by filename alone.",
@@ -238,8 +522,109 @@
         ]
       },
       "corpus": {
-        "runDate": "2026-08-26T12:17:44.945Z",
-        "adapters": []
+        "runDate": "2026-08-26T12:18:11.673Z",
+        "reportSchemaVersion": 3,
+        "auditExit": {
+          "code": 3,
+          "classification": "evidence_incomplete"
+        },
+        "rulesetDigest": "6198ed37c2818d062d6f1ed89dcac8a8288dc871008ba6e48e54347da1eea799",
+        "mutableAdapters": [
+          "osv"
+        ],
+        "digests": {
+          "reportBytes": "1cffffe4565ee05c652c38b82aa4a31280889713ae9031fbc2d580544ef8f1b3",
+          "reportSemantics": "22b0479c11fc24c53a459516e4e738948796a23e9fdbf5c07d47a5fc8f63245e",
+          "stableReportSemantics": "b4d8c20dd3ae9e074dd970a3d6b4ea8f4f925c5d8c29e0046b1f7120db74ffb2",
+          "manualAnnotationIdentity": "a96ecdf3f740d6892818aef73a73004a0a35870b9e6c8ee93215d6e0c541befb"
+        },
+        "adapters": [
+          {
+            "id": "builtin-source",
+            "version": "1.1.1",
+            "status": "built_in",
+            "rulesetDigest": "441a7bcbd5548d2a33fb9943b701dcd5d776df9c0694f560cf7853db0771e1f9",
+            "deterministicFindingIdsDigest": "dfee25088080754c65ca25378d523314a0cfdd7dc0254508e9b6ce20f69fbbe4",
+            "deterministicFindingContentDigest": "f82ab9541dc8443df1a8da81e535f0786d12e8d2a5a667f4939642de29bfcaa6"
+          },
+          {
+            "id": "gitleaks",
+            "version": "8.30.1",
+            "status": "available",
+            "observedVersion": "8.30.1",
+            "rulesetDigest": "932d1f6d5cbf6d0d2a83bd2ffeb2023ddfd4fefd437435689c7bc7ca0eea268b",
+            "binarySha256": "ba52fb1bfabbcde42f032afad3d6e0b19dff8ed105229a16e7caa338bbc0e84f",
+            "deterministicFindingIdsDigest": "26d55a047894238b64eac9cf5c866ebba885be52582d3a102a895fba2c16a3ca",
+            "deterministicFindingContentDigest": "fcd27e77caddf763e5a34444c0b5ad65705f660159841c6ca552c108401fb7e9"
+          },
+          {
+            "id": "osv",
+            "version": "2.5.0",
+            "status": "available",
+            "observedVersion": "2.5.0",
+            "rulesetDigest": "0e0d7d61d9a883eef12ffceb296d1fe706c38f1139efb76dea67b82b259dbbe2",
+            "binarySha256": "fff5a2e351b7f0a60001e87cbf862e82fb82e2792d368b533fec7a5865a73da2"
+          }
+        ],
+        "coverage": {
+          "dependency-lockfile-missing": "completed",
+          "sensitive-env-file-present": "completed",
+          "tracked-sensitive-env-file": "completed",
+          "node-inspector-public-bind": "completed",
+          "production-source-map-enabled": "completed",
+          "js-dynamic-code-execution": "completed",
+          "node-child-process-shell-execution": "completed",
+          "react-dangerous-html-sink": "completed",
+          "browser-html-injection-sink": "completed",
+          "cors-wildcard-with-credentials": "completed",
+          "node-tls-verification-disabled": "completed",
+          "jwt-unsafe-verification-options": "completed",
+          "hardcoded-auth-secret": "completed",
+          "js-inline-session-secret": "completed",
+          "js-insecure-cookie-options": "completed",
+          "python-dynamic-code-execution": "completed",
+          "python-shell-command-execution": "completed",
+          "python-unsafe-deserialization": "completed",
+          "python-unsafe-yaml-load": "completed",
+          "python-tls-verification-disabled": "completed",
+          "python-framework-debug-enabled": "completed",
+          "python-hardcoded-framework-secret": "completed",
+          "python-cors-wildcard-with-credentials": "completed",
+          "python-insecure-session-cookie-settings": "completed",
+          "python-csrf-protection-disabled": "completed",
+          "source-stack-unsupported": "completed",
+          "source-evidence-incomplete": "completed",
+          "js-route-security-evidence-incomplete": "partial",
+          "gitleaks-committed-secret": "completed",
+          "gitleaks-working-tree-secret": "completed",
+          "osv-known-vulnerability": "completed"
+        },
+        "snapshot": {
+          "summary": {
+            "total": 122,
+            "confirmed": 4,
+            "suspected": 117,
+            "unknown": 1
+          },
+          "byRule": {
+            "dependency-lockfile-missing": 4,
+            "gitleaks-committed-secret": 1,
+            "gitleaks-working-tree-secret": 1,
+            "js-route-security-evidence-incomplete": 1,
+            "node-child-process-shell-execution": 19,
+            "node-tls-verification-disabled": 2,
+            "osv-known-vulnerability": 94
+          },
+          "externalStates": [
+            "suspected"
+          ]
+        },
+        "confirmedFindingIds": [
+          "dependency-lockfile-missing-f260fc0cc410d",
+          "dependency-lockfile-missing-fb2a2e7802b84",
+          "dependency-lockfile-missing-fd19a7ef391f0",
+          "dependency-lockfile-missing-fef12c7017a8a"
+        ]
       },
       "falsePositiveClosures": [
         "Four built-in confirmations describe lockfile absence in independent extra/example tool directories; they are reproducible hygiene findings, not four application vulnerabilities.",
@@ -301,8 +686,99 @@
         ]
       },
       "corpus": {
-        "runDate": "2026-08-26T12:17:44.945Z",
-        "adapters": []
+        "runDate": "2026-08-26T12:18:11.673Z",
+        "reportSchemaVersion": 3,
+        "auditExit": {
+          "code": 0,
+          "classification": "complete"
+        },
+        "rulesetDigest": "6198ed37c2818d062d6f1ed89dcac8a8288dc871008ba6e48e54347da1eea799",
+        "mutableAdapters": [
+          "osv"
+        ],
+        "digests": {
+          "reportBytes": "9d18ccc01576d2498f1a9da5afac571100f70493ad11b2ab6b7591dcbd510c64",
+          "reportSemantics": "17ee433ebe33a5cdf3984939caf7356058216f3f64462143e72899807da0ff77",
+          "stableReportSemantics": "bbf8a322089347ab337d87ee277b0fe6ae5060783af811c6218999ba8e110b25",
+          "manualAnnotationIdentity": "a32dcc71d1130f2363b8b28d169fbe09b3de5fb6b868002e7604a164c5b5320c"
+        },
+        "adapters": [
+          {
+            "id": "builtin-source",
+            "version": "1.1.1",
+            "status": "built_in",
+            "rulesetDigest": "441a7bcbd5548d2a33fb9943b701dcd5d776df9c0694f560cf7853db0771e1f9",
+            "deterministicFindingIdsDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "deterministicFindingContentDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          },
+          {
+            "id": "gitleaks",
+            "version": "8.30.1",
+            "status": "available",
+            "observedVersion": "8.30.1",
+            "rulesetDigest": "932d1f6d5cbf6d0d2a83bd2ffeb2023ddfd4fefd437435689c7bc7ca0eea268b",
+            "binarySha256": "ba52fb1bfabbcde42f032afad3d6e0b19dff8ed105229a16e7caa338bbc0e84f",
+            "deterministicFindingIdsDigest": "e81486a620379e73e69d157ab58b979869e49ad1f96c3cbf581dade22c7ea1f5",
+            "deterministicFindingContentDigest": "cf27cd1e78bdc61ad2ff5b617517e6b3ba054b6e3bc467eb5f32aedd1d0961b3"
+          },
+          {
+            "id": "osv",
+            "version": "2.5.0",
+            "status": "available",
+            "observedVersion": "2.5.0",
+            "rulesetDigest": "0e0d7d61d9a883eef12ffceb296d1fe706c38f1139efb76dea67b82b259dbbe2",
+            "binarySha256": "fff5a2e351b7f0a60001e87cbf862e82fb82e2792d368b533fec7a5865a73da2"
+          }
+        ],
+        "coverage": {
+          "dependency-lockfile-missing": "completed",
+          "sensitive-env-file-present": "completed",
+          "tracked-sensitive-env-file": "completed",
+          "node-inspector-public-bind": "completed",
+          "production-source-map-enabled": "completed",
+          "js-dynamic-code-execution": "completed",
+          "node-child-process-shell-execution": "completed",
+          "react-dangerous-html-sink": "completed",
+          "browser-html-injection-sink": "completed",
+          "cors-wildcard-with-credentials": "completed",
+          "node-tls-verification-disabled": "completed",
+          "jwt-unsafe-verification-options": "completed",
+          "hardcoded-auth-secret": "completed",
+          "js-inline-session-secret": "completed",
+          "js-insecure-cookie-options": "completed",
+          "python-dynamic-code-execution": "completed",
+          "python-shell-command-execution": "completed",
+          "python-unsafe-deserialization": "completed",
+          "python-unsafe-yaml-load": "completed",
+          "python-tls-verification-disabled": "completed",
+          "python-framework-debug-enabled": "completed",
+          "python-hardcoded-framework-secret": "completed",
+          "python-cors-wildcard-with-credentials": "completed",
+          "python-insecure-session-cookie-settings": "completed",
+          "python-csrf-protection-disabled": "completed",
+          "source-stack-unsupported": "completed",
+          "source-evidence-incomplete": "completed",
+          "js-route-security-evidence-incomplete": "not_applicable",
+          "gitleaks-committed-secret": "completed",
+          "gitleaks-working-tree-secret": "completed",
+          "osv-known-vulnerability": "completed"
+        },
+        "snapshot": {
+          "summary": {
+            "total": 41,
+            "confirmed": 0,
+            "suspected": 41,
+            "unknown": 0
+          },
+          "byRule": {
+            "gitleaks-committed-secret": 26,
+            "gitleaks-working-tree-secret": 15
+          },
+          "externalStates": [
+            "suspected"
+          ]
+        },
+        "confirmedFindingIds": []
       },
       "falsePositiveClosures": [
         "The traced recipe-image URL path reaches an authenticated route and private-IP transport guard, so that limited sink-only lead is not a vulnerability finding.",
