@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "plans": [
+    {
+      "path": "docs/V0.6.0_ENGINEERING_PLAN.md",
+      "release": "0.6.0",
+      "status": "shipped_with_as_built_deviations",
+      "artifacts": [
+        {
+          "plannedPath": "scripts/lib/route-analysis-limits.mjs",
+          "disposition": "shipped_as",
+          "rationale": "Route parser and graph limits were kept next to the bounded operations they govern instead of creating a pass-through limits module.",
+          "asBuilt": [
+            "scripts/lib/js-ts-ast-parser.mjs",
+            "scripts/lib/js-ts-module-graph.mjs"
+          ]
+        },
+        {
+          "plannedPath": "scripts/lib/frameworks/express-control-signals.mjs",
+          "disposition": "shipped_as",
+          "rationale": "Shared control vocabulary and framework-local extraction were consolidated to prevent three signal registries from drifting.",
+          "asBuilt": [
+            "scripts/lib/route-control-registry.mjs",
+            "scripts/lib/frameworks/express-route-extractor.mjs"
+          ]
+        },
+        {
+          "plannedPath": "scripts/lib/frameworks/nest-control-signals.mjs",
+          "disposition": "shipped_as",
+          "rationale": "Shared control vocabulary and framework-local extraction were consolidated to prevent three signal registries from drifting.",
+          "asBuilt": [
+            "scripts/lib/route-control-registry.mjs",
+            "scripts/lib/frameworks/nest-route-extractor.mjs"
+          ]
+        },
+        {
+          "plannedPath": "scripts/lib/frameworks/next-control-signals.mjs",
+          "disposition": "shipped_as",
+          "rationale": "Shared control vocabulary and framework-local extraction were consolidated to prevent three signal registries from drifting.",
+          "asBuilt": [
+            "scripts/lib/route-control-registry.mjs",
+            "scripts/lib/frameworks/next-app-route-extractor.mjs"
+          ]
+        },
+        {
+          "plannedPath": "test/route-security-renderer.test.mjs",
+          "disposition": "shipped_as",
+          "rationale": "Renderer behavior is exercised through the integrated route artifact contract instead of a renderer-only file.",
+          "asBuilt": [
+            "test/route-security-integration.test.mjs",
+            "test/route-security-contract.test.mjs"
+          ]
+        },
+        {
+          "plannedPath": "test/route-security-priority.test.mjs",
+          "disposition": "shipped_as",
+          "rationale": "Priority assertions shipped with the route-control mapping matrix that supplies their inputs.",
+          "asBuilt": [
+            "test/route-control-mapping.test.mjs"
+          ]
+        }
+      ]
+    }
+  ]
+}

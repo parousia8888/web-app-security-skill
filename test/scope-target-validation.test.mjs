@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   scopeDigest, sourceAuditBoundary, validatePersistedScope,
 } from '../scripts/lib/project-identity.mjs';
 import { runOsv } from '../scripts/lib/external-adapters.mjs';
+import Ajv2020 from 'ajv/dist/2020.js';
+import addFormats from 'ajv-formats';
 
 const temp = mkdtempSync(join(tmpdir(), 'web-app-security-scope-target-'));
 
@@ -28,6 +32,22 @@ function scope(projectRoot) {
   };
 }
 
+function schemaScope(projectRoot) {
+  const value = scope(projectRoot);
+  value.generatedAt = '2026-08-26T00:00:00.000Z';
+  value.run = { id: 'schema-fixture', directory: '.webapp-security/runs/schema-fixture' };
+  Object.assign(value.target, {
+    discoveryStatus: 'supported', layout: 'single-root', publicOrigins: [],
+  });
+  value.authorization = { status: 'pending', basis: '', proof: '', note: '' };
+  value.checkModes = { source: true, local: true, remotePassive: false, remoteActive: false };
+  value.discoveryEvidence = {
+    examinedFiles: [], networkAccessPerformed: false, secretFilesRead: false, warnings: [], unknowns: [],
+  };
+  value.exclusions = [];
+  return value;
+}
+
 try {
   const project = join(temp, 'project');
   const outside = join(temp, 'outside');
@@ -37,6 +57,21 @@ try {
   writeFileSync(join(project, 'package-lock.json'), '{}\n');
   writeFileSync(join(outside, 'outside.lock'), '{}\n');
   assert.equal(validatePersistedScope(scope(project)).target.projectRoot, project);
+
+  const ajv = new Ajv2020({ strict: true, strictTypes: false, strictRequired: false });
+  addFormats(ajv);
+  const validateSchema = ajv.compile(JSON.parse(readFileSync(
+    new URL('../docs/security-scope.schema.json', import.meta.url), 'utf8')));
+  assert.equal(validateSchema(schemaScope(project)), true, ajv.errorsText(validateSchema.errors));
+  for (const [field, value] of [
+    ['projectRoot', '../relative'], ['lockfiles', '../escape.lock'],
+    ['lockfiles', '/etc/passwd'], ['lockfiles', 'nested/./lockfile'],
+  ]) {
+    const hostile = schemaScope(project);
+    if (field === 'projectRoot') hostile.target.projectRoot = value;
+    else hostile.target.lockfiles = [value];
+    assert.equal(validateSchema(hostile), false, `${field} ${value} must fail the public schema`);
+  }
 
   for (const value of ['/etc/passwd', '../escape.lock', 'nested/../../escape.lock', 'bad\nname']) {
     const hostile = scope(project);

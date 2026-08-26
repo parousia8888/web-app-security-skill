@@ -76,7 +76,7 @@ function summary(results) {
   };
 }
 
-export function buildRuleContractConformance(corpus, observations) {
+export function buildRuleContractConformance(corpus, observations, release) {
   const observed = new Map(observations.map((item) => [item.ruleId, item]));
   const rules = corpus.rules.filter((rule) => rule.adapterType === 'built_in').map((rule) => {
     const item = observed.get(rule.ruleId) || {
@@ -107,7 +107,7 @@ export function buildRuleContractConformance(corpus, observations) {
   const integrity = rules.filter((rule) => rule.kind === 'evidence_integrity');
   return {
     schemaVersion: 1,
-    release: 'v0.6.0',
+    release,
     evidenceType: 'synthetic_rule_contract_conformance',
     limitation: LIMITATION,
     rulesetSemanticDigest: corpus.rulesetSemanticDigest,
@@ -123,6 +123,9 @@ export function buildRuleContractConformance(corpus, observations) {
 export function validateRuleContractConformance(conformance) {
   const errors = [];
   if (conformance?.schemaVersion !== 1) errors.push('conformance.schemaVersion must be 1');
+  if (!/^v\d+\.\d+\.\d+$/.test(conformance?.release || '')) {
+    errors.push('conformance.release must be a version label');
+  }
   if (conformance?.evidenceType !== 'synthetic_rule_contract_conformance') {
     errors.push('conformance evidence type is invalid');
   }
@@ -149,7 +152,7 @@ function summaryLine(label, value) {
 
 export function renderRuleContractMarkdown(conformance) {
   const lines = [
-    '# v0.5.4 rule-contract conformance', '',
+    `# ${conformance.release} rule-contract conformance`, '',
     `> ${conformance.limitation}`, '',
     `Ruleset semantic digest: \`${conformance.rulesetSemanticDigest}\``, '',
     '## Contract results', '',
@@ -167,7 +170,7 @@ export function renderRuleContractMarkdown(conformance) {
     ...conformance.rules.map((rule) => `| \`${rule.ruleId}\` | ${rule.kind} | \`${rule.positive.expectedState}\` | ${rule.positive.passed ? 'pass' : 'fail'} | ${rule.negative.passed ? 'pass' : 'fail'} |`),
     '',
     'Regenerate with `npm run conformance:rules`. CI uses the same runner with `--check` to',
-    'compare committed JSON and Markdown bytes.', '',
+    'compare committed JSON and Markdown bytes.',
   ];
   return `${lines.join('\n')}\n`;
 }

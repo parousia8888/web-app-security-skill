@@ -77,7 +77,7 @@ release progress and evidence are in the [v0.5.2 patch plan](docs/V0.5.2_PATCH_P
 
 ## v0.5.3 distribution and review-noise release
 
-The v0.5.3 candidate adds a zero-install npm/npx path, a Claude Code plugin marketplace manifest,
+The published v0.5.3 release added a zero-install npm/npx path, a Claude Code plugin marketplace manifest,
 public known limitations, Git-aware `--since` and `--staged` built-in audit scopes, and a
 reproducible planted pattern-contract benchmark for all 20 built-in risk rules plus two evidence-
 integrity rules. The benchmark is fixture evidence, not a production precision/recall claim.
@@ -86,6 +86,21 @@ MCP and a larger stable rule catalogue are intentionally outside v0.5.3. Their e
 permission boundaries and evidence requirements are recorded in the
 [MCP and rule-expansion decision](docs/architecture/mcp-and-rule-expansion.md). Exact implementation
 and release progress lives in the [v0.5.3 engineering plan](docs/V0.5.3_ENGINEERING_PLAN.md).
+
+## Shipped in v0.5.4
+
+v0.5.4 expands the bounded automatic first pass with five built-in checks, eight same-file
+Opengrep flow rules across JavaScript/TypeScript and Python, and `--profile deep` for explicitly
+selecting the built-in detector plus four caller-installed external adapters. Missing adapter
+prerequisites remain `unknown`; source and flow matches remain `suspected` until reproduced.
+
+The release records 25 built-in risk rules, 2 evidence-integrity rules and 16 opt-in external
+adapter rules: 43 stable rules total. The self-authored planted suite is a rule-contract
+conformance gate, while a separate five-case corpus preserves named real-world regressions. Neither
+is presented as production precision or recall. The signed GitHub Release, npm package with SLSA
+provenance, verified installer, and owner-approved public `v1` promotion are complete. Exact facts
+are in the [v0.5.4 release evidence](docs/releases/v0.5.4.md) and
+[engineering plan](docs/V0.5.4_ENGINEERING_PLAN.md).
 
 ## Shipped in v0.6.0
 
@@ -104,7 +119,7 @@ Implementation evidence is in the [v0.6.0 route review](docs/reviews/v0.6.0-rout
 verified installer, immutable Action and signed `v1` consumers are complete; exact public facts are
 in the [v0.6.0 release evidence](docs/releases/v0.6.0.md).
 
-## Implemented for v0.7.0 candidate
+## Shipped in v0.7.0
 
 v0.7.0 corrects application-guard aggregation and deepens the route inventory into a bounded
 access-control-chain review. Nest application controls are listed once; authentication,
@@ -123,20 +138,22 @@ All 12 ordinary-project chains are partial and zero are completed, which remains
 Four [real-world regressions](docs/regressions/v0.7.0-access-control-real-world-regressions.md) and
 the [engineering plan](docs/V0.7.0_ENGINEERING_PLAN.md) record exact scope and release progress.
 
-## Shipped in v0.5.4
+## v0.7.1 execution-boundary patch
 
-v0.5.4 expands the bounded automatic first pass with five built-in checks, eight same-file
-Opengrep flow rules across JavaScript/TypeScript and Python, and `--profile deep` for explicitly
-selecting the built-in detector plus four caller-installed external adapters. Missing adapter
-prerequisites remain `unknown`; source and flow matches remain `suspected` until reproduced.
+v0.7.1 bounds crawl destinations, redirects, DNS, response sizes and timeouts; applies deterministic
+per-file and run-wide source budgets; keeps nested credential material out of report bundles; and
+makes suspected HIGH findings participate in the default gate without changing their evidence
+state. Unsupported or exhausted analysis remains incomplete rather than clean. Exact public facts
+are in the [v0.7.1 release evidence](docs/releases/v0.7.1.md).
 
-The release records 25 built-in risk rules, 2 evidence-integrity rules and 16 opt-in external
-adapter rules: 43 stable rules total. The self-authored planted suite is a rule-contract
-conformance gate, while a separate five-case corpus preserves named real-world regressions. Neither
-is presented as production precision or recall. The signed GitHub Release, npm package with SLSA
-provenance, verified installer, and owner-approved public `v1` promotion are complete. Exact facts
-are in the [v0.5.4 release evidence](docs/releases/v0.5.4.md) and
-[engineering plan](docs/V0.5.4_ENGINEERING_PLAN.md).
+## v0.7.2 correctness and executable-contract patch
+
+v0.7.2 prevents demo cleanup from touching unowned output, strengthens report-bundle redaction,
+adds direct CommonJS Express route coverage and fail-closed evidence for unresolved imported
+registration functions, compiles public JSON Schemas under Ajv, and makes the v0.7.0 access review
+digest-bound and independently checkable. Exact public facts are in the
+[v0.7.2 release evidence](docs/releases/v0.7.2.md) and
+[patch plan](docs/V0.7.2_PATCH_PLAN.md).
 
 ## Correctness backlog
 

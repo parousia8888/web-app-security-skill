@@ -141,7 +141,7 @@ term, plain-language meaning, realistic consequence, evidence boundary, proposal
 side effects, owner decisions, separate security/functional retests and rollback. Stable rule
 inventory is now 25 built-in risk rules, 3 evidence-integrity rules and 16 opt-in external-adapter
 risk rules, for 44 total. Route records are not counted as vulnerability rules.
-The [v0.6.0 planted rule-contract conformance](docs/conformance/v0.6.0-rule-contract-conformance.md)
+The [current planted rule-contract conformance](docs/conformance/rule-contract-conformance.md)
 checks the 28 built-in contracts and remains explicitly separate from production accuracy.
 
 ## Install

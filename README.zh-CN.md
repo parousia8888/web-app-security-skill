@@ -129,7 +129,7 @@ stable 清单仍是 25 条 built-in risk、3 条 evidence-integrity 和 16 条 o
 边界、提案、替代方案、副作用、用户决策、安全复测、功能复测和回滚。稳定规则清单现为 25 条
 内置 risk、3 条 evidence-integrity 和 16 条 opt-in 外部 adapter risk，共 44 条。路由记录不计入
 漏洞规则数量。
-[v0.6.0 planted 规则合同一致性](docs/conformance/v0.6.0-rule-contract-conformance.md)检查 28 条
+[当前 planted 规则合同一致性](docs/conformance/rule-contract-conformance.md)检查 28 条
 内置合同，仍明确不代表生产准确率。
 
 ## 安装

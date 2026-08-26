@@ -48,7 +48,7 @@
       "name": "Narrow deterministic source audit",
       "category": "detection",
       "maturity": "stable",
-      "scope": "Runs 25 stable built-in risk rules and 3 evidence-integrity rules: five shared repository/configuration checks plus ten bounded JavaScript/TypeScript and ten bounded Python leads. Pattern matches remain suspected; only narrow Git and manifest facts can be confirmed, and this is not whole-program SAST. Deterministic per-file token/operation and whole-run operation budgets fail closed as incomplete evidence.",
+      "scope": "Runs 25 stable built-in risk rules and 3 evidence-integrity rules: five shared repository/configuration checks plus ten bounded JavaScript/TypeScript and ten bounded Python leads. Pattern matches remain suspected; only narrow Git and manifest facts can be confirmed, and this is not whole-program SAST. Deterministic parser/budget failures fail closed as incomplete evidence. Explicit policy exclusions are counted separately from parser, encoding, size and budget failures and do not silently become scanned files.",
       "evidence": ["scripts/lib/source-audit.mjs", "scripts/lib/source-analysis-budget.mjs", "scripts/lib/js-ts-source-audit.mjs", "scripts/lib/python-source-audit.mjs", "scripts/lib/source-rule-registry.mjs", "docs/stable-source-rules.json", "test/js-ts-source-audit.test.mjs", "test/python-source-audit.test.mjs", "test/source-coverage-ledger.test.mjs", "test/source-rule-registry.test.mjs"]
     },
     {
@@ -56,7 +56,7 @@
       "name": "Framework-aware route, action and control inventory",
       "category": "detection",
       "maturity": "stable",
-      "scope": "Produces route-security v2 artifacts for bounded Express, NestJS and Next.js App Router syntax, with Next.js Server Actions as a separate non-HTTP surface. Stable Express syntax covers variable-bound ESM/CommonJS factories, direct require('express').Router(), inline routes, exact static mounts and exact local CommonJS router mounts. A structurally observed imported local registration function remains unsupported and fails closed as partial/unknown evidence. Application controls are listed once, authentication and authorization signals are separated, and routes with no observed route-scoped control remain review states rather than vulnerability findings.",
+      "scope": "Produces route-security v2 artifacts for bounded Express, NestJS and Next.js App Router syntax, with Next.js Server Actions as a separate non-HTTP surface. Stable Express syntax covers variable-bound ESM/CommonJS factories, direct require('express').Router(), inline routes, exact static mounts and exact local CommonJS router mounts. A structurally observed imported local registration function remains unsupported and fails closed as partial/unknown evidence. Application controls are listed once; Next.js middleware/proxy participation is application context and never proof of per-route enforcement. Authentication, authorization and unclassified controls remain separate, and an unclassified control does not remove a route from the bare-control review context.",
       "evidence": ["scripts/lib/route-security-audit.mjs", "scripts/lib/frameworks/express-route-extractor.mjs", "scripts/lib/frameworks/nest-route-extractor.mjs", "scripts/lib/frameworks/next-app-route-extractor.mjs", "scripts/lib/frameworks/next-server-action-extractor.mjs", "docs/reviews/v0.7.0-access-control-review.json", "test/express-route-extractor.test.mjs", "test/route-security-integration.test.mjs", "test/next-server-action-extractor.test.mjs"]
     },
     {
@@ -64,7 +64,7 @@
       "name": "Bounded identity-to-data access-control chain",
       "category": "detection",
       "maturity": "stable",
-      "scope": "For supported routes and Server Actions, records exact Nest Passport or Auth.js identity evidence and caller-selected object flow into bounded Prisma or Drizzle operations in the same handler or through one exact project-local call. Static module aliases resolve only to one source target and analysis stops before a second call. A missing visible constraint remains review evidence and cannot prove BOLA/IDOR; the capped ordinary-project review produced 12 partial and zero completed chains.",
+      "scope": "For supported routes and Server Actions, accessChains is the sole public authorization-analysis surface. It records exact Nest Passport or Auth.js identity evidence and caller-selected object flow into bounded Prisma or Drizzle operations in the same handler or through one exact project-local call. Principal and tenant tokens come from one shared vocabulary. Static module aliases resolve only to one source target and analysis stops before a second call. A missing visible constraint remains review evidence and cannot prove BOLA/IDOR; the capped historical v0.7.0 review produced 12 partial and zero completed chains.",
       "evidence": ["scripts/lib/js-ts-identity-evidence.mjs", "scripts/lib/js-ts-data-operation-evidence.mjs", "scripts/lib/js-ts-one-hop-access.mjs", "scripts/lib/js-ts-module-graph.mjs", "docs/reviews/v0.7.0-access-control-review.json", "test/access-control-identity.test.mjs", "test/access-control-data-operations.test.mjs", "test/access-control-one-hop.test.mjs"]
     },
     {
@@ -72,7 +72,7 @@
       "name": "Experimental Clerk, Better Auth and Supabase access evidence",
       "category": "detection",
       "maturity": "experimental",
-      "scope": "Recognizes exact bounded Clerk, Better Auth and Supabase identity constructs plus Supabase Query Builder operations. These families lack sufficient ordinary-project evidence for stable promotion; every Supabase operation retains external_policy_required because source analysis cannot evaluate deployed Postgres RLS.",
+      "scope": "Adds exact bounded Clerk, Better Auth and Supabase identity constructs plus Supabase Query Builder operations to the same public accessChains surface; there is no parallel experimental finding output. These families lack sufficient ordinary-project evidence for stable promotion. Every Supabase operation retains external_policy_required because source analysis cannot evaluate deployed Postgres RLS.",
       "evidence": ["scripts/lib/js-ts-identity-evidence.mjs", "scripts/lib/js-ts-data-operation-evidence.mjs", "scripts/lib/js-ts-one-hop-access.mjs", "docs/reviews/v0.7.0-access-control-review.json", "test/access-control-identity.test.mjs", "test/access-control-data-operations.test.mjs"]
     },
     {
@@ -128,7 +128,7 @@
       "name": "Automatic project discovery and scoped run",
       "category": "evidence_reporting",
       "maturity": "stable",
-      "scope": "Detects supported Node/Python and split-stack projects, package managers, lockfiles and config/deployment paths, then creates a versioned network-free security scope. It never establishes deployment ownership.",
+      "scope": "Detects supported Node/Python and split-stack projects, package managers, lockfiles and config/deployment paths, then creates a versioned network-free security scope. Persisted scope paths are schema-bounded and runtime-validated: projectRoot is canonical absolute input while discovered files and framework/package-manager roots are normalized project-relative paths. It never establishes deployment ownership.",
       "evidence": ["scripts/project-start.mjs", "scripts/lib/project-discovery.mjs", "test/project-discovery.test.mjs", "docs/security-scope.schema.json"]
     },
     {
@@ -152,8 +152,8 @@
       "name": "Reproducible rule-contract conformance",
       "category": "evidence_reporting",
       "maturity": "stable",
-      "scope": "Regenerates exact JSON and Markdown pass/fail evidence for 25 built-in risk and three evidence-integrity planted positive/negative rule contracts. It is author-maintained conformance evidence, not a production-vulnerability precision, recall, reachability, exploitability or security-coverage measurement.",
-      "evidence": ["scripts/run-rule-contract-conformance.mjs", "scripts/lib/rule-contract-conformance.mjs", "test/rule-contract-conformance.test.mjs", "docs/conformance/v0.6.0-rule-contract-conformance.json"]
+      "scope": "Regenerates version-labelled JSON and Markdown pass/fail evidence at a stable path for 25 built-in risk and three evidence-integrity planted positive/negative rule contracts. The label is derived from VERSION. It is author-maintained conformance evidence, not a production-vulnerability precision, recall, reachability, exploitability or security-coverage measurement.",
+      "evidence": ["scripts/run-rule-contract-conformance.mjs", "scripts/lib/rule-contract-conformance.mjs", "test/rule-contract-conformance.test.mjs", "docs/conformance/rule-contract-conformance.json"]
     },
     {
       "id": "real-world-regression-corpus",

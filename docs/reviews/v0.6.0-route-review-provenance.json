@@ -21,6 +21,9 @@
     "docs/reviews/v0.6.0-route-review.md": {
       "sha256": "32393bcb9b3af2ef1a0fdf26d004174376c7180b3ba8074d40c22655b309b2b9"
     },
+    "reviewSemanticIdentity": {
+      "sha256": "d6fa326244232b01280e67d2e5b8b09d5282c1b7022cd28684ae2c5c32ca0227"
+    },
     "manualAnnotationIdentity": {
       "sha256": "a52654ca802c2ed4efd866d77bee657e9dcfd25a29f021b80fa3b792ce453f7d"
     }
@@ -30,6 +33,7 @@
     "byteIdentity": "reproducible",
     "manualAnnotationIdentity": "reproducible",
     "currentAnalyzerBehavior": "verification_pending",
+    "originalAnalyzerInvocation": "not_retained",
     "missingEvidence": [
       "Original per-project route-security.json artifacts",
       "Exact analyzer invocation and environment for each project",

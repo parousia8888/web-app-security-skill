@@ -23,6 +23,22 @@ const annotationIdentity = digest(JSON.stringify(review.projects.map((project) =
   commit: project.commit,
   annotations: project.annotations,
 }))));
+const reviewSemanticIdentity = digest(JSON.stringify({
+  release: review.release,
+  method: review.method,
+  aggregate: review.aggregate,
+  projects: review.projects.map((project) => ({
+    id: project.id,
+    commit: project.commit,
+    analyzerRun: project.analyzerRun,
+    annotations: project.annotations,
+    experimentalBolaReview: project.experimentalBolaReview,
+    promotion: project.promotion,
+  })),
+  promotionDecisions: review.promotionDecisions,
+  rejectedCandidates: review.rejectedCandidates,
+  limitations: review.limitations,
+}));
 const provenance = {
   schemaVersion: 1,
   evidenceType: 'historical_route_review_provenance',
@@ -38,6 +54,7 @@ const provenance = {
   artifacts: {
     'docs/reviews/v0.6.0-route-review.json': { sha256: digest(jsonBytes) },
     'docs/reviews/v0.6.0-route-review.md': { sha256: digest(markdownBytes) },
+    reviewSemanticIdentity: { sha256: reviewSemanticIdentity },
     manualAnnotationIdentity: { sha256: annotationIdentity },
   },
   reproducibility: {
@@ -45,6 +62,7 @@ const provenance = {
     byteIdentity: 'reproducible',
     manualAnnotationIdentity: 'reproducible',
     currentAnalyzerBehavior: 'verification_pending',
+    originalAnalyzerInvocation: 'not_retained',
     missingEvidence: [
       'Original per-project route-security.json artifacts',
       'Exact analyzer invocation and environment for each project',
@@ -63,11 +81,13 @@ const markdown = `# v0.6.0 route-review provenance\n\n`
   + `- Tool version recorded by the release: \`${provenance.source.toolVersion}\`\n`
   + `- JSON SHA-256: \`${provenance.artifacts['docs/reviews/v0.6.0-route-review.json'].sha256}\`\n`
   + `- Markdown SHA-256: \`${provenance.artifacts['docs/reviews/v0.6.0-route-review.md'].sha256}\`\n`
+  + `- Review semantic identity: \`${provenance.artifacts.reviewSemanticIdentity.sha256}\`\n`
   + `- Manual-annotation identity: \`${provenance.artifacts.manualAnnotationIdentity.sha256}\`\n\n`
   + `## Reproducibility classification\n\n`
   + `- Published bytes: \`reproducible\` with \`${provenance.reproducibility.byteGenerationCommand}\`.\n`
   + `- Manual annotation identity: \`reproducible\`.\n`
   + `- Current analyzer behavior: \`verification_pending\`. The original raw route reports and exact per-project analyzer commands were not retained, so current behavior cannot be inferred from identical generated prose.\n\n`
+  + `- Original analyzer invocation: \`not_retained\`; no command is reconstructed from the generated review.\n\n`
   + `## Target commits\n\n`
   + Object.entries(provenance.source.targetCommits).map(([id, commit]) => `- ${id}: \`${commit}\``).join('\n')
   + `\n\n## Refresh contract\n\n${provenance.refreshContract.policy}\n`;

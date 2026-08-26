@@ -271,13 +271,18 @@ try {
     'audit', join(ROOT, 'test', 'fixtures', 'audit-app'), '--out', installedAuditOut,
     '--name', 'installed', '--fail-on', 'never',
   ], { env: { ...process.env, HOME: allHome, SOURCE_DATE_EPOCH: '0' } });
-  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.status, 3, result.stderr);
   const installedReport = JSON.parse(readFileSync(join(installedAuditOut, 'installed.json'), 'utf8'));
   assert.equal(installedReport.schemaVersion, 3);
   assert.equal(installedReport.subject.binding, 'ephemeral');
   assert.equal(JSON.stringify(installedReport).includes(installedAuditOut), false);
   assert.equal(installedReport.summary.byState.confirmed, 2);
   assert.equal(installedReport.summary.byState.suspected, 3);
+  assert.equal(installedReport.summary.byState.unknown, 1);
+  assert.ok(installedReport.findings.some((finding) =>
+    finding.rule.id === 'js-route-security-evidence-incomplete'
+      && finding.state === 'unknown'
+      && finding.evidence.reasons.framework_hinted_no_eligible_module === 1));
   assert.deepEqual(installedReport.findings.filter((finding) => finding.state === 'confirmed')
     .map((finding) => finding.rule.id).sort(), [
     'dependency-lockfile-missing',

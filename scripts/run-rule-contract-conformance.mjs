@@ -9,8 +9,8 @@ import {
 import { readStableRuleCorpus, validateStableRuleCorpus } from './lib/rule-corpus.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const JSON_OUTPUT = join(ROOT, 'docs', 'conformance', 'v0.6.0-rule-contract-conformance.json');
-const MARKDOWN_OUTPUT = join(ROOT, 'docs', 'conformance', 'v0.6.0-rule-contract-conformance.md');
+const JSON_OUTPUT = join(ROOT, 'docs', 'conformance', 'rule-contract-conformance.json');
+const MARKDOWN_OUTPUT = join(ROOT, 'docs', 'conformance', 'rule-contract-conformance.md');
 const check = process.argv.includes('--check');
 if (process.argv.slice(2).some((argument) => argument !== '--check')) {
   console.error('usage: node scripts/run-rule-contract-conformance.mjs [--check]');
@@ -23,7 +23,8 @@ if (corpusErrors.length) {
   console.error(`stable rule corpus is invalid:\n${corpusErrors.map((error) => `- ${error}`).join('\n')}`);
   process.exit(1);
 }
-const conformance = buildRuleContractConformance(corpus, collectRuleContractObservations(ROOT));
+const release = `v${readFileSync(join(ROOT, 'VERSION'), 'utf8').trim()}`;
+const conformance = buildRuleContractConformance(corpus, collectRuleContractObservations(ROOT), release);
 const errors = validateRuleContractConformance(conformance);
 if (errors.length) {
   console.error(`rule-contract conformance failed:\n${errors.map((error) => `- ${error}`).join('\n')}`);
