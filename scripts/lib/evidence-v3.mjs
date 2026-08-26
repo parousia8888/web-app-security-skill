@@ -12,6 +12,7 @@ import {
   downgradeFindingV3, downgradeReportV3, validateExplanationV3, validateReportV3,
 } from './report-v3-contract.mjs';
 import { sha256 } from './report-v2-contract.mjs';
+import { markdownCodeSpan } from './markdown-escaping.mjs';
 
 const severityRank = new Map(['critical', 'high', 'medium', 'low', 'info']
   .map((severity, index) => [severity, index]));
@@ -215,10 +216,10 @@ export function renderFindingMarkdownV3(finding, { technical = false } = {}) {
   }
   if (technical) lines.push(
     '**Technical evidence:**', '',
-    `- Rule: \`${finding.rule.id}@${finding.rule.revision}\``,
-    `- Adapter: \`${finding.adapter.id}@${finding.adapter.version}\``,
-    `- Location: ${finding.location ? `\`${finding.location.path}${finding.location.line ? `:${finding.location.line}` : ''}\`` : 'project-wide'}`,
-    `- Evidence: \`${JSON.stringify(finding.evidence)}\``, '',
+    `- Rule: ${markdownCodeSpan(`${finding.rule.id}@${finding.rule.revision}`)}`,
+    `- Adapter: ${markdownCodeSpan(`${finding.adapter.id}@${finding.adapter.version}`)}`,
+    `- Location: ${finding.location ? markdownCodeSpan(`${finding.location.path}${finding.location.line ? `:${finding.location.line}` : ''}`) : 'project-wide'}`,
+    `- Evidence: ${markdownCodeSpan(JSON.stringify(finding.evidence))}`, '',
   );
   return lines;
 }

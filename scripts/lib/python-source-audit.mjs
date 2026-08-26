@@ -293,9 +293,20 @@ function keyword(argumentsList, name) {
   return null;
 }
 
+function tokenIsLiteral(token, expected) {
+  if (!token) return false;
+  if (['True', 'False', 'None'].includes(expected)) {
+    return token.type === 'identifier' && token.value === expected;
+  }
+  if (/^-?(?:\d+(?:\.\d*)?|\.\d+)$/.test(expected)) {
+    return token.type === 'number' && token.value === expected;
+  }
+  return token.type === 'string' && token.value === expected;
+}
+
 function literalIs(argument, expected) {
   if (!argument) return false;
-  if (argument.length === 1) return valueAt(argument, 0) === expected;
+  if (argument.length === 1) return tokenIsLiteral(argument[0], expected);
   if (valueAt(argument, 0) !== '[' || valueAt(argument, argument.length - 1) !== ']') return false;
   for (let index = 1; index < argument.length - 1; index += 1) {
     chargeAnalysisOperations(argument);
@@ -463,18 +474,18 @@ function inspectPythonSourceWithBudget(path, text, budget) {
     }
     if (flaskApps.has(token.value) && valueAt(tokens, index + 1) === '.'
         && valueAt(tokens, index + 2) === 'debug' && valueAt(tokens, index + 3) === '='
-        && valueAt(tokens, index + 4) === 'True') {
+        && tokenIsLiteral(tokens[index + 4], 'True')) {
       add('python-framework-debug-enabled', token, 'flask_debug_true');
     }
     if (/(?:^|\/)settings\.py$/i.test(path) && token.value === 'DEBUG'
-        && valueAt(tokens, index + 1) === '=' && valueAt(tokens, index + 2) === 'True') {
+        && valueAt(tokens, index + 1) === '=' && tokenIsLiteral(tokens[index + 2], 'True')) {
       add('python-framework-debug-enabled', token, 'django_debug_true');
     }
 
     if (/(?:^|\/)settings\.py$/i.test(path) && [
       'SESSION_COOKIE_SECURE', 'SESSION_COOKIE_HTTPONLY', 'CSRF_COOKIE_SECURE',
     ].includes(token.value) && valueAt(tokens, index + 1) === '='
-        && valueAt(tokens, index + 2) === 'False') {
+        && tokenIsLiteral(tokens[index + 2], 'False')) {
       add('python-insecure-session-cookie-settings', token,
         `django_${token.value.toLowerCase()}_false`);
     }
@@ -492,7 +503,7 @@ function inspectPythonSourceWithBudget(path, text, budget) {
     if (flaskApps.has(token.value) && valueAt(tokens, index + 1) === '.'
         && valueAt(tokens, index + 2) === 'config' && valueAt(tokens, index + 3) === '['
         && tokens[index + 4]?.type === 'string' && valueAt(tokens, index + 5) === ']'
-        && valueAt(tokens, index + 6) === '=' && valueAt(tokens, index + 7) === 'False') {
+        && valueAt(tokens, index + 6) === '=' && tokenIsLiteral(tokens[index + 7], 'False')) {
       const setting = valueAt(tokens, index + 4);
       if (['SESSION_COOKIE_SECURE', 'SESSION_COOKIE_HTTPONLY'].includes(setting)) {
         add('python-insecure-session-cookie-settings', token,
@@ -559,11 +570,11 @@ function inspectPythonSourceWithBudget(path, text, budget) {
     for (let index = 0; index < tokens.length; index += 1) {
       chargeAnalysisOperations(tokens);
       if (tokens[index].value === 'CORS_ALLOW_ALL_ORIGINS'
-          && valueAt(tokens, index + 1) === '=' && valueAt(tokens, index + 2) === 'True') {
+          && valueAt(tokens, index + 1) === '=' && tokenIsLiteral(tokens[index + 2], 'True')) {
         allowAll = tokens[index];
       }
       if (tokens[index].value === 'CORS_ALLOW_CREDENTIALS'
-          && valueAt(tokens, index + 1) === '=' && valueAt(tokens, index + 2) === 'True') {
+          && valueAt(tokens, index + 1) === '=' && tokenIsLiteral(tokens[index + 2], 'True')) {
         credentials = true;
       }
     }

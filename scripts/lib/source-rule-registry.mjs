@@ -25,7 +25,7 @@ function entry(adapter, rule) {
   };
 }
 
-const builtin = { id: 'builtin-source', version: '1.1.0', maturity: 'stable', type: 'built_in' };
+const builtin = { id: 'builtin-source', version: '1.1.1', maturity: 'stable', type: 'built_in' };
 const checkov = { id: 'checkov', version: '3.3.9', maturity: 'stable', type: 'external' };
 const gitleaks = { id: 'gitleaks', version: '8.30.1', maturity: 'stable', type: 'external' };
 const opengrep = { id: 'opengrep', version: '1.27.0', maturity: 'stable', type: 'external' };
@@ -320,15 +320,15 @@ export const SOURCE_RULE_REGISTRY = [
     fixtures: { positive: [fixture('react-html-sink-positive', 'test/fixtures/js-ts-rules/vulnerable.tsx')], negative: [fixture('react-html-sink-safe', 'test/fixtures/js-ts-rules/safe.tsx')] },
   }),
   entry(builtin, {
-    id: 'browser-html-injection-sink', kind: 'risk_detection', family: 'browser_output',
+    id: 'browser-html-injection-sink', revision: '2', kind: 'risk_detection', family: 'browser_output',
     languages: ['javascript', 'typescript'], frameworks: ['browser'], domain: 'security_exposure',
     severity: 'medium', defaultState: 'suspected', rationale: 'browser_html_sink_lead',
     technicalTerm: 'DOM-based cross-site scripting sink lead (CWE-79)',
     plainLanguage: 'Browser code inserts a value as HTML instead of text. If that value came from outside the app, it can change the page or run script.',
     consequence: 'A successful path may steal in-page data, perform actions as the user or present false content.',
-    confidenceBoundary: 'The rule finds direct innerHTML/outerHTML assignments, insertAdjacentHTML and document.write calls. It does not trace input or determine sanitization.',
+    confidenceBoundary: 'The rule finds direct innerHTML/outerHTML assignments and append assignments, insertAdjacentHTML, and document.write/document.writeln calls. It does not trace input or determine sanitization.',
     applicability: 'Non-test, non-generated browser JavaScript and TypeScript source files.',
-    detection: { type: 'bounded_js_ts_tokens', constructs: ['innerHTML_assignment', 'outerHTML_assignment', 'insertAdjacentHTML_call', 'document.write_call'], taintFlow: false },
+    detection: { type: 'bounded_js_ts_tokens', constructs: ['innerHTML_assignment', 'innerHTML_append_assignment', 'outerHTML_assignment', 'outerHTML_append_assignment', 'insertAdjacentHTML_call', 'document.write_call', 'document.writeln_call'], taintFlow: false },
     standards: [standard('CWE-79', 'https://cwe.mitre.org/data/definitions/79.html'), standard('OWASP-TOP10-2025-A05', 'https://owasp.org/Top10/2025/A05_2025-Injection/')],
     falsePositiveCauses: ['Only a fixed trusted literal reaches the sink.', 'The value is sanitized by a policy the lexical rule cannot identify.'],
     proposal: { status: 'review_required', summary: 'Use textContent or DOM construction for text, or sanitize required HTML with a reviewed allowlist at the trust boundary.' },
@@ -572,7 +572,7 @@ export const SOURCE_RULE_REGISTRY = [
     fixtures: { positive: [fixture('python-yaml-positive', 'test/fixtures/python-rules/vulnerable.py')], negative: [fixture('python-yaml-safe', 'test/fixtures/python-rules/safe.py')] },
   }),
   entry(builtin, {
-    id: 'python-tls-verification-disabled', kind: 'risk_detection', family: 'transport',
+    id: 'python-tls-verification-disabled', revision: '2', kind: 'risk_detection', family: 'transport',
     languages: ['python'], frameworks: ['Requests', 'HTTPX'], domain: 'security_exposure', severity: 'high',
     defaultState: 'suspected', rationale: 'tls_verification_disabled_lead',
     technicalTerm: 'Improper TLS certificate validation lead (CWE-295)',
@@ -770,7 +770,7 @@ export const SOURCE_RULE_REGISTRY = [
     helpUri: 'https://github.com/parousia8888/web-app-security-skill/blob/main/KNOWN_LIMITATIONS.md',
     fixtures: {
       positive: [fixture('route-security-incomplete-positive', 'test/route-security-integration.test.mjs')],
-      negative: [fixture('route-security-complete-positive', 'test/route-security-integration.test.mjs')],
+      negative: [fixture('route-security-complete-negative', 'test/fixtures/next-app/app/api/health/route.ts')],
     },
   }),
   entry(checkov, {

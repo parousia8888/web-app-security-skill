@@ -58,6 +58,12 @@ assert.match(markdown, /Access-control chain review/);
 assert.match(markdown, /principal_constraint_observed/);
 assert.doesNotMatch(markdown, /\[object Object\]/);
 
+const hostileRoute = structuredClone(document);
+hostileRoute.routes[0].path = '/projects/`id`\n# injected-route-heading';
+const hostileMarkdown = renderRouteSecurityMarkdown(hostileRoute);
+assert.doesNotMatch(hostileMarkdown, /^# injected-route-heading$/m);
+assert.match(hostileMarkdown, /\/projects\/`id`\\n# injected-route-heading/);
+
 const degradedRoute = structuredClone(document.routes[0]);
 degradedRoute.accessChains[0].outcome = 'principal_constraint_not_observed';
 degradedRoute.accessChains[0].dataOperation.principalConstraint = 'not_observed';

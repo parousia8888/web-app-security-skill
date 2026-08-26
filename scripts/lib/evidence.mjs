@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
+import { markdownCodeSpan } from './markdown-escaping.mjs';
 
 export const SEVERITIES = ['critical', 'high', 'medium', 'low', 'info'];
 export const RESULT_STATES = ['confirmed', 'suspected', 'unknown', 'not_applicable'];
@@ -147,8 +148,8 @@ export function renderMarkdown(report) {
       `### ${finding.id}: ${finding.title}`, '',
       `**${finding.severity} / ${finding.state}${finding.baselineState ? ` / ${finding.baselineState}` : ''}**`, '',
       finding.summary, '',
-      finding.location ? `Location: \`${finding.location.path}${finding.location.line ? `:${finding.location.line}` : ''}\`` : 'Location: project-wide', '',
-      `Evidence: \`${JSON.stringify(finding.evidence)}\``, '',
+      finding.location ? `Location: ${markdownCodeSpan(`${finding.location.path}${finding.location.line ? `:${finding.location.line}` : ''}`)}` : 'Location: project-wide', '',
+      `Evidence: ${markdownCodeSpan(JSON.stringify(finding.evidence))}`, '',
       `Remediation: ${finding.remediation}`, '',
       `Retest: ${finding.retest}`, '',
     );

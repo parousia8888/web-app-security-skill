@@ -44,7 +44,7 @@ function regexMayStart(previous) {
   if (!previous) return true;
   if (previous.type === 'punct') {
     return ['(', '[', '{', '=', ':', ',', ';', '!', '?', '&&', '||', '??', '=>', '+', '-', '*', '/',
-      '%', '&', '|', '^', '~', '<', '>', '==', '===', '!=', '!==', '<=', '>='].includes(previous.value);
+      '%', '&', '|', '^', '~', '<', '>', '==', '===', '!=', '!==', '<=', '>=', '+='].includes(previous.value);
   }
   return previous.type === 'identifier'
     && ['return', 'throw', 'case', 'default', 'delete', 'void', 'typeof', 'instanceof', 'in', 'of',
@@ -252,7 +252,7 @@ function tokenizeJsTsWithBudget(text, jsx, budget) {
       index += number[0].length;
       continue;
     }
-    const operator = ['===', '!==', '>>>', '=>', '==', '!=', '>=', '<=', '&&', '||', '?.', '??', '**']
+    const operator = ['===', '!==', '>>>', '=>', '==', '!=', '>=', '<=', '&&', '||', '?.', '??', '**', '+=']
       .find((candidate) => text.startsWith(candidate, index));
     const value = operator || character;
     push('punct', value, index, line);
@@ -581,16 +581,18 @@ function inspectJsTsSourceWithBudget(path, text, budget) {
       add('react-dangerous-html-sink', token, 'dangerously_set_inner_html');
     }
     if (valueAt(tokens, index - 1) === '.' && ['innerHTML', 'outerHTML'].includes(token.value)
-        && valueAt(tokens, index + 1) === '=') {
-      add('browser-html-injection-sink', token, `${token.value}_assignment`);
+        && ['=', '+='].includes(valueAt(tokens, index + 1))) {
+      const operationKind = valueAt(tokens, index + 1) === '+=' ? 'append_assignment' : 'assignment';
+      add('browser-html-injection-sink', token, `${token.value}_${operationKind}`);
     }
     if (valueAt(tokens, index - 1) === '.' && token.value === 'insertAdjacentHTML'
         && valueAt(tokens, index + 1) === '(') {
       add('browser-html-injection-sink', token, 'insert_adjacent_html_call');
     }
     if (token.value === 'document' && valueAt(tokens, index + 1) === '.'
-        && valueAt(tokens, index + 2) === 'write' && valueAt(tokens, index + 3) === '(') {
-      add('browser-html-injection-sink', token, 'document_write_call');
+        && ['write', 'writeln'].includes(valueAt(tokens, index + 2))
+        && valueAt(tokens, index + 3) === '(') {
+      add('browser-html-injection-sink', token, `document_${valueAt(tokens, index + 2)}_call`);
     }
     if (token.value === 'origin' && valueAt(tokens, index + 1) === ':'
         && tokens[index + 2]?.type === 'string' && valueAt(tokens, index + 2) === '*') {

@@ -11,6 +11,7 @@ import {
 } from './source-rules.mjs';
 import { adapterRulesetDigest } from './ruleset-v2.mjs';
 import { sanitizeEvidence, sanitizedJson, writeAtomicEvidenceBundle } from './evidence-writer.mjs';
+import { markdownCodeSpan } from './markdown-escaping.mjs';
 
 export const SEVERITIES = ['critical', 'high', 'medium', 'low', 'info'];
 const severityRank = new Map(SEVERITIES.map((severity, index) => [severity, index]));
@@ -469,8 +470,8 @@ export function renderMarkdownV2(report) {
       `### ${finding.id}: ${finding.title}`, '',
       `**${finding.domain} / ${finding.severity} / ${finding.state} / ${finding.baseline.state || 'none'}**`, '',
       finding.summary, '',
-      finding.location ? `Location: \`${finding.location.path}${finding.location.line ? `:${finding.location.line}` : ''}\`` : 'Location: project-wide', '',
-      `Evidence: \`${JSON.stringify(finding.evidence)}\``, '',
+      finding.location ? `Location: ${markdownCodeSpan(`${finding.location.path}${finding.location.line ? `:${finding.location.line}` : ''}`)}` : 'Location: project-wide', '',
+      `Evidence: ${markdownCodeSpan(JSON.stringify(finding.evidence))}`, '',
       `Remediation: ${finding.remediation}`, '',
       `Retest: ${finding.retest}`, '',
     );

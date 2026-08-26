@@ -78,6 +78,7 @@ try {
   const coverage = sourceCoverage([], {
     'dependency-lockfile-missing': { status: 'completed' },
   });
+  const hostilePath = 'src/report\n# injected-heading\n- [ ] injected-task `tick` [link](target) | <b>\t\u2028.js';
   const finding = createFindingV2({
     ruleset,
     adapterId: 'builtin-source',
@@ -85,6 +86,7 @@ try {
     title: 'Missing lockfile <script>alert(1)</script>',
     severity: 'low',
     state: 'confirmed',
+    location: { path: hostilePath, line: 9 },
     summary: `Authorization: Bearer ${secret}\n<script>alert(1)</script>`,
     evidence: {
       subject: 'lockfile', token: secret, email: `${secret}@example.invalid`,
@@ -125,17 +127,26 @@ try {
   }
   assert.doesNotMatch(rendered, new RegExp(secret));
   assert.doesNotMatch(rendered, /\/(?:Users|home|private)\//);
-  JSON.parse(readFileSync(renderedFiles.json, 'utf8'));
+  const renderedJson = JSON.parse(readFileSync(renderedFiles.json, 'utf8'));
+  assert.equal(renderedJson.findings[0].location.path, hostilePath,
+    'structured evidence preserves the sanitized path used for identity and baseline comparison');
   JSON.parse(readFileSync(renderedFiles.sarif, 'utf8'));
   JSON.parse(readFileSync(renderedFiles['report.observations.json'], 'utf8'));
   assert.match(readFileSync(renderedFiles.html, 'utf8'), /&lt;script&gt;/);
   assert.match(readFileSync(renderedFiles.junit, 'utf8'), /&lt;script&gt;/);
+  const renderedMarkdown = readFileSync(renderedFiles.markdown, 'utf8');
+  assert.doesNotMatch(renderedMarkdown, /^# injected-heading$|^- \[ \] injected-task/m);
+  assert.match(renderedMarkdown, /src\/report\\n# injected-heading\\n- \[ \] injected-task/);
+  assert.equal((renderedMarkdown.match(/^### /gm) || []).length, 1,
+    'a source-controlled path cannot create another Markdown finding heading');
   const technicalMarkdown = renderFindingMarkdownV3(upgradeFindingV2(report.findings[0]),
     { technical: true }).join('\n');
   assert.doesNotMatch(technicalMarkdown, new RegExp(secret),
     'technical finding output must use the sanitized evidence tree');
   assert.match(technicalMarkdown, /dependency-lock-key/,
     'non-credential key metadata remains reviewable');
+  assert.doesNotMatch(technicalMarkdown, /^# injected-heading$|^- \[ \] injected-task/m);
+  assert.match(technicalMarkdown, /\\t\\u2028\.js/);
 
   const existing = join(temp, 'existing');
   mkdirSync(existing, { mode: 0o700 });

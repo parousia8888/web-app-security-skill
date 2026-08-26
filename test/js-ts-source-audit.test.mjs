@@ -131,6 +131,24 @@ const repeatedJsSink = inspectJsTsSource('src/repeated.ts', `
 `);
 assert.equal(repeatedJsSink.findings.length, 2);
 assert.equal(new Set(repeatedJsSink.findings.map((finding) => finding.evidence.subject)).size, 2);
+const browserSinkMatrix = [
+  ['assignment', 'node.innerHTML = value;', ['innerHTML_assignment']],
+  ['append assignment', 'node.innerHTML += value;', ['innerHTML_append_assignment']],
+  ['outer append assignment', 'node.outerHTML += value;', ['outerHTML_append_assignment']],
+  ['document writeln', 'document.writeln(value);', ['document_writeln_call']],
+  ['numeric review lead', 'node.innerHTML = 42;', ['innerHTML_assignment']],
+  ['static review lead', "node.innerHTML = '<b>fixed</b>';", ['innerHTML_assignment']],
+  ['unrelated property', 'node.innerHTMLValue += value;', []],
+  ['computed property outside bounded rule', "node['innerHTML'] += value;", []],
+  ['JSX neighbor', 'const view = <div>{value}</div>;', []],
+];
+for (const [label, sourceText, expectedKinds] of browserSinkMatrix) {
+  const result = inspectJsTsSource(`src/${label.replaceAll(' ', '-')}.tsx`, sourceText);
+  assert.equal(result.error, null, label);
+  const findings = result.findings.filter((finding) => finding.ruleId === 'browser-html-injection-sink');
+  assert.deepEqual(findings.map((finding) => finding.evidence.construct), expectedKinds, label);
+  assert.ok(findings.every((finding) => finding.state === 'suspected'), label);
+}
 
 assert.equal(classifyJsTsSource('src/client.ts').eligible, true);
 assert.deepEqual(classifyJsTsSource('src/client.min.js'),

@@ -129,6 +129,26 @@ assert.deepEqual(new Set(django.findings.map((finding) => finding.ruleId)), new 
 ]));
 assert.doesNotMatch(JSON.stringify(django), /fixture-django-secret-never-deploy/);
 
+const pythonLiteralMatrix = [
+  ['boolean false', 'import requests\nrequests.get(url, verify=False)', ['python-tls-verification-disabled']],
+  ['boolean true', 'import requests\nrequests.get(url, verify=True)', []],
+  ['false string', 'import requests\nrequests.get(url, verify="False")', []],
+  ['zero number', 'import requests\nrequests.get(url, verify=0)', []],
+  ['zero string', 'import requests\nrequests.get(url, verify="0")', []],
+  ['CA path', 'import requests\nrequests.get(url, verify="/etc/ssl/certs/ca.pem")', []],
+  ['variable', 'import requests\nrequests.get(url, verify=tls_verify)', []],
+  ['environment expression', 'import os, requests\nrequests.get(url, verify=os.getenv("TLS_VERIFY"))', []],
+  ['debug string', 'from flask import Flask\napp = Flask(__name__)\napp.run(debug="True")', []],
+  ['cookie string', 'SESSION_COOKIE_SECURE = "False"', []],
+  ['CORS boolean strings', 'CORS_ALLOW_ALL_ORIGINS = "True"\nCORS_ALLOW_CREDENTIALS = "True"', []],
+];
+for (const [label, sourceText, expectedRuleIds] of pythonLiteralMatrix) {
+  const path = label.includes('cookie') || label.includes('CORS') ? 'project/settings.py' : `src/${label.replaceAll(' ', '_')}.py`;
+  const result = inspectPythonSource(path, `${sourceText}\n`);
+  assert.equal(result.error, null, label);
+  assert.deepEqual(result.findings.map((finding) => finding.ruleId), expectedRuleIds, label);
+}
+
 assert.equal(classifyPythonSource('src/app.py').eligible, true);
 assert.deepEqual(classifyPythonSource('tests/test_app.py'),
   { eligible: false, reason: 'test_or_fixture_source' });

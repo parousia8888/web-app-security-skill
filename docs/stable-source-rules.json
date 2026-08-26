@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "semanticDigest": "2091018595479bf02406219b3a4ecabf045e0dbbd15f8c5d02d95d08e2d9666f",
+  "semanticDigest": "7dd6da8f1c7e2e3e859f8e24f85262da669aff2635033083abf9b1e5ce0b052e",
   "counts": {
     "stableTotal": 44,
     "builtInRisk": 25,
@@ -11,12 +11,12 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
       "maturity": "stable",
-      "revision": "1",
+      "revision": "2",
       "frameworks": [
         "browser"
       ],
@@ -40,15 +40,18 @@
       "technicalTerm": "DOM-based cross-site scripting sink lead (CWE-79)",
       "plainLanguage": "Browser code inserts a value as HTML instead of text. If that value came from outside the app, it can change the page or run script.",
       "consequence": "A successful path may steal in-page data, perform actions as the user or present false content.",
-      "confidenceBoundary": "The rule finds direct innerHTML/outerHTML assignments, insertAdjacentHTML and document.write calls. It does not trace input or determine sanitization.",
+      "confidenceBoundary": "The rule finds direct innerHTML/outerHTML assignments and append assignments, insertAdjacentHTML, and document.write/document.writeln calls. It does not trace input or determine sanitization.",
       "applicability": "Non-test, non-generated browser JavaScript and TypeScript source files.",
       "detection": {
         "type": "bounded_js_ts_tokens",
         "constructs": [
           "innerHTML_assignment",
+          "innerHTML_append_assignment",
           "outerHTML_assignment",
+          "outerHTML_append_assignment",
           "insertAdjacentHTML_call",
-          "document.write_call"
+          "document.write_call",
+          "document.writeln_call"
         ],
         "taintFlow": false
       },
@@ -349,7 +352,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -435,7 +438,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -665,7 +668,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -753,7 +756,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -839,7 +842,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -931,7 +934,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -1031,7 +1034,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -1107,8 +1110,8 @@
         ],
         "negative": [
           {
-            "id": "route-security-complete-positive",
-            "path": "test/route-security-integration.test.mjs"
+            "id": "route-security-complete-negative",
+            "path": "test/fixtures/next-app/app/api/health/route.ts"
           }
         ]
       }
@@ -1116,7 +1119,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -1203,7 +1206,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -1293,7 +1296,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -1374,7 +1377,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -2369,7 +2372,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -2459,7 +2462,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -2547,7 +2550,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -2637,7 +2640,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -2719,7 +2722,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -2806,7 +2809,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -2892,7 +2895,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -2983,7 +2986,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -3065,12 +3068,12 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
       "maturity": "stable",
-      "revision": "1",
+      "revision": "2",
       "frameworks": [
         "Requests",
         "HTTPX"
@@ -3152,7 +3155,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -3237,7 +3240,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -3322,7 +3325,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -3407,7 +3410,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -3485,7 +3488,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -3556,7 +3559,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },
@@ -3627,7 +3630,7 @@
     {
       "adapter": {
         "id": "builtin-source",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "maturity": "stable",
         "type": "built_in"
       },

@@ -1,6 +1,7 @@
 import { assertRouteSecurityDocument } from './route-security-contract.mjs';
+import { markdownCodeSpan } from './markdown-escaping.mjs';
 
-const code = (value) => `\`${String(value).replace(/`/g, '\\`')}\``;
+const code = markdownCodeSpan;
 const listCounts = (value) => Object.entries(value).filter(([, count]) => count)
   .map(([key, count]) => `${key}=${count}`).join(', ') || 'none';
 const signalList = (signals) => signals?.length

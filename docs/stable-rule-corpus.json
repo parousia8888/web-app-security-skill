@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "rulesetSemanticDigest": "2091018595479bf02406219b3a4ecabf045e0dbbd15f8c5d02d95d08e2d9666f",
+  "rulesetSemanticDigest": "7dd6da8f1c7e2e3e859f8e24f85262da669aff2635033083abf9b1e5ce0b052e",
   "counts": {
     "stableTotal": 44,
     "builtInRisk": 25,
@@ -10,13 +10,13 @@
   "rules": [
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "browser-html-injection-sink",
       "kind": "risk_detection",
       "family": "browser_output",
       "expectedPositiveState": "suspected",
-      "evidenceBoundary": "The rule finds direct innerHTML/outerHTML assignments, insertAdjacentHTML and document.write calls. It does not trace input or determine sanitization.",
+      "evidenceBoundary": "The rule finds direct innerHTML/outerHTML assignments and append assignments, insertAdjacentHTML, and document.write/document.writeln calls. It does not trace input or determine sanitization.",
       "positiveFixtures": [
         {
           "id": "browser-html-sink-positive",
@@ -102,7 +102,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "cors-wildcard-with-credentials",
       "kind": "risk_detection",
@@ -125,7 +125,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "dependency-lockfile-missing",
       "kind": "risk_detection",
@@ -194,7 +194,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "hardcoded-auth-secret",
       "kind": "risk_detection",
@@ -217,7 +217,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "js-dynamic-code-execution",
       "kind": "risk_detection",
@@ -240,7 +240,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "js-inline-session-secret",
       "kind": "risk_detection",
@@ -263,7 +263,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "js-insecure-cookie-options",
       "kind": "risk_detection",
@@ -286,7 +286,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "js-route-security-evidence-incomplete",
       "kind": "evidence_integrity",
@@ -301,15 +301,15 @@
       ],
       "negativeFixtures": [
         {
-          "id": "route-security-complete-positive",
-          "path": "test/route-security-integration.test.mjs"
+          "id": "route-security-complete-negative",
+          "path": "test/fixtures/next-app/app/api/health/route.ts"
         }
       ],
       "testEntry": "test/source-coverage-ledger.test.mjs"
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "jwt-unsafe-verification-options",
       "kind": "risk_detection",
@@ -332,7 +332,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "node-child-process-shell-execution",
       "kind": "risk_detection",
@@ -355,7 +355,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "node-inspector-public-bind",
       "kind": "risk_detection",
@@ -378,7 +378,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "node-tls-verification-disabled",
       "kind": "risk_detection",
@@ -654,7 +654,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "production-source-map-enabled",
       "kind": "risk_detection",
@@ -677,7 +677,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "python-cors-wildcard-with-credentials",
       "kind": "risk_detection",
@@ -700,7 +700,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "python-csrf-protection-disabled",
       "kind": "risk_detection",
@@ -723,7 +723,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "python-dynamic-code-execution",
       "kind": "risk_detection",
@@ -746,7 +746,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "python-framework-debug-enabled",
       "kind": "risk_detection",
@@ -769,7 +769,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "python-hardcoded-framework-secret",
       "kind": "risk_detection",
@@ -792,7 +792,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "python-insecure-session-cookie-settings",
       "kind": "risk_detection",
@@ -815,7 +815,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "python-shell-command-execution",
       "kind": "risk_detection",
@@ -838,7 +838,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "python-tls-verification-disabled",
       "kind": "risk_detection",
@@ -861,7 +861,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "python-unsafe-deserialization",
       "kind": "risk_detection",
@@ -884,7 +884,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "python-unsafe-yaml-load",
       "kind": "risk_detection",
@@ -907,7 +907,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "react-dangerous-html-sink",
       "kind": "risk_detection",
@@ -930,7 +930,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "sensitive-env-file-present",
       "kind": "risk_detection",
@@ -953,7 +953,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "source-evidence-incomplete",
       "kind": "evidence_integrity",
@@ -976,7 +976,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "source-stack-unsupported",
       "kind": "evidence_integrity",
@@ -999,7 +999,7 @@
     },
     {
       "adapterId": "builtin-source",
-      "adapterVersion": "1.1.0",
+      "adapterVersion": "1.1.1",
       "adapterType": "built_in",
       "ruleId": "tracked-sensitive-env-file",
       "kind": "risk_detection",
