@@ -107,7 +107,7 @@ npm run demo -- --out ./demo-output
 
 ## v0.8.0 新增内容
 
-v0.8.0 是限定范围的跨函数访问控制 candidate。它把同一份 route-security 访问路径从一次本地调用
+v0.8.0 是限定范围的跨函数访问控制 release。它把同一份 route-security 访问路径从一次本地调用
 扩展到最多四条精确项目内调用边。
 它支持精确 route/query/body/Server Action selector，分开传播 object、principal 与 tenant，并区分
 Prisma/Drizzle 查询约束和受支持的加载后比较。调用歧义、参数/返回值变换、无法证明的 provider
@@ -125,8 +125,9 @@ Formbricks `ACTION getMembershipRole`，因 `argument_mapping_ambiguous` 与
 stable 规则清单仍是 25 条 built-in risk、3 条 evidence-integrity 和 16 条 opt-in 外部 adapter risk，
 共 44 条；访问路径是独立能力，不算新增漏洞规则。模式命中继续保持 `suspected`；不完整分析保持
 `unknown`，并可能退出 3。v0.8.0 签名 tag、GitHub Release、npm 包与可信安装器已经公开，并共同指向
-源码提交 `119cbcc7f8d327482df8abfa50a4af0b69fcceee`。移动的 `v1` Action 在 v0.8.0 不可变
-consumer 与最终提升门通过前仍指向 v0.7.3。
+源码提交 `119cbcc7f8d327482df8abfa50a4af0b69fcceee`。v0.8.0 不可变 consumer 与 guarded promotion
+lease 已通过，移动的 `v1` Action 现指向同一源码。组合公开 consumer 与持久 live-verification 记录
+仍是独立的最终门禁。
 
 ## 安装
 
@@ -368,8 +369,8 @@ Composite Action 保持 v0.3 crawl 输入与输出兼容。Crawl mode 默认被�
     fail-on: high
 ```
 
-需要可重复 CI 时使用上面的 v0.8.0 不可变 commit。签名的稳定大版本别名在 v0.8.0 不可变
-consumer 与提升 lease 通过前仍指向 v0.7.3；这个别名仍会有意移动：
+需要可重复 CI 时使用上面的 v0.8.0 不可变 commit。签名的稳定大版本别名现在指向同一个 v0.8.0
+源码 commit；这个别名仍会有意移动：
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
@@ -389,9 +390,8 @@ Source mode 默认只用内置 adapter。v0.8.0 不可变 Action 运行 v3 源�
     fail-on: high
 ```
 
-移动的 `v1` tag 在 v0.8.0 不可变 Action consumer 完成前保持 v0.7.3；随后才会通过 guarded
-promotion lease 提升。以后接受更新前应检查 release note；工作流不能随版本移动时使用上面的完整
-commit。
+移动的 `v1` tag 已在 v0.8.0 不可变 Action consumer 通过后，用精确 guarded lease 提升到
+v0.8.0。以后接受更新前应检查 release note；工作流不能随版本移动时使用上面的完整 commit。
 
 ## 信任与 release 证据
 

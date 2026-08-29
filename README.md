@@ -114,7 +114,7 @@ For the complete install-to-uninstall path, follow the tested
 
 ## What's new in v0.8.0
 
-v0.8.0 is a bounded interprocedural access-control candidate. It extends the route-security surface
+v0.8.0 is a bounded interprocedural access-control release. It extends the route-security surface
 from one local call to at most four
 exact project-local call edges. It supports exact route/query/body/Server Action selectors, carries
 object, principal and tenant facts separately, and distinguishes Prisma/Drizzle query predicates
@@ -135,8 +135,9 @@ The stable rule inventory remains 25 built-in risk rules, 3 evidence-integrity r
 external-adapter risk rules, for 44 total. Access paths are a separate capability, not additional
 vulnerability rules. Pattern matches remain `suspected`; incomplete analysis remains `unknown` and
 may exit 3. The signed v0.8.0 tag, GitHub Release, npm package and verified installer are public and
-identify source commit `119cbcc7f8d327482df8abfa50a4af0b69fcceee`. The moving `v1` Action still
-identifies v0.7.3 until the immutable v0.8.0 consumer and final promotion gate pass.
+identify source commit `119cbcc7f8d327482df8abfa50a4af0b69fcceee`. The moving `v1` Action now
+identifies the same v0.8.0 source after its immutable consumer and guarded promotion lease passed.
+The combined public consumer and durable live-verification record remain separate final gates.
 
 ## Install
 
@@ -401,9 +402,8 @@ requires deployment authorization acknowledgement:
     fail-on: high
 ```
 
-For repeatable CI, use the immutable v0.8.0 commit above. The signed stable major-version alias
-still targets v0.7.3 until the v0.8.0 immutable consumer and promotion lease pass; it remains
-intentionally movable:
+For repeatable CI, use the immutable v0.8.0 commit above. The signed stable major-version alias now
+targets the same v0.8.0 source commit; it remains intentionally movable:
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
@@ -424,9 +424,9 @@ installed and pinned by the caller; the Action never downloads them:
     fail-on: high
 ```
 
-The moving `v1` tag remains at v0.7.3 while the immutable v0.8.0 Action consumer is checked. It will
-move only under the guarded promotion lease after that gate passes. Review release notes before
-accepting an update; use the full commit above when the workflow must not move.
+The moving `v1` tag was promoted to v0.8.0 with an exact guarded lease after the immutable Action
+consumer passed. Review release notes before accepting a future update; use the full commit above
+when the workflow must not move.
 
 ## Trust and release evidence
 
