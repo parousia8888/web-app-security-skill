@@ -19,13 +19,13 @@
     "docs/case-studies/mealie.md"
   ],
   "currentSourceRelease": {
-    "version": "0.7.3",
+    "version": "0.8.0",
     "status": "candidate",
     "stableRuleCorpus": "docs/stable-rule-corpus.json",
     "ordinaryProjectReview": "docs/case-studies/journeys/v0.5.0-evidence.json",
-    "routeSchema": "docs/route-security-v2.schema.json",
-    "accessControlReview": "docs/reviews/v0.7.0-access-control-review.json",
-    "accessControlRegressions": "docs/regressions/v0.7.0-access-control-real-world-regressions.json",
+    "routeSchema": "docs/route-security-v3.schema.json",
+    "accessControlReview": "docs/reviews/v0.8.0-access-control-review.json",
+    "accessControlRegressions": "docs/regressions/v0.8.0-access-control-real-world-regression.json",
     "stableFrameworks": ["express", "nestjs", "next-app"],
     "serverActionSurface": "next-server-actions",
     "stableIdentityFamilies": ["nestjs-passport", "authjs"],
@@ -33,10 +33,11 @@
     "experimentalFamilies": ["clerk", "better-auth", "supabase-identity", "supabase-query-builder"],
     "limits": [
       "Application controls are not attributed to every route.",
-      "A missing route-scoped control or visible query constraint is review evidence, not vulnerability proof.",
-      "Access-chain analysis stops before a second project-local call.",
+      "A missing route-scoped control or supported authorization constraint is review evidence, not vulnerability proof.",
+      "Access-path analysis follows at most four exact project-local call edges; ambiguous and unsupported relationships remain partial.",
+      "Completed means bounded analysis finished, not that runtime authorization is correct.",
       "Supabase always requires external RLS-policy evidence.",
-      "The fixed-commit ordinary-project review produced 12 partial and zero completed chains."
+      "The frozen fixed-commit review completed 13 of 14 eligible paths, retained one partial miss and four completed paths with supporting limitations; it is not production precision or recall."
     ]
   }
 }

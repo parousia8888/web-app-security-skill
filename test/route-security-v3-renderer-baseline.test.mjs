@@ -38,6 +38,8 @@ function documentFor(routes, options = {}) {
 }
 
 const unconstrained = structuredClone(observed);
+unconstrained.id = `access-chain.${'1'.repeat(20)}`;
+unconstrained.fingerprint = '1'.repeat(64);
 unconstrained.outcome = 'authorization_constraint_not_observed';
 unconstrained.dataOperation.principalConstraint = 'not_observed';
 unconstrained.authorizationEvidence = [{
@@ -46,6 +48,8 @@ unconstrained.authorizationEvidence = [{
 }];
 
 const external = structuredClone(observed);
+external.id = `access-chain.${'2'.repeat(20)}`;
+external.fingerprint = '2'.repeat(64);
 external.outcome = 'external_policy_required';
 external.dataOperation.provider = 'supabase';
 external.dataOperation.principalConstraint = 'not_applicable';

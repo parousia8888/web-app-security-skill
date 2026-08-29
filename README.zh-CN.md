@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#查看结果">Demo</a> ·
-  <a href="#v073-新增内容">v0.7.3</a> ·
+  <a href="#v080-新增内容">v0.8.0</a> ·
   <a href="#安装">安装</a> ·
   <a href="#执行第一个项目">首个项目</a> ·
   <a href="docs/tutorial.zh-CN.md">完整教程</a> ·
@@ -105,43 +105,10 @@ npm run demo -- --out ./demo-output
 
 完整的安装到卸载流程见经过测试的[第一个项目教程](docs/tutorial.zh-CN.md)。
 
-## v0.7.3 新增内容
+## v0.8.0 新增内容
 
-v0.7.3 是限定范围的正确性与证据完整性 release，处理外部审计的 26 项完整台账，不增加检测器
-家族，也不扩大框架宣传。签名 GitHub Release、npm 包和可信 installer 已公开，签名 `v1` 现已指向
-v0.7.3；公开 Action consumer 与持久 live verification 已在
-[v0.7.3 公开 consumer run](https://github.com/parousia8888/web-app-security-skill/actions/runs/32981490467)
-中通过：
-
-- **不可信输入有明确上限：** 持久化项目/lockfile 路径在进入 OSV 前会检查，包括 symlink 逃逸。
-  过深 member expression、畸形 workspace 元数据和不支持的 workspace pattern 会变成显式不完整
-  证据，不会让整次检查崩溃或制造干净结果。
-- **路由审查默认保守：** 无法解析的 Express 结构，以及只有 framework hint、没有可分析 route module
-  的项目，不能返回 completed 空清单。认证、授权、限流和未分类 control 各自独立；Next middleware/
-  proxy 只算应用上下文，不代表某条路由已经被保护。
-- **授权分析只有一个公开出口：** `accessChains` 承载限定范围的 principal、tenant、Prisma/Drizzle 和
-  一次本地调用证据。没有看到约束只是待复查线索，不能证明存在 BOLA/IDOR 或运行时授权已经生效。
-- **窄范围源码规则更准确：** `innerHTML`/`outerHTML` 的 compound assignment 可以被看到；Python 安全
-  配置必须是真 boolean token；项目控制的技术值不能在 Markdown 报告里注入标题或任务列表。
-- **五项目证据可以重跑：** active journey 固定 target commit、adapter 版本和 binary identity，并把
-  确定性语义、可变化的 OSV 结果和人工标注分开。v0.7.3 candidate 已在精确 tool commit
-  `0cd79fd` 上重跑；Gitleaks 历史只包含每个精确 target commit 可达的提交，不相关的 ref/tag 不会
-  改变历史输入。不完整的项目证据继续保持不完整。
-- **测试和 release 不再把未完成写成成功：** passed、failed、skipped、not-run 分开统计。candidate、
-  GitHub/npm 发布、installer、不可变 Action、移动 `v1` 与持久 live verification 是独立门禁。
-- **公开合同可执行：** 当前 conformance 使用稳定路径并从 `VERSION` 生成标签；schema 路径规则与
-  runtime 一致；roadmap、release 流程、历史 provenance 和计划/实际文件映射都可机器检查。
-
-stable 清单仍是 25 条 built-in risk、3 条 evidence-integrity 和 16 条 opt-in 外部 adapter risk，
-共 44 条。模式命中继续保持 `suspected`；不完整分析保持 `unknown`，并可能退出 3。路由记录不计入
-漏洞规则数量。[当前规则合同一致性](docs/conformance/rule-contract-conformance.md)检查 28 条内置合同，
-不代表生产 precision/recall。精确 issue 处置与剩余边界见
-[v0.7.3 修复计划](docs/V0.7.3_EXTERNAL_AUDIT_REMEDIATION_PLAN.md)和
-[release 证据](docs/releases/v0.7.3.md)。
-
-### v0.8.0 candidate 能力证据
-
-当前 candidate 把同一份 route-security 访问路径从一次本地调用扩展到最多四条精确项目内调用边。
+v0.8.0 是限定范围的跨函数访问控制 candidate。它把同一份 route-security 访问路径从一次本地调用
+扩展到最多四条精确项目内调用边。
 它支持精确 route/query/body/Server Action selector，分开传播 object、principal 与 tenant，并区分
 Prisma/Drizzle 查询约束和受支持的加载后比较。调用歧义、参数/返回值变换、无法证明的 provider
 构造和预算耗尽继续保持 partial，不会靠函数名猜测。
@@ -154,6 +121,11 @@ Formbricks `ACTION getMembershipRole`，因 `argument_mapping_ambiguous` 与
 [provenance](docs/reviews/v0.8.0-access-control-review-provenance.md)、
 [真实回归](docs/regressions/v0.8.0-access-control-real-world-regression.md)与
 [工程计划](docs/V0.8.0_ENGINEERING_PLAN.md)。
+
+stable 规则清单仍是 25 条 built-in risk、3 条 evidence-integrity 和 16 条 opt-in 外部 adapter risk，
+共 44 条；访问路径是独立能力，不算新增漏洞规则。模式命中继续保持 `suspected`；不完整分析保持
+`unknown`，并可能退出 3。v0.8.0 签名 tag、GitHub Release、npm 包和公开 consumer 要等 candidate 与
+托管发布门通过后才存在；在此之前，下面已发布的 installer 和 Action 示例继续精确指向 v0.7.3。
 
 ## 安装
 
@@ -438,7 +410,7 @@ Source mode 默认只用内置 adapter。v0.7.3 不可变 Action 运行 v3 源�
 sha256sum -c SHA256SUMS
 gh attestation verify web-app-security-skill-*.tar.gz \
   --repo parousia8888/web-app-security-skill
-git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.7.3
+git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.8.0
 ```
 
 `.github/release-signers` 是仓库内 signer policy：本地验签通过只证明 tag 与当前检出的仓库政策

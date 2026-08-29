@@ -95,6 +95,7 @@ const routeV2 = createRouteSecurityDocument({
 routeV2.schemaVersion = 2;
 routeV2.analyzer.revision = '2';
 delete routeV2.analyzer.analysisLimits;
+delete routeV2.accessPathCoverage;
 const routeV3 = createRouteSecurityDocument({
   version: '0.8.0', generatedAt: '2026-08-29T00:00:00.000Z', mode: 'audit',
   subject: { id: 'project-0123456789abcdef0123456789abcdef', scopeDigest: 'd'.repeat(64) },

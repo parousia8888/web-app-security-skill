@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#see-the-result">Demo</a> ·
-  <a href="#whats-new-in-v073">v0.7.3</a> ·
+  <a href="#whats-new-in-v080">v0.8.0</a> ·
   <a href="#install">Install</a> ·
   <a href="#run-the-first-project">First project</a> ·
   <a href="docs/tutorial.md">Tutorial</a> ·
@@ -112,52 +112,10 @@ check reruns the fixture and fails if any surface disagrees.
 For the complete install-to-uninstall path, follow the tested
 [first project tutorial](docs/tutorial.md).
 
-## What's new in v0.7.3
+## What's new in v0.8.0
 
-v0.7.3 is a bounded correctness and evidence-integrity release. It addresses the complete 26-item
-external-audit ledger without adding a detector family or framework claim. The signed GitHub
-Release, npm package and verified installer are public, and signed `v1` now targets v0.7.3. Public
-Action-consumer and durable live-verification gates passed in the
-[v0.7.3 public consumer run](https://github.com/parousia8888/web-app-security-skill/actions/runs/32981490467):
-
-- **Untrusted input stays bounded:** persisted project/lockfile paths are checked before OSV use,
-  including symlink escape. Deep member expressions, malformed workspace metadata and unsupported
-  workspace patterns become explicit incomplete evidence instead of crashing or inventing a clean
-  result.
-- **Route review fails closed:** computed/unresolved Express shapes and framework hints with no
-  eligible module cannot produce completed empty coverage. Authentication, authorization,
-  rate-limit and unclassified controls remain separate; Next middleware/proxy is application
-  context, not proof that an individual route is protected.
-- **One authorization-analysis surface:** `accessChains` now carries the bounded principal, tenant,
-  Prisma/Drizzle and one-local-call evidence. A missing visible constraint remains a review lead,
-  never proof of BOLA/IDOR or runtime enforcement.
-- **Narrow source rules corrected:** compound `innerHTML`/`outerHTML` assignments are visible,
-  Python boolean settings require real boolean tokens, and project-controlled technical values
-  cannot inject Markdown headings or tasks into reports.
-- **Five-project evidence can be rerun:** the active journey contract pins target commits, adapter
-  versions and binary identities, and separates deterministic semantics, mutable OSV results and
-  manual annotations. The v0.7.3 candidate was rerun at exact tool commit `0cd79fd`; Gitleaks history
-  is bounded to commits reachable from each exact target commit, so unrelated refs and tags cannot
-  change the recorded history input. Incomplete project evidence remains incomplete.
-- **Tests and releases stop overstating completion:** passed, failed, skipped and not-run work are
-  counted separately. Candidate, GitHub/npm publication, installer, immutable Action, moving `v1`
-  and durable live verification are independent gates.
-- **Executable public contracts:** current conformance uses stable paths and a VERSION-derived
-  label; schema path rules agree with runtime; roadmap, release procedure, historical provenance
-  and planned-versus-shipped artifacts are machine checked.
-
-The stable inventory remains 25 built-in risk rules, 3 evidence-integrity rules and 16 opt-in
-external-adapter risk rules, for 44 total. Pattern matches remain `suspected`; incomplete analysis
-remains `unknown` and may exit 3. Route records are not vulnerability rules. The
-[current rule-contract conformance](docs/conformance/rule-contract-conformance.md) checks the 28
-built-in contracts but is not a production precision/recall claim. Exact issue dispositions and
-remaining boundaries are in the
-[v0.7.3 remediation plan](docs/V0.7.3_EXTERNAL_AUDIT_REMEDIATION_PLAN.md) and
-[release evidence](docs/releases/v0.7.3.md).
-
-### v0.8.0 candidate capability evidence
-
-The current candidate extends the same route-security surface from one local call to at most four
+v0.8.0 is a bounded interprocedural access-control candidate. It extends the route-security surface
+from one local call to at most four
 exact project-local call edges. It supports exact route/query/body/Server Action selectors, carries
 object, principal and tenant facts separately, and distinguishes Prisma/Drizzle query predicates
 from supported post-load comparisons. Ambiguous calls, argument/return transforms, unsupported
@@ -172,6 +130,13 @@ precision/recall, vulnerability confirmation or proof of deployed enforcement. R
 [provenance](docs/reviews/v0.8.0-access-control-review-provenance.md),
 [real-world regression](docs/regressions/v0.8.0-access-control-real-world-regression.md) and
 [engineering plan](docs/V0.8.0_ENGINEERING_PLAN.md).
+
+The stable rule inventory remains 25 built-in risk rules, 3 evidence-integrity rules and 16 opt-in
+external-adapter risk rules, for 44 total. Access paths are a separate capability, not additional
+vulnerability rules. Pattern matches remain `suspected`; incomplete analysis remains `unknown` and
+may exit 3. The signed v0.8.0 tag, GitHub Release, npm package and public consumers remain pending
+until the candidate and hosted release gates pass; published installer and Action examples below
+continue to identify v0.7.3 in the meantime.
 
 ## Install
 
@@ -484,7 +449,7 @@ Verify downloaded release assets:
 sha256sum -c SHA256SUMS
 gh attestation verify web-app-security-skill-*.tar.gz \
   --repo parousia8888/web-app-security-skill
-git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.7.3
+git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.8.0
 ```
 
 `.github/release-signers` is a repository-local signer policy: a successful local check proves that

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-08-30
+
 ### Added
 - Route-security v3 follows exact route/query/body/Server Action object selectors plus principal
   and tenant facts through at most four exact project-local call edges into bounded Prisma and
@@ -31,6 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   runtime reachability, correct authorization, exploitability or absence of unsupported paths.
 - The 13/14 fixed-corpus result is not production precision/recall. Ambiguous calls, unsupported
   transforms, unresolved argument/return mappings and exhausted budgets remain partial/unknown.
+
+Publication status: v0.8.0 candidate only until exact-commit CI and CodeQL, the signed tag, GitHub
+Release assets and provenance, npm trusted publishing, verified installer, immutable Action,
+signed `v1` promotion and durable live verification pass.
 
 ## [0.7.3] — 2026-08-26
 
