@@ -27,6 +27,11 @@ function parameterNode(raw) {
   return parameter?.type === 'AssignmentPattern' ? parameter.left : parameter;
 }
 
+function parameterOmittable(raw) {
+  const parameter = raw?.type === 'TSParameterProperty' ? raw.parameter : raw;
+  return parameter?.type === 'AssignmentPattern' || parameter?.optional === true;
+}
+
 function propertyName(property) {
   if (property?.computed) return null;
   return safeName(property?.key);
@@ -192,6 +197,7 @@ function emptyFacts(input = {}) {
     objectNodes: new Set(input.objectNodes || []),
     principalAliases: new Set(input.principalAliases || []),
     tenantAliases: new Set(input.tenantAliases || []),
+    omittedAliases: new Set(input.omittedAliases || []),
   };
 }
 
@@ -314,6 +320,12 @@ export function expandSummaryFacts(summary, input) {
       const target = parameterNode(declaration.id);
       if (target?.type === 'Identifier') {
         if (summary.writes.get(target.name) !== 1) continue;
+        const sourceName = safeName(declaration.init);
+        if (sourceName && facts.omittedAliases.has(sourceName)
+            && !facts.omittedAliases.has(target.name)) {
+          facts.omittedAliases.add(target.name);
+          changed = true;
+        }
         const kinds = expressionKinds(declaration.init, facts);
         if (kinds.length > 1) limitations.add('argument_mapping_ambiguous');
         else if (kinds.length === 1) changed = addKind(facts, kinds[0], target.name) || changed;
@@ -358,6 +370,10 @@ export function mapCallFacts(summary, call, facts) {
       continue;
     }
     if (parameter.type === 'Identifier') {
+      const argumentName = safeName(argument);
+      if (argumentName && facts.omittedAliases.has(argumentName)) {
+        output.omittedAliases.add(parameter.name);
+      }
       const kinds = expressionKinds(argument, facts);
       if (kinds.length > 1) limitations.add('argument_mapping_ambiguous');
       else if (kinds.length === 1) addKind(output, kinds[0], parameter.name);
@@ -376,6 +392,12 @@ export function mapCallFacts(summary, call, facts) {
       continue;
     }
     if (containsFact(argument, facts)) limitations.add('argument_mapping_ambiguous');
+  }
+  for (let index = call.node.arguments.length; index < parameters.length; index += 1) {
+    const parameter = parameterNode(parameters[index]);
+    if (parameter?.type === 'Identifier' && parameterOmittable(parameters[index])) {
+      output.omittedAliases.add(parameter.name);
+    }
   }
   return { ...output, limitations: [...limitations].sort() };
 }

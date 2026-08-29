@@ -25,7 +25,7 @@ function entryTarget(module, handler, entry) {
 }
 
 function normalizedFacts(facts) {
-  return ['objectAliases', 'principalAliases', 'tenantAliases'].map((key) =>
+  return ['objectAliases', 'principalAliases', 'tenantAliases', 'omittedAliases'].map((key) =>
     [...facts[key]].sort().join(',')).join('\u0000');
 }
 
@@ -107,6 +107,8 @@ function chainKey(chain) {
 }
 
 function outcomeFor(operation) {
+  if (operation.principalConstraint === 'incomplete' || operation.tenantConstraint === 'incomplete'
+      || operation.objectConstraint === 'incomplete') return 'incomplete';
   if (operation.principalConstraint === 'observed' || operation.tenantConstraint === 'observed') {
     return 'principal_constraint_observed';
   }
@@ -124,8 +126,8 @@ function completed(state, operation) {
     objectSelectors: [state.selector],
     callEdges: state.callEdges,
     dataOperation: operation,
-    authorizationEvidence: null,
-    limitations: state.limitations,
+    authorizationEvidence: operation.authorizationEvidence || null,
+    limitations: [...new Set([...state.limitations, ...(operation.limitations || [])])].sort(),
     evidenceBoundary: state.callEdges.length
       ? 'An exact bounded local call path reached a supported data operation. Static source relationships do not prove deployed authorization or exploitability.'
       : 'The request-selected object reaches a supported same-handler data operation. Static source relationships do not prove deployed authorization or exploitability.',
@@ -227,6 +229,7 @@ export function analyzeAccessPaths(input) {
       objectNodes: new Set(group.nodes || []),
       principalAliases: new Set(input.principalAliases || []),
       tenantAliases: new Set(input.tenantAliases || []),
+      omittedAliases: new Set(),
     },
     callEdges: [],
     visited: new Set([target.id]),
@@ -290,6 +293,8 @@ export function analyzeAccessPaths(input) {
       objectNodes: facts.objectNodes,
       principalAliases: facts.principalAliases,
       tenantAliases: facts.tenantAliases,
+      omittedAliases: facts.omittedAliases,
+      callableIndex: index,
     });
     for (const operation of analyzed.operations) {
       operations.push(operation);

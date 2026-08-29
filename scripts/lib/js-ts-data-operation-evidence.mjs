@@ -5,6 +5,10 @@ import {
 } from './frameworks/route-extractor-helpers.mjs';
 import { identityProviderSymbolsForHandler } from './js-ts-identity-evidence.mjs';
 import { accessControlKeyCategory } from './access-control-vocabulary.mjs';
+import { resolveCallableCall } from './js-ts-callable-index.mjs';
+import {
+  evaluateDrizzlePredicate, evaluatePrismaPredicate, observedAuthorizationEvidence,
+} from './js-ts-authorization-evidence.mjs';
 
 const FUNCTION_TYPES = new Set([
   'ArrowFunctionExpression', 'FunctionDeclaration', 'FunctionExpression', 'ClassMethod',
@@ -97,11 +101,13 @@ function containsExpression(node, aliases, includeFunctions = true, nodes = new 
   return matched;
 }
 
-function collectLocalAliases(handler, objectSeed, principalSeed, objectNodeSeed = [], tenantSeed = []) {
+function collectLocalAliases(handler, objectSeed, principalSeed, objectNodeSeed = [], tenantSeed = [],
+  omittedSeed = []) {
   const objectAliases = new Set(objectSeed);
   const objectNodes = new Set(objectNodeSeed);
   const principalAliases = new Set(principalSeed);
   const tenantAliases = new Set(tenantSeed);
+  const omittedAliases = new Set(omittedSeed);
   const objectValues = new Map();
   const declarations = [];
   functionWalk(handler, (node) => {
@@ -125,10 +131,16 @@ function collectLocalAliases(handler, objectSeed, principalSeed, objectNodeSeed 
         tenantAliases.add(declaration.id.name);
         changed = true;
       }
+      const initName = safeName(init);
+      if (initName && omittedAliases.has(initName) && !omittedAliases.has(declaration.id.name)) {
+        omittedAliases.add(declaration.id.name);
+        changed = true;
+      }
     }
     if (!changed) break;
   }
-  return { objectAliases, objectNodes, principalAliases, tenantAliases, objectValues };
+  return { objectAliases, objectNodes, principalAliases, tenantAliases, omittedAliases,
+    objectValues };
 }
 
 function resolvedObject(node, objectValues) {
@@ -275,6 +287,39 @@ function moduleClientSymbols(graph, module, cache = new Map(), visiting = new Se
   return symbols;
 }
 
+function handlerBinding(handler, name) {
+  let binding = null;
+  for (const parameter of handler.params || []) {
+    const candidate = parameterNode(parameter);
+    if (candidate?.type === 'Identifier' && candidate.name === name) {
+      return { kind: 'parameter', node: candidate, init: null };
+    }
+  }
+  functionWalk(handler, (node) => {
+    if (binding || node.type !== 'VariableDeclarator' || node.id?.type !== 'Identifier'
+        || node.id.name !== name) return;
+    binding = { kind: 'variable', node: node.id, init: unwrap(node.init) };
+  });
+  return binding;
+}
+
+function exactLocalClientBinding(module, handler, name, descriptor) {
+  const binding = handlerBinding(handler, name);
+  if (!binding) return true;
+  if (descriptor.handlerLocal) return true;
+  const imports = importedBindings(module);
+  if (descriptor.provider === 'prisma' && binding.init?.type === 'NewExpression') {
+    const constructor = imports.get(safeName(binding.init.callee));
+    return constructor?.source === '@prisma/client' && constructor.imported === 'PrismaClient';
+  }
+  if (descriptor.provider === 'drizzle' && binding.init?.type === 'CallExpression') {
+    const factory = imports.get(safeName(binding.init.callee));
+    return /^drizzle-orm(?:\/|$)/.test(factory?.source || '')
+      && ['drizzle', 'default'].includes(factory.imported);
+  }
+  return false;
+}
+
 function decomposeChain(node) {
   const current = unwrap(node);
   if (!current) return null;
@@ -300,31 +345,123 @@ function resourceName(node) {
   return literalString(node) || safeName(node) || 'unknown';
 }
 
-function prismaEvidence(module, call, clients, facts) {
-  const name = safeName(call.callee);
-  if (!name) return null;
-  for (const [client, descriptor] of clients) {
-    if (descriptor.provider !== 'prisma' || !name.startsWith(`${client}.`)) continue;
-    const parts = name.slice(client.length + 1).split('.');
-    if (parts.length !== 2 || !PRISMA_OPERATIONS.has(parts[1])) continue;
-    const options = resolvedObject(call.arguments[0], facts.objectValues);
-    const where = objectProperty(options, 'where', facts.objectValues);
-    const constraints = constraintsIn(where, facts, facts.objectValues);
-    if (!constraints.object) return null;
-    return operation(module, call, 'prisma', parts[0], parts[1], constraints, 'not_applicable');
-  }
-  return null;
+function parameterNode(raw) {
+  const parameter = raw?.type === 'TSParameterProperty' ? raw.parameter : raw;
+  return parameter?.type === 'AssignmentPattern' ? parameter.left : parameter;
 }
 
-function drizzleEvidence(module, call, clients, facts) {
+function parameterOmittable(raw) {
+  const parameter = raw?.type === 'TSParameterProperty' ? raw.parameter : raw;
+  return parameter?.type === 'AssignmentPattern' || parameter?.optional === true;
+}
+
+function callableReturns(target) {
+  if (target.node.type === 'ArrowFunctionExpression' && target.node.body?.type !== 'BlockStatement') {
+    return [target.node.body];
+  }
+  const returned = [];
+  functionWalk(target.node, (node) => {
+    if (node.type === 'ReturnStatement' && node.argument) returned.push(node.argument);
+  });
+  return returned;
+}
+
+function mappedOmittedAliases(call, target, facts) {
+  const omitted = new Set();
+  const parameters = target.node.params || [];
+  for (let index = 0; index < parameters.length; index += 1) {
+    const parameter = parameterNode(parameters[index]);
+    if (parameter?.type !== 'Identifier') continue;
+    if (index >= call.arguments.length) {
+      if (parameterOmittable(parameters[index])) omitted.add(parameter.name);
+      continue;
+    }
+    const argument = call.arguments[index];
+    if (argument.type !== 'SpreadElement' && facts.omittedAliases.has(safeName(argument))) {
+      omitted.add(parameter.name);
+    }
+  }
+  return omitted;
+}
+
+function resolvePrismaClientExpression(index, graph, module, handler, raw, facts, clientCache,
+  visiting = new Set(), depth = 0) {
+  const node = unwrap(raw);
+  if (!node || depth > 4) return { state: 'incomplete' };
+  const clients = moduleClientSymbols(graph, module, clientCache);
+  const name = safeName(node);
+  if (name && clients.get(name)?.provider === 'prisma'
+      && exactLocalClientBinding(module, handler, name, clients.get(name))) {
+    return { state: 'exact', name };
+  }
+  if (node.type === 'LogicalExpression' && node.operator === '??') {
+    const left = safeName(node.left);
+    if (!left || !facts.omittedAliases.has(left)) return { state: 'incomplete' };
+    return resolvePrismaClientExpression(index, graph, module, handler, node.right, facts,
+      clientCache, visiting, depth + 1);
+  }
+  if (node.type !== 'CallExpression' || !index) return { state: 'incomplete' };
+  const resolution = resolveCallableCall(index, module, handler, node);
+  if (resolution?.state !== 'exact' || visiting.has(resolution.target.id)) {
+    return { state: 'incomplete' };
+  }
+  const returns = callableReturns(resolution.target);
+  if (returns.length !== 1) return { state: 'incomplete' };
+  const nextFacts = { ...facts,
+    omittedAliases: mappedOmittedAliases(node, resolution.target, facts) };
+  return resolvePrismaClientExpression(index, graph, resolution.target.module,
+    resolution.target.node, returns[0], nextFacts, clientCache,
+    new Set([...visiting, resolution.target.id]), depth + 1);
+}
+
+function prismaCallShape(call) {
+  const callee = unwrap(call.callee);
+  if (!['MemberExpression', 'OptionalMemberExpression'].includes(callee?.type) || callee.computed) {
+    return null;
+  }
+  const operationName = safeName(callee.property);
+  const resourceMember = unwrap(callee.object);
+  if (!PRISMA_OPERATIONS.has(operationName)
+      || !['MemberExpression', 'OptionalMemberExpression'].includes(resourceMember?.type)
+      || resourceMember.computed) return null;
+  const resource = safeName(resourceMember.property);
+  if (!resource) return null;
+  return { client: resourceMember.object, resource, operationName };
+}
+
+function prismaEvidence(graph, module, handler, call, facts, index, clientCache) {
+  const shape = prismaCallShape(call);
+  if (!shape) return null;
+  const client = resolvePrismaClientExpression(index, graph, module, handler, shape.client,
+    facts, clientCache);
+  const options = resolvedObject(call.arguments[0], facts.objectValues);
+  const where = objectProperty(options, 'where', facts.objectValues);
+  if (client.state !== 'exact') {
+    return containsExpression(where, facts.objectAliases, true, facts.objectNodes)
+      ? { incomplete: { code: 'prisma_client_identity_unresolved', path: module.path,
+        location: sourceLocation(module.path, call) } } : null;
+  }
+  const evaluated = evaluatePrismaPredicate(module, where, facts);
+  if (evaluated.states.object.state === 'not_observed') return null;
+  return { operation: operation(module, call, 'prisma', shape.resource, shape.operationName,
+    evaluated, 'not_applicable') };
+}
+
+function drizzleEvidence(module, handler, call, clients, facts, operators) {
   const direct = safeName(call.callee);
   for (const [client, descriptor] of clients) {
     if (descriptor.provider !== 'drizzle') continue;
+    if (!exactLocalClientBinding(module, handler, client, descriptor)) continue;
     if (direct?.startsWith(`${client}.query.`)) {
       const parts = direct.slice(client.length + 1).split('.');
       if (parts.length === 3 && parts[0] === 'query' && DRIZZLE_QUERY_OPERATIONS.has(parts[2])) {
-        const constraints = constraintsIn(call.arguments[0], facts, facts.objectValues);
-        if (constraints.object) return operation(module, call, 'drizzle', parts[1], parts[2], constraints, 'not_applicable');
+        const options = resolvedObject(call.arguments[0], facts.objectValues);
+        const where = objectProperty(options, 'where', facts.objectValues);
+        const evaluated = evaluateDrizzlePredicate(module, where, facts, operators);
+        if (evaluated.states.object.state !== 'not_observed') {
+          return operation(module, call, 'drizzle', parts[1], parts[2], evaluated,
+            'not_applicable');
+        }
       }
     }
     const chain = decomposeChain(call);
@@ -333,20 +470,21 @@ function drizzleEvidence(module, call, clients, facts) {
     if (!builder) continue;
     const where = chain.stages.filter((stage) => stage.name === 'where').at(-1);
     if (!where) continue;
-    const constraints = constraintsIn(where.arguments, facts, facts.objectValues);
-    if (!constraints.object) continue;
+    const evaluated = evaluateDrizzlePredicate(module, where.arguments[0], facts, operators);
+    if (evaluated.states.object.state === 'not_observed') continue;
     const from = chain.stages.find((stage) => stage.name === 'from');
     const resource = resourceName((from || builder).arguments[0]);
-    return operation(module, call, 'drizzle', resource, builder.name, constraints, 'not_applicable');
+    return operation(module, call, 'drizzle', resource, builder.name, evaluated, 'not_applicable');
   }
   return null;
 }
 
-function supabaseEvidence(module, call, clients, facts) {
+function supabaseEvidence(module, handler, call, clients, facts) {
   const chain = decomposeChain(call);
   if (!chain) return null;
   for (const [client, descriptor] of clients) {
     if (descriptor.provider !== 'supabase' || chain.root !== client) continue;
+    if (!exactLocalClientBinding(module, handler, client, descriptor)) continue;
     const from = chain.stages.find((stage) => stage.name === 'from');
     const selected = [...chain.stages].reverse().find((stage) => SUPABASE_OPERATIONS.has(stage.name));
     if (!from || !selected) continue;
@@ -359,14 +497,22 @@ function supabaseEvidence(module, call, clients, facts) {
 }
 
 function operation(module, call, provider, resource, operationName, constraints, externalPolicy) {
+  const structured = constraints.states ? constraints.states : {
+    object: { state: constraints.object ? 'observed' : 'not_observed' },
+    principal: { state: constraints.principal ? 'observed' : 'not_observed' },
+    tenant: { state: constraints.tenant ? 'observed' : 'not_observed' },
+  };
+  const authorizationEvidence = constraints.states ? observedAuthorizationEvidence(constraints) : null;
   return {
     provider,
     resource,
     operation: operationName.replace(/[A-Z]/g, (character) => `-${character.toLowerCase()}`),
     location: sourceLocation(module.path, call),
-    objectConstraint: constraints.object ? 'observed' : 'not_observed',
-    principalConstraint: constraints.principal ? 'observed' : 'not_observed',
-    tenantConstraint: constraints.tenant ? 'observed' : 'not_observed',
+    objectConstraint: structured.object.state,
+    principalConstraint: structured.principal.state,
+    tenantConstraint: structured.tenant.state,
+    authorizationEvidence: authorizationEvidence?.length ? authorizationEvidence : null,
+    limitations: constraints.limitations || [],
     externalPolicy,
     node: call,
   };
@@ -374,23 +520,36 @@ function operation(module, call, provider, resource, operationName, constraints,
 
 export function analyzeDataOperations(graph, module, handler, options = {}) {
   const facts = collectLocalAliases(handler, options.objectAliases || [], options.principalAliases || [],
-    options.objectNodes || [], options.tenantAliases || []);
-  const clients = moduleClientSymbols(graph, module);
+    options.objectNodes || [], options.tenantAliases || [], options.omittedAliases || []);
+  const clientCache = new Map();
+  const clients = moduleClientSymbols(graph, module, clientCache);
   for (const [name, descriptor] of identityProviderSymbolsForHandler(graph, module, handler)) {
-    if (descriptor.instance === 'supabase') clients.set(name, { provider: 'supabase' });
+    if (descriptor.instance === 'supabase') {
+      clients.set(name, { provider: 'supabase', handlerLocal: true });
+    }
   }
   const prismaRelevant = [...importedBindings(module).values()].some((binding) =>
     binding.source === '@prisma/client')
     || [...clients.values()].some((descriptor) => descriptor.provider === 'prisma');
+  const drizzleOperators = new Map([...importedBindings(module)].flatMap(([local, binding]) =>
+    /^drizzle-orm(?:\/|$)/.test(binding.source) && ['and', 'or', 'eq'].includes(binding.imported)
+      ? [[local, binding.imported]] : []));
   const operations = [];
   const incomplete = [];
   functionWalk(handler, (node) => {
     if (node.type !== 'CallExpression') return;
-    const found = prismaEvidence(module, node, clients, facts)
-      || drizzleEvidence(module, node, clients, facts)
-      || supabaseEvidence(module, node, clients, facts);
-    if (found) operations.push(found);
-    if (found) return;
+    const prisma = prismaRelevant
+      ? prismaEvidence(graph, module, handler, node, facts, options.callableIndex, clientCache)
+      : null;
+    if (prisma?.operation) operations.push(prisma.operation);
+    if (prisma?.incomplete) incomplete.push(prisma.incomplete);
+    if (prisma) return;
+    const found = drizzleEvidence(module, handler, node, clients, facts, drizzleOperators)
+      || supabaseEvidence(module, handler, node, clients, facts);
+    if (found) {
+      operations.push(found);
+      return;
+    }
     const name = safeName(node.callee);
     const parts = name?.split('.') || [];
     if (parts.length === 3 && PRISMA_OPERATIONS.has(parts[2])

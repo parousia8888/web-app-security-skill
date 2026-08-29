@@ -82,4 +82,4 @@ assert.equal(analyzeDataOperations(graph, module, handler('benign'), {
   objectAliases: new Set(['objectId']), principalAliases: new Set(),
 }).operations.length, 0);
 
-console.log('access-control data operations ok: Prisma, Drizzle, Supabase constraints and benign client');
+console.log('access-control data operations ok: Prisma, Drizzle, Supabase constraints and shadowed client');
