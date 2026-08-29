@@ -1,9 +1,8 @@
 import { walkJsTsAst } from './js-ts-ast-parser.mjs';
+import { callableIndexForGraph, resolveCallableCall } from './js-ts-callable-index.mjs';
 import { analyzeDataOperations } from './js-ts-data-operation-evidence.mjs';
 import { expressionName } from './js-ts-module-graph.mjs';
-import {
-  importedBindings, localModuleExport, sourceLocation,
-} from './frameworks/route-extractor-helpers.mjs';
+import { sourceLocation } from './frameworks/route-extractor-helpers.mjs';
 
 const FUNCTION_TYPES = new Set([
   'ArrowFunctionExpression', 'FunctionDeclaration', 'FunctionExpression', 'ClassMethod',
@@ -39,103 +38,6 @@ function functionWalk(root, visit) {
       } else if (value && typeof value === 'object') stack.push({ node: value, root: false });
     }
   }
-}
-
-function topLevelDeclarations(module) {
-  const values = new Map();
-  const duplicates = new Set();
-  const record = (name, node) => {
-    if (!name || !FUNCTION_TYPES.has(node?.type)) return;
-    if (values.has(name) && values.get(name) !== node) duplicates.add(name);
-    else values.set(name, node);
-  };
-  for (const raw of module.ast?.body || []) {
-    const node = raw.type === 'ExportNamedDeclaration' || raw.type === 'ExportDefaultDeclaration'
-      ? raw.declaration : raw;
-    if (node?.type === 'FunctionDeclaration') record(node.id?.name, node);
-    if (node?.type === 'VariableDeclaration') {
-      for (const declaration of node.declarations) {
-        if (declaration.id?.type === 'Identifier') record(declaration.id.name, unwrap(declaration.init));
-      }
-    }
-  }
-  for (const name of duplicates) values.delete(name);
-  return values;
-}
-
-function classDeclarations(module) {
-  const values = new Map();
-  for (const raw of module.ast?.body || []) {
-    const node = raw.type === 'ExportNamedDeclaration' || raw.type === 'ExportDefaultDeclaration'
-      ? raw.declaration : raw;
-    if (node?.type === 'ClassDeclaration' && node.id?.name) values.set(node.id.name, node);
-  }
-  return values;
-}
-
-function importedFunction(graph, module, name) {
-  const binding = importedBindings(module).get(name);
-  if (!binding || binding.imported === 'default' || binding.imported === '*') return null;
-  if (binding.resolutionReason) return { incomplete: binding.resolutionReason };
-  if (!binding.resolvedPath) return null;
-  const target = graph.modules.get(binding.resolvedPath);
-  const local = localModuleExport(graph, binding.resolvedPath, binding.imported);
-  const node = local ? topLevelDeclarations(target).get(local) : null;
-  return node ? { module: target, node, name: local, kind: 'local_function' }
-    : { incomplete: 'local_function_export_unresolved' };
-}
-
-function containingClass(module, handler) {
-  for (const klass of classDeclarations(module).values()) {
-    if (klass.body?.body?.includes(handler)) return klass;
-  }
-  return null;
-}
-
-function typeName(parameter) {
-  const target = parameter?.typeAnnotation?.typeAnnotation;
-  return target?.type === 'TSTypeReference' ? safeName(target.typeName) : null;
-}
-
-function nestInjectedServices(graph, module, handler) {
-  const services = new Map();
-  const klass = containingClass(module, handler);
-  const constructor = klass?.body?.body?.find((node) => node.type === 'ClassMethod'
-    && node.kind === 'constructor');
-  const imports = importedBindings(module);
-  for (const raw of constructor?.params || []) {
-    const parameter = raw.type === 'TSParameterProperty' ? raw.parameter : raw;
-    if (parameter?.type !== 'Identifier') continue;
-    const importedType = typeName(parameter);
-    const binding = imports.get(importedType);
-    if (!binding?.resolvedPath || binding.resolutionReason || ['default', '*'].includes(binding.imported)) continue;
-    const target = graph.modules.get(binding.resolvedPath);
-    const local = localModuleExport(graph, binding.resolvedPath, binding.imported);
-    const targetClass = local ? classDeclarations(target).get(local) : null;
-    if (targetClass) services.set(parameter.name, { module: target, klass: targetClass, name: local });
-  }
-  return services;
-}
-
-function resolveCall(graph, module, handler, call, services = null) {
-  const called = safeName(call.callee);
-  if (!called) return null;
-  if (!called.includes('.')) {
-    const local = topLevelDeclarations(module).get(called);
-    if (local && local !== handler) return { module, node: local, name: called, kind: 'local_function' };
-    return importedFunction(graph, module, called);
-  }
-  const parts = called.split('.');
-  if (parts.length !== 3 || parts[0] !== 'this') return null;
-  const registry = services || nestInjectedServices(graph, module, handler);
-  const service = registry.get(parts[1]);
-  if (!service) return null;
-  const matches = service.klass.body.body.filter((node) => ['ClassMethod', 'ClassPrivateMethod'].includes(node.type)
-    && safeName(node.key) === parts[2]);
-  return matches.length === 1
-    ? { module: service.module, node: matches[0], name: `${service.name}.${parts[2]}`,
-      kind: 'nest_injected_service' }
-    : { incomplete: 'nest_service_method_unresolved' };
 }
 
 function directAlias(node, aliases, nodes = new Set()) {
@@ -190,14 +92,13 @@ function mapArguments(call, callee, objectAliases, principalAliases, objectNodes
   return { objectAliases: mappedObjects, principalAliases: mappedPrincipals };
 }
 
-function secondLocalEdge(graph, module, handler, objectAliases) {
-  const services = nestInjectedServices(graph, module, handler);
+function secondLocalEdge(index, module, handler, objectAliases) {
   let observed = false;
   functionWalk(handler, (node) => {
     if (observed || node.type !== 'CallExpression'
         || !node.arguments.some((argument) => argumentCarriesAlias(argument, objectAliases))) return;
-    const resolved = resolveCall(graph, module, handler, node, services);
-    if (resolved?.node || resolved?.incomplete) observed = true;
+    const resolved = resolveCallableCall(index, module, handler, node);
+    if (resolved?.state === 'exact' || resolved?.state === 'incomplete') observed = true;
   });
   return observed;
 }
@@ -218,18 +119,25 @@ export function analyzeOneHopAccess(input) {
   const { graph, module, handler, entry, identity, objectAliases, principalAliases } = input;
   const objectNodes = input.objectNodes || new Set();
   const selectors = input.objectSelectors || [];
-  const services = nestInjectedServices(graph, module, handler);
+  const index = input.callableIndex || callableIndexForGraph(graph);
   const results = [];
   functionWalk(handler, (call) => {
     if (call.type !== 'CallExpression'
         || !call.arguments.some((argument) => argumentCarriesAlias(argument, objectAliases,
           objectNodes))) return;
-    const resolved = resolveCall(graph, module, handler, call, services);
-    if (!resolved) return;
-    if (resolved.incomplete) {
-      results.push(partialResult(entry, identity, selectors, call, null, resolved.incomplete));
+    const resolution = resolveCallableCall(index, module, handler, call);
+    const resolved = resolution?.state === 'exact' ? {
+      module: resolution.target.module,
+      node: resolution.target.node,
+      name: resolution.target.name,
+      kind: resolution.edgeKind,
+    } : null;
+    if (resolution?.state === 'incomplete'
+        && resolution.reason !== 'dynamic_dispatch_unresolved') {
+      results.push(partialResult(entry, identity, selectors, call, null, resolution.reason));
       return;
     }
+    if (!resolved) return;
     const mapped = mapArguments(call, resolved.node, objectAliases, principalAliases, objectNodes);
     if (mapped.incomplete) {
       results.push(partialResult(entry, identity, selectors, call, resolved, mapped.incomplete));
@@ -240,7 +148,7 @@ export function analyzeOneHopAccess(input) {
     const edge = { kind: resolved.kind, from: entry.name, to: resolved.name,
       location: sourceLocation(module.path, call) };
     if (!analyzed.operations.length) {
-      const secondEdge = secondLocalEdge(graph, resolved.module, resolved.node, mapped.objectAliases);
+      const secondEdge = secondLocalEdge(index, resolved.module, resolved.node, mapped.objectAliases);
       results.push({
         entryKind: entry.kind, entryId: entry.id,
         status: secondEdge ? 'partial' : 'not_applicable',

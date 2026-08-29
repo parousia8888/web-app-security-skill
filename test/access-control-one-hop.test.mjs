@@ -21,8 +21,17 @@ export class ProjectService {
   find(id, userId) { return db.project.findFirst({ where: { id, ownerId: userId } }); }
 }
 ` },
+  { path: 'src/barrel.ts', text: "export { loadProject as carriedLoad } from './repository';" },
+  { path: 'src/default-repository.ts', text: `
+import { db } from './db';
+export default function defaultLoad(id, userId) {
+  return db.project.findFirst({ where: { id, ownerId: userId } });
+}
+` },
   { path: 'src/entry.ts', text: `
 import { loadProject, secondHop } from './repository';
+import { carriedLoad } from './barrel';
+import defaultLoad from './default-repository';
 import { ProjectService } from './service';
 import { db } from './db';
 function sameFile(id) { return loadProject(id, 'unknown'); }
@@ -30,6 +39,8 @@ function sameFileDirect(id, userId) {
   return db.project.findFirst({ where: { id, ownerId: userId } });
 }
 function importedHandler(objectId, userId) { return loadProject(objectId, userId); }
+function reexportedHandler(objectId, userId) { return carriedLoad(objectId, userId); }
+function defaultHandler(objectId, userId) { return defaultLoad(objectId, userId); }
 function sameFileHandler(objectId) { return sameFile(objectId); }
 function sameFileDirectHandler(objectId, userId) { return sameFileDirect(objectId, userId); }
 function twoHopHandler(objectId) { return secondHop(objectId); }
@@ -64,9 +75,17 @@ function analyze(name) {
 
 const imported = analyze('importedHandler');
 assert.equal(imported.length, 1);
-assert.equal(imported[0].callEdges[0].kind, 'local_function');
+assert.equal(imported[0].callEdges[0].kind, 'local_import');
 assert.equal(imported[0].entryId, 'route.importedHandler');
 assert.equal(imported[0].outcome, 'principal_constraint_observed');
+const reexported = analyze('reexportedHandler');
+assert.equal(reexported.length, 1);
+assert.equal(reexported[0].callEdges[0].kind, 'local_reexport');
+assert.equal(reexported[0].outcome, 'principal_constraint_observed');
+const defaultImported = analyze('defaultHandler');
+assert.equal(defaultImported.length, 1);
+assert.equal(defaultImported[0].callEdges[0].kind, 'local_import');
+assert.equal(defaultImported[0].outcome, 'principal_constraint_observed');
 const sameFile = analyze('sameFileHandler');
 assert.equal(sameFile.length, 1);
 assert.equal(sameFile[0].status, 'partial');

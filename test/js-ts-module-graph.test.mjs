@@ -62,6 +62,12 @@ const limited = buildJsTsModuleGraph([
 ], { maxEdges: 0 });
 assert.ok(limited.reasons.some((item) => item.code === 'module_graph_edge_limit'));
 
+const exportAll = buildJsTsModuleGraph([
+  { path: 'src/barrel.ts', text: "export * from './target';" },
+  { path: 'src/target.ts', text: 'export function target() {}' },
+]);
+assert.equal(exportAll.modules.get('src/barrel.ts').imports[0].resolution.path, 'src/target.ts');
+
 const escaped = buildJsTsModuleGraph([
   { path: '../outside.ts', text: 'export default 1;' },
   { path: 'src/safe.ts', text: 'export default 2;' },

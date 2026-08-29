@@ -407,6 +407,12 @@ function collectModule(path, text, files, limits, context) {
         exports.push({ exported: expressionName(specifier.exported), local: expressionName(specifier.local), node: specifier });
       }
     }
+    if (node.type === 'ExportAllDeclaration') {
+      const source = literalString(node.source);
+      const resolution = source ? resolveLocal(path, source, files, context) : null;
+      imports.push({ source, bindings: [], resolution });
+      if (resolution?.reason) reasons.push(resolution.reason);
+    }
     if (node.type === 'AssignmentExpression') {
       const left = expressionName(node.left);
       if (left === 'module.exports') exports.push({ exported: 'default', local: expressionName(node.right), node: node.right });

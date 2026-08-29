@@ -156,7 +156,7 @@ assert.deepEqual(supabaseAccess[0].authorizationEvidence.map((evidence) => evide
 assert.equal(supabaseAccess[0].outcome, 'external_policy_required');
 const hopAccess = result.routes.find((route) => route.path === '/hop-projects/:id').accessChains;
 assert.equal(hopAccess.length, 1);
-assert.equal(hopAccess[0].callEdges[0].kind, 'local_function');
+assert.equal(hopAccess[0].callEdges[0].kind, 'local_import');
 assert.equal(hopAccess[0].dataOperation.provider, 'prisma');
 assert.equal(hopAccess[0].outcome, 'authorization_constraint_observed');
 for (const expected of [
