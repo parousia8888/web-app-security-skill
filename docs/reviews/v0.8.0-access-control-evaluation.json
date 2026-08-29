@@ -1,0 +1,1594 @@
+{
+  "schemaVersion": 1,
+  "release": "0.8.0",
+  "state": "owner_decision_required",
+  "frozenOn": "2026-08-29",
+  "historicalSource": {
+    "path": "docs/reviews/v0.7.0-access-control-review.json",
+    "toolCommit": "bfed608b5d1abe56b6b34b09f0c6ef59f17eab4a",
+    "projects": 4,
+    "observations": 32,
+    "observationsSha256": "735c541c57d4ae0aa7534860ad2faccebd7b652325572da57996b104771d187b"
+  },
+  "criteria": {
+    "eligible": "A fixed-commit ordinary entry has an exact v0.8.0 selector, a uniquely resolved local path within four edges and a supported Prisma or Drizzle object operation without relying on an excluded mapping.",
+    "excluded": "The historical entry remains visible but does not enter the completion denominator when it lacks an object selector/operation or requires an explicit non-goal such as TypeORM, Mongoose, arbitrary validator semantics, external higher-order wrapper semantics or dynamic data-client dispatch.",
+    "evidenceBoundary": "Eligibility predicts structural analyzability, not security, vulnerability, runtime reachability, deployed enforcement or production accuracy."
+  },
+  "projects": [
+    {
+      "id": "nestjs-boilerplate",
+      "repository": "brocoders/nestjs-boilerplate",
+      "commit": "9620f159eefe38f47747d02ab162852367c5472c",
+      "license": "MIT",
+      "target": "."
+    },
+    {
+      "id": "vercel-chatbot",
+      "repository": "vercel/chatbot",
+      "commit": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
+      "license": "Apache-2.0",
+      "target": "."
+    },
+    {
+      "id": "formbricks",
+      "repository": "formbricks/formbricks",
+      "commit": "b66c1dd978af618a0e402bd3343b456bed68594c",
+      "license": "AGPL-3.0",
+      "target": "."
+    },
+    {
+      "id": "documenso",
+      "repository": "documenso/documenso",
+      "commit": "75330166cc00b29c14399bc2e391e4b4d8080c00",
+      "license": "AGPL-3.0",
+      "target": "apps/docs"
+    }
+  ],
+  "optionalFifthProject": {
+    "selected": false,
+    "reason": "No project was added before the owner decides whether to extend one bounded mapping or use the single optional project slot. Adding an easy project now would hide the current-corpus shortfall."
+  },
+  "aggregate": {
+    "totalEntries": 32,
+    "eligibleEntries": 4,
+    "excludedEntries": 28,
+    "byExpectedStatus": {
+      "completed": 4,
+      "not_applicable": 11,
+      "partial": 17
+    },
+    "bySelectorOrigin": {
+      "nest_param": 2,
+      "next_route_param": 6,
+      "next_wrapper_parsed_param_candidate": 2,
+      "none": 10,
+      "request_json_candidate": 2,
+      "server_action_parameter": 4,
+      "server_action_parameter_candidate": 1,
+      "url_search_param": 5
+    },
+    "byDataProvider": {
+      "drizzle": 6,
+      "none": 15,
+      "prisma": 11
+    },
+    "byAuthorizationKind": {
+      "none": 16,
+      "post_load_comparison": 13,
+      "query_predicate": 3
+    },
+    "byMissFamily": {
+      "callable_wrapper_reexport": 7,
+      "depth_propagation": 6,
+      "none": 11,
+      "selector_origin": 8
+    },
+    "dominantMissFamilies": [
+      {
+        "family": "selector_origin",
+        "count": 8
+      },
+      {
+        "family": "callable_wrapper_reexport",
+        "count": 7
+      },
+      {
+        "family": "depth_propagation",
+        "count": 6
+      }
+    ]
+  },
+  "targetCalculation": {
+    "completionRate": 0.7,
+    "denominator": 4,
+    "minimumByRate": 3,
+    "groundedPathFloor": 6,
+    "effectiveMinimum": 6,
+    "feasibleWithCurrentBoundary": false,
+    "pathShortfall": 2,
+    "completedProjectFloor": 2,
+    "representedEligibleProjects": [
+      "formbricks",
+      "vercel-chatbot"
+    ],
+    "requiredProviders": [
+      "drizzle",
+      "prisma"
+    ],
+    "representedEligibleProviders": [
+      "drizzle",
+      "prisma"
+    ],
+    "queryConstraintCases": 0,
+    "postLoadComparisonCases": 3,
+    "queryConstraintShortfall": 1
+  },
+  "decisionRequired": {
+    "code": "current_boundary_cannot_meet_release_floor",
+    "statement": "The current contract has four eligible paths, two fewer than the six-path floor, and no eligible query-constraint case. D1 must approve a bounded scope adjustment or a fifth grounded project before P2.",
+    "prohibitedResolution": "Do not lower the six-path floor, relabel client input as a principal, erase excluded entries or count fixtures as real paths."
+  },
+  "claims": [
+    "This ledger freezes manual expectations before v0.8.0 production analyzer implementation.",
+    "It is not a production precision, recall, reachability or exploitability measurement.",
+    "Historical v0.7.0 assessments are copied verbatim and remain historical."
+  ],
+  "entries": [
+    {
+      "id": "v080-eval-01",
+      "project": "nestjs-boilerplate",
+      "repository": "brocoders/nestjs-boilerplate",
+      "commit": "9620f159eefe38f47747d02ab162852367c5472c",
+      "entry": "POST /auth/email/login",
+      "source": {
+        "path": "src/auth/auth.controller.ts",
+        "line": 39,
+        "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L39"
+      },
+      "historical": {
+        "assessment": "expected_public",
+        "note": "No route-scoped control observed; appropriate for a login entry but still owner-classified."
+      },
+      "sampleKind": "expected_public_negative",
+      "selectorOrigin": null,
+      "expectedCallablePath": [],
+      "expectedEdgeCount": null,
+      "expectedDataOperation": null,
+      "expectedAuthorizationEvidence": {
+        "state": "not_applicable",
+        "kind": "none",
+        "category": "none",
+        "limitation": null
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "no_supported_object_selector",
+      "exclusion": {
+        "code": "no_supported_object_selector",
+        "boundary": "No supported client-selected object identifier enters this entry."
+      },
+      "expectedStatus": "not_applicable",
+      "expectedPrimaryReason": null,
+      "missFamily": "none",
+      "reviewerNote": "Retained as a labeled negative; it is outside the access-path completion denominator.",
+      "recordSha256": "53f0db67bd92e9b09fab69db93ccd255611c247272bc61abbf668133b312f8b0"
+    },
+    {
+      "id": "v080-eval-02",
+      "project": "nestjs-boilerplate",
+      "repository": "brocoders/nestjs-boilerplate",
+      "commit": "9620f159eefe38f47747d02ab162852367c5472c",
+      "entry": "POST /auth/email/register",
+      "source": {
+        "path": "src/auth/auth.controller.ts",
+        "line": 51,
+        "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L51"
+      },
+      "historical": {
+        "assessment": "expected_public",
+        "note": "No route-scoped control observed; appropriate for registration."
+      },
+      "sampleKind": "expected_public_negative",
+      "selectorOrigin": null,
+      "expectedCallablePath": [],
+      "expectedEdgeCount": null,
+      "expectedDataOperation": null,
+      "expectedAuthorizationEvidence": {
+        "state": "not_applicable",
+        "kind": "none",
+        "category": "none",
+        "limitation": null
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "no_supported_object_selector",
+      "exclusion": {
+        "code": "no_supported_object_selector",
+        "boundary": "No supported client-selected object identifier enters this entry."
+      },
+      "expectedStatus": "not_applicable",
+      "expectedPrimaryReason": null,
+      "missFamily": "none",
+      "reviewerNote": "Retained as a labeled negative; it is outside the access-path completion denominator.",
+      "recordSha256": "d08e9b5832e7a4848e9f1ed7fbf3985d3cc4fafcf17324f5ade08da24782a732"
+    },
+    {
+      "id": "v080-eval-03",
+      "project": "nestjs-boilerplate",
+      "repository": "brocoders/nestjs-boilerplate",
+      "commit": "9620f159eefe38f47747d02ab162852367c5472c",
+      "entry": "POST /auth/logout",
+      "source": {
+        "path": "src/auth/auth.controller.ts",
+        "line": 125,
+        "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L125"
+      },
+      "historical": {
+        "assessment": "supported_control",
+        "note": "Route-scoped Passport authentication was observed; no authorization claim was made."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": null,
+      "expectedCallablePath": [],
+      "expectedEdgeCount": null,
+      "expectedDataOperation": null,
+      "expectedAuthorizationEvidence": {
+        "state": "not_applicable",
+        "kind": "none",
+        "category": "none",
+        "limitation": null
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "principal_scoped_without_object_selector",
+      "exclusion": {
+        "code": "principal_scoped_without_object_selector",
+        "boundary": "Authentication evidence exists, but no client-selected object identifier is present."
+      },
+      "expectedStatus": "not_applicable",
+      "expectedPrimaryReason": null,
+      "missFamily": "none",
+      "reviewerNote": "Retained as a labeled negative; it is outside the access-path completion denominator.",
+      "recordSha256": "37680c2abb0aeb0967e2ef8ba3b1d4ee95931b0c93f7a0e935b5446c1fc83599"
+    },
+    {
+      "id": "v080-eval-04",
+      "project": "nestjs-boilerplate",
+      "repository": "brocoders/nestjs-boilerplate",
+      "commit": "9620f159eefe38f47747d02ab162852367c5472c",
+      "entry": "GET /auth/me",
+      "source": {
+        "path": "src/auth/auth.controller.ts",
+        "line": 90,
+        "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L90"
+      },
+      "historical": {
+        "assessment": "supported_control",
+        "note": "Route-scoped Passport authentication was observed."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": null,
+      "expectedCallablePath": [],
+      "expectedEdgeCount": null,
+      "expectedDataOperation": null,
+      "expectedAuthorizationEvidence": {
+        "state": "not_applicable",
+        "kind": "none",
+        "category": "none",
+        "limitation": null
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "principal_scoped_without_object_selector",
+      "exclusion": {
+        "code": "principal_scoped_without_object_selector",
+        "boundary": "The route addresses the current principal rather than a client-selected object."
+      },
+      "expectedStatus": "not_applicable",
+      "expectedPrimaryReason": null,
+      "missFamily": "none",
+      "reviewerNote": "Retained as a labeled negative; it is outside the access-path completion denominator.",
+      "recordSha256": "6dc49765d6565168c93ae2a1bc462fecd3481b964f56bc53d30949962eb61a40"
+    },
+    {
+      "id": "v080-eval-05",
+      "project": "nestjs-boilerplate",
+      "repository": "brocoders/nestjs-boilerplate",
+      "commit": "9620f159eefe38f47747d02ab162852367c5472c",
+      "entry": "DELETE /auth/me",
+      "source": {
+        "path": "src/auth/auth.controller.ts",
+        "line": 154,
+        "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L154"
+      },
+      "historical": {
+        "assessment": "supported_control",
+        "note": "State-changing route has route-scoped authentication evidence."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": null,
+      "expectedCallablePath": [],
+      "expectedEdgeCount": null,
+      "expectedDataOperation": null,
+      "expectedAuthorizationEvidence": {
+        "state": "not_applicable",
+        "kind": "none",
+        "category": "none",
+        "limitation": null
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "principal_scoped_without_object_selector",
+      "exclusion": {
+        "code": "principal_scoped_without_object_selector",
+        "boundary": "The route addresses the current principal rather than a client-selected object."
+      },
+      "expectedStatus": "not_applicable",
+      "expectedPrimaryReason": null,
+      "missFamily": "none",
+      "reviewerNote": "Retained as a labeled negative; it is outside the access-path completion denominator.",
+      "recordSha256": "4a024bcc275d49e6048c9784b98009f9612032588be32bb2626446b27b6db257"
+    },
+    {
+      "id": "v080-eval-06",
+      "project": "nestjs-boilerplate",
+      "repository": "brocoders/nestjs-boilerplate",
+      "commit": "9620f159eefe38f47747d02ab162852367c5472c",
+      "entry": "GET /files/:path",
+      "source": {
+        "path": "src/files/infrastructure/uploader/local/files.controller.ts",
+        "line": 58,
+        "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/files/infrastructure/uploader/local/files.controller.ts#L58"
+      },
+      "historical": {
+        "assessment": "review_lead",
+        "note": "No route-scoped control was observed; path policy and intended public access require review."
+      },
+      "sampleKind": "ordinary_review_negative",
+      "selectorOrigin": null,
+      "expectedCallablePath": [],
+      "expectedEdgeCount": null,
+      "expectedDataOperation": null,
+      "expectedAuthorizationEvidence": {
+        "state": "not_applicable",
+        "kind": "none",
+        "category": "none",
+        "limitation": null
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "path_is_not_object_identifier",
+      "exclusion": {
+        "code": "path_is_not_object_identifier",
+        "boundary": "The dynamic field is named path; the v0.8.0 selector contract does not reclassify generic paths as protected object IDs."
+      },
+      "expectedStatus": "not_applicable",
+      "expectedPrimaryReason": null,
+      "missFamily": "none",
+      "reviewerNote": "Retained as a labeled negative; it is outside the access-path completion denominator.",
+      "recordSha256": "2ada4af41eb67d8ba2bbcd9d9d9d0be941e01efadcd045147ed304d24c6a9553"
+    },
+    {
+      "id": "v080-eval-07",
+      "project": "nestjs-boilerplate",
+      "repository": "brocoders/nestjs-boilerplate",
+      "commit": "9620f159eefe38f47747d02ab162852367c5472c",
+      "entry": "DELETE /users/:id",
+      "source": {
+        "path": "src/users/users.controller.ts",
+        "line": 129,
+        "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/users/users.controller.ts#L129"
+      },
+      "historical": {
+        "assessment": "correct_bounded_stop",
+        "note": "Inherited authentication and an authorization candidate were separated; the chain stopped before a second local call."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "nest_param",
+        "field": "id",
+        "expressionClass": "@Param('id')"
+      },
+      "expectedCallablePath": [
+        "src/users/users.controller.ts#UsersController.remove",
+        "src/users/users.service.ts#UsersService.remove",
+        "src/users/infrastructure/persistence/user.repository.ts#UserRepository.remove"
+      ],
+      "expectedEdgeCount": 2,
+      "expectedDataOperation": null,
+      "expectedAuthorizationEvidence": {
+        "state": "incomplete",
+        "kind": "none",
+        "category": "principal",
+        "limitation": "data_client_unresolved"
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "unsupported_data_provider",
+      "exclusion": {
+        "code": "unsupported_data_provider",
+        "boundary": "The repository dispatches to TypeORM or Mongoose; neither provider is included in v0.8.0."
+      },
+      "expectedStatus": "partial",
+      "expectedPrimaryReason": "data_client_unresolved",
+      "missFamily": "depth_propagation",
+      "reviewerNote": "Useful multi-hop stop evidence, but it cannot become a completed Prisma/Drizzle path in this release.",
+      "recordSha256": "7dfefabe5f3d0de44b256caa364280d71d53924124b28d2e4c60854cce8cb4fb"
+    },
+    {
+      "id": "v080-eval-08",
+      "project": "nestjs-boilerplate",
+      "repository": "brocoders/nestjs-boilerplate",
+      "commit": "9620f159eefe38f47747d02ab162852367c5472c",
+      "entry": "GET /users/:id",
+      "source": {
+        "path": "src/users/users.controller.ts",
+        "line": 92,
+        "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/users/users.controller.ts#L92"
+      },
+      "historical": {
+        "assessment": "correct_bounded_stop",
+        "note": "The route was object-addressed and the one-hop chain stopped explicitly at the service boundary."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "nest_param",
+        "field": "id",
+        "expressionClass": "@Param('id')"
+      },
+      "expectedCallablePath": [
+        "src/users/users.controller.ts#UsersController.findOne",
+        "src/users/users.service.ts#UsersService.findById",
+        "src/users/infrastructure/persistence/user.repository.ts#UserRepository.findById"
+      ],
+      "expectedEdgeCount": 2,
+      "expectedDataOperation": null,
+      "expectedAuthorizationEvidence": {
+        "state": "incomplete",
+        "kind": "none",
+        "category": "principal",
+        "limitation": "data_client_unresolved"
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "unsupported_data_provider",
+      "exclusion": {
+        "code": "unsupported_data_provider",
+        "boundary": "The repository dispatches to TypeORM or Mongoose; neither provider is included in v0.8.0."
+      },
+      "expectedStatus": "partial",
+      "expectedPrimaryReason": "data_client_unresolved",
+      "missFamily": "depth_propagation",
+      "reviewerNote": "The controller/service/repository path is in scope for stopping evidence, while the terminal provider is not.",
+      "recordSha256": "0a775f4f601534829163068549a3445d700acc904d3c7b8872067e572151c7ee"
+    },
+    {
+      "id": "v080-eval-09",
+      "project": "vercel-chatbot",
+      "repository": "vercel/chatbot",
+      "commit": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
+      "entry": "POST /api/chat",
+      "source": {
+        "path": "app/(chat)/api/chat/route.ts",
+        "line": 70,
+        "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/chat/route.ts#L70"
+      },
+      "historical": {
+        "assessment": "known_miss",
+        "note": "Local Auth.js use is visible in source, but route control remains unclassified and body-selected IDs are outside this release."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "request_json_candidate",
+        "field": "id",
+        "expressionClass": "schema_parse_of_awaited_request_json"
+      },
+      "expectedCallablePath": [
+        "app/(chat)/api/chat/route.ts#POST"
+      ],
+      "expectedEdgeCount": 0,
+      "expectedDataOperation": null,
+      "expectedAuthorizationEvidence": {
+        "state": "incomplete",
+        "kind": "post_load_comparison",
+        "category": "principal",
+        "limitation": "selector_source_unresolved"
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "selector_transform_outside_contract",
+      "exclusion": {
+        "code": "selector_transform_outside_contract",
+        "boundary": "The ID is recovered through a Zod parse result; v0.8.0 supports direct JSON property access and destructuring, not arbitrary validator return semantics."
+      },
+      "expectedStatus": "partial",
+      "expectedPrimaryReason": "selector_source_unresolved",
+      "missFamily": "selector_origin",
+      "reviewerNote": "A minimized direct request.json body case belongs in P3 tests; this ordinary Zod-mediated case must remain partial.",
+      "recordSha256": "cf640b13ac69c7cc6cfb53e0a4c797ca2a665f239a2219504684b40b209101e1"
+    },
+    {
+      "id": "v080-eval-10",
+      "project": "vercel-chatbot",
+      "repository": "vercel/chatbot",
+      "commit": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
+      "entry": "DELETE /api/chat",
+      "source": {
+        "path": "app/(chat)/api/chat/route.ts",
+        "line": 447,
+        "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/chat/route.ts#L447"
+      },
+      "historical": {
+        "assessment": "known_miss",
+        "note": "Local Auth.js use is visible, but query-selected IDs do not enter the v0.7.0 chain selector."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "url_search_param",
+        "field": "id",
+        "expressionClass": "new_URL_request_url_searchParams_get"
+      },
+      "expectedCallablePath": [
+        "app/(chat)/api/chat/route.ts#DELETE",
+        "lib/db/queries.ts#getChatById"
+      ],
+      "expectedEdgeCount": 1,
+      "expectedDataOperation": {
+        "provider": "drizzle",
+        "resource": "chat",
+        "operation": "select",
+        "path": "lib/db/queries.ts:218"
+      },
+      "expectedAuthorizationEvidence": {
+        "state": "observed",
+        "kind": "post_load_comparison",
+        "category": "principal",
+        "limitation": null
+      },
+      "eligibleForV080": true,
+      "eligibilityReason": "supported_query_selector_direct_return_and_comparison",
+      "exclusion": null,
+      "expectedStatus": "completed",
+      "expectedPrimaryReason": null,
+      "missFamily": "selector_origin",
+      "reviewerNote": "The query-selected ID reaches Drizzle and the returned chat userId is compared with Auth.js session.user.id.",
+      "recordSha256": "97c88038bf0dc1bb0aa4cfb1b1df620281b6407fb1ccff74d2a9a1923ec9358a"
+    },
+    {
+      "id": "v080-eval-11",
+      "project": "vercel-chatbot",
+      "repository": "vercel/chatbot",
+      "commit": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
+      "entry": "GET /api/document",
+      "source": {
+        "path": "app/(chat)/api/document/route.ts",
+        "line": 19,
+        "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/document/route.ts#L19"
+      },
+      "historical": {
+        "assessment": "known_miss",
+        "note": "The handler performs an owner comparison, but query-selected document IDs are outside the route-parameter selector."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "url_search_param",
+        "field": "id",
+        "expressionClass": "new_URL_request_url_searchParams_get"
+      },
+      "expectedCallablePath": [
+        "app/(chat)/api/document/route.ts#GET",
+        "lib/db/queries.ts#getDocumentsById"
+      ],
+      "expectedEdgeCount": 1,
+      "expectedDataOperation": {
+        "provider": "drizzle",
+        "resource": "document",
+        "operation": "select",
+        "path": "lib/db/queries.ts:379"
+      },
+      "expectedAuthorizationEvidence": {
+        "state": "incomplete",
+        "kind": "post_load_comparison",
+        "category": "principal",
+        "limitation": "return_mapping_unresolved"
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "single_element_array_return_mapping_not_in_contract",
+      "exclusion": {
+        "code": "single_element_array_return_mapping_not_in_contract",
+        "boundary": "The queried array is unpacked with const [document] = documents; the current v0.8.0 return mapping does not include array element identity."
+      },
+      "expectedStatus": "partial",
+      "expectedPrimaryReason": "return_mapping_unresolved",
+      "missFamily": "selector_origin",
+      "reviewerNote": "The sink is visible, but the plan cannot yet bind the selected array element to the later owner comparison.",
+      "recordSha256": "055009c541132fbdf1cc315dc6f85e991154c7449afe34cccddbf7011a4af616"
+    },
+    {
+      "id": "v080-eval-12",
+      "project": "vercel-chatbot",
+      "repository": "vercel/chatbot",
+      "commit": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
+      "entry": "POST /api/document",
+      "source": {
+        "path": "app/(chat)/api/document/route.ts",
+        "line": 51,
+        "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/document/route.ts#L51"
+      },
+      "historical": {
+        "assessment": "known_miss",
+        "note": "The handler performs ownership checks; no chain is emitted because the ID comes from query state."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "url_search_param",
+        "field": "id",
+        "expressionClass": "new_URL_request_url_searchParams_get"
+      },
+      "expectedCallablePath": [
+        "app/(chat)/api/document/route.ts#POST",
+        "lib/db/queries.ts#getDocumentsById"
+      ],
+      "expectedEdgeCount": 1,
+      "expectedDataOperation": {
+        "provider": "drizzle",
+        "resource": "document",
+        "operation": "select",
+        "path": "lib/db/queries.ts:379"
+      },
+      "expectedAuthorizationEvidence": {
+        "state": "incomplete",
+        "kind": "post_load_comparison",
+        "category": "principal",
+        "limitation": "return_mapping_unresolved"
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "single_element_array_return_mapping_not_in_contract",
+      "exclusion": {
+        "code": "single_element_array_return_mapping_not_in_contract",
+        "boundary": "The queried array is unpacked before the owner comparison; array element identity is not in the frozen return mapping."
+      },
+      "expectedStatus": "partial",
+      "expectedPrimaryReason": "return_mapping_unresolved",
+      "missFamily": "selector_origin",
+      "reviewerNote": "The create/update branches do not change the pre-load comparison boundary used for this label.",
+      "recordSha256": "af646744a07b9662dbeae10bee6cebeb6dba9807b4392b0017f8d9b4acac9c6e"
+    },
+    {
+      "id": "v080-eval-13",
+      "project": "vercel-chatbot",
+      "repository": "vercel/chatbot",
+      "commit": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
+      "entry": "DELETE /api/document",
+      "source": {
+        "path": "app/(chat)/api/document/route.ts",
+        "line": 110,
+        "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/document/route.ts#L110"
+      },
+      "historical": {
+        "assessment": "known_miss",
+        "note": "The handler performs ownership checks; no chain is emitted because the ID comes from query state."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "url_search_param",
+        "field": "id",
+        "expressionClass": "new_URL_request_url_searchParams_get"
+      },
+      "expectedCallablePath": [
+        "app/(chat)/api/document/route.ts#DELETE",
+        "lib/db/queries.ts#getDocumentsById"
+      ],
+      "expectedEdgeCount": 1,
+      "expectedDataOperation": {
+        "provider": "drizzle",
+        "resource": "document",
+        "operation": "select",
+        "path": "lib/db/queries.ts:379"
+      },
+      "expectedAuthorizationEvidence": {
+        "state": "incomplete",
+        "kind": "post_load_comparison",
+        "category": "principal",
+        "limitation": "return_mapping_unresolved"
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "single_element_array_return_mapping_not_in_contract",
+      "exclusion": {
+        "code": "single_element_array_return_mapping_not_in_contract",
+        "boundary": "The queried array is unpacked before the owner comparison; array element identity is not in the frozen return mapping."
+      },
+      "expectedStatus": "partial",
+      "expectedPrimaryReason": "return_mapping_unresolved",
+      "missFamily": "selector_origin",
+      "reviewerNote": "The later delete remains downstream of a comparison the current return contract cannot ground.",
+      "recordSha256": "b146f0cb7bcc4765adf561ba2f30605872274dbaaf603ab7fd31502088a82c87"
+    },
+    {
+      "id": "v080-eval-14",
+      "project": "vercel-chatbot",
+      "repository": "vercel/chatbot",
+      "commit": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
+      "entry": "GET /api/vote",
+      "source": {
+        "path": "app/(chat)/api/vote/route.ts",
+        "line": 12,
+        "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/vote/route.ts#L12"
+      },
+      "historical": {
+        "assessment": "known_miss",
+        "note": "Auth.js and an explicit owner comparison are visible, but the query-selected chat ID is not modeled."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "url_search_param",
+        "field": "chatId",
+        "expressionClass": "new_URL_request_url_searchParams_get"
+      },
+      "expectedCallablePath": [
+        "app/(chat)/api/vote/route.ts#GET",
+        "lib/db/queries.ts#getChatById"
+      ],
+      "expectedEdgeCount": 1,
+      "expectedDataOperation": {
+        "provider": "drizzle",
+        "resource": "chat",
+        "operation": "select",
+        "path": "lib/db/queries.ts:218"
+      },
+      "expectedAuthorizationEvidence": {
+        "state": "observed",
+        "kind": "post_load_comparison",
+        "category": "principal",
+        "limitation": null
+      },
+      "eligibleForV080": true,
+      "eligibilityReason": "supported_query_selector_direct_return_and_comparison",
+      "exclusion": null,
+      "expectedStatus": "completed",
+      "expectedPrimaryReason": null,
+      "missFamily": "selector_origin",
+      "reviewerNote": "The chatId alias reaches getChatById and the returned chat owner is compared with the Auth.js principal.",
+      "recordSha256": "b1e8e23410772356a8ddbe06d2fe9f5e5858e170854ca121b97deea4940822d1"
+    },
+    {
+      "id": "v080-eval-15",
+      "project": "vercel-chatbot",
+      "repository": "vercel/chatbot",
+      "commit": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
+      "entry": "PATCH /api/vote",
+      "source": {
+        "path": "app/(chat)/api/vote/route.ts",
+        "line": 44,
+        "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/vote/route.ts#L44"
+      },
+      "historical": {
+        "assessment": "known_miss",
+        "note": "Auth.js and an explicit owner comparison are visible, but the body-selected chat ID is not modeled."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "request_json_candidate",
+        "field": "chatId",
+        "expressionClass": "schema_parse_of_awaited_request_json"
+      },
+      "expectedCallablePath": [
+        "app/(chat)/api/vote/route.ts#PATCH"
+      ],
+      "expectedEdgeCount": 0,
+      "expectedDataOperation": null,
+      "expectedAuthorizationEvidence": {
+        "state": "incomplete",
+        "kind": "post_load_comparison",
+        "category": "principal",
+        "limitation": "selector_source_unresolved"
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "selector_transform_outside_contract",
+      "exclusion": {
+        "code": "selector_transform_outside_contract",
+        "boundary": "The IDs are recovered through a Zod parse result rather than a direct request.json property/destructuring relationship."
+      },
+      "expectedStatus": "partial",
+      "expectedPrimaryReason": "selector_source_unresolved",
+      "missFamily": "selector_origin",
+      "reviewerNote": "Do not treat a validator result as the raw request object without an explicit supported mapping.",
+      "recordSha256": "32250df0dea4dcd306df9bf7f73a3637d8c2e7e8fa2f66caed3b515814247631"
+    },
+    {
+      "id": "v080-eval-16",
+      "project": "vercel-chatbot",
+      "repository": "vercel/chatbot",
+      "commit": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
+      "entry": "ACTION updateChatVisibility",
+      "source": {
+        "path": "app/(chat)/actions.ts",
+        "line": 64,
+        "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/actions.ts#L64"
+      },
+      "historical": {
+        "assessment": "supported_identity",
+        "note": "Exact local Auth.js identity evidence is observed; no object chain is emitted for the unsupported argument shape."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "server_action_parameter",
+        "field": "chatId",
+        "expressionClass": "object_pattern_parameter"
+      },
+      "expectedCallablePath": [
+        "app/(chat)/actions.ts#updateChatVisibility",
+        "lib/db/queries.ts#getChatById"
+      ],
+      "expectedEdgeCount": 1,
+      "expectedDataOperation": {
+        "provider": "drizzle",
+        "resource": "chat",
+        "operation": "select",
+        "path": "lib/db/queries.ts:218"
+      },
+      "expectedAuthorizationEvidence": {
+        "state": "observed",
+        "kind": "post_load_comparison",
+        "category": "principal",
+        "limitation": null
+      },
+      "eligibleForV080": true,
+      "eligibilityReason": "supported_action_selector_direct_return_and_comparison",
+      "exclusion": null,
+      "expectedStatus": "completed",
+      "expectedPrimaryReason": null,
+      "missFamily": "selector_origin",
+      "reviewerNote": "The action parameter and Auth.js principal meet in an exact returned-resource comparison.",
+      "recordSha256": "a003ddf8b525324d8b0704a994b5b31bc1b9685e7cd972cca0f9776d45e4fc97"
+    },
+    {
+      "id": "v080-eval-17",
+      "project": "formbricks",
+      "repository": "formbricks/formbricks",
+      "commit": "b66c1dd978af618a0e402bd3343b456bed68594c",
+      "entry": "GET /legacy-organization-settings/[workspaceId]/[[...path]]",
+      "source": {
+        "path": "apps/web/app/(redirects)/legacy-organization-settings/[workspaceId]/[[...path]]/route.ts",
+        "line": 8,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/app/(redirects)/legacy-organization-settings/[workspaceId]/[[...path]]/route.ts#L8"
+      },
+      "historical": {
+        "assessment": "correct_bounded_stop",
+        "note": "The alias-resolved local call is visible, but the exported wrapper cannot be reduced to one supported operation."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "next_route_param",
+        "field": "workspaceId",
+        "expressionClass": "awaited_context_params"
+      },
+      "expectedCallablePath": [
+        "apps/web/app/(redirects)/legacy-organization-settings/[workspaceId]/[[...path]]/route.ts#GET",
+        "apps/web/lib/workspace/service.ts#getWorkspace"
+      ],
+      "expectedEdgeCount": 1,
+      "expectedDataOperation": {
+        "provider": "prisma",
+        "resource": "workspace",
+        "operation": "findUnique",
+        "path": "apps/web/lib/workspace/service.ts:118"
+      },
+      "expectedAuthorizationEvidence": {
+        "state": "incomplete",
+        "kind": "post_load_comparison",
+        "category": "principal",
+        "limitation": "wrapper_handler_unresolved"
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "external_higher_order_wrapper_outside_contract",
+      "exclusion": {
+        "code": "external_higher_order_wrapper_outside_contract",
+        "boundary": "getWorkspace is exported through React cache(callback); external higher-order wrapper semantics are not included."
+      },
+      "expectedStatus": "partial",
+      "expectedPrimaryReason": "wrapper_handler_unresolved",
+      "missFamily": "callable_wrapper_reexport",
+      "reviewerNote": "The source callback is visible, but exported-call identity is not inferred through an external wrapper.",
+      "recordSha256": "043954d1463ac6f6f47a854696e5abef45924e93931dd2431f62afcb563438f6"
+    },
+    {
+      "id": "v080-eval-18",
+      "project": "formbricks",
+      "repository": "formbricks/formbricks",
+      "commit": "b66c1dd978af618a0e402bd3343b456bed68594c",
+      "entry": "POST /api/internal/feedback-datasets/[datasetId]/purge",
+      "source": {
+        "path": "apps/web/app/api/internal/feedback-datasets/[datasetId]/purge/route.ts",
+        "line": 15,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/app/api/internal/feedback-datasets/[datasetId]/purge/route.ts#L15"
+      },
+      "historical": {
+        "assessment": "known_miss",
+        "note": "The route is inventoried, but wrapper-based controls and deeper service calls remain outside the bounded chain."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "next_wrapper_parsed_param_candidate",
+        "field": "datasetId",
+        "expressionClass": "withV3ApiWrapper_parsedInput_params"
+      },
+      "expectedCallablePath": [
+        "apps/web/app/api/internal/feedback-datasets/[datasetId]/purge/route.ts#POST.handler",
+        "apps/web/app/api/internal/feedback-datasets/lib/operations.ts#purgeV3FeedbackDataset",
+        "apps/web/app/api/internal/feedback-datasets/lib/access.ts#requireFeedbackDatasetMutationAccess",
+        "apps/web/modules/ee/feedback-directory/lib/feedback-directory.ts#getOrganizationIdFromDirectoryId"
+      ],
+      "expectedEdgeCount": 3,
+      "expectedDataOperation": {
+        "provider": "prisma",
+        "resource": "feedbackDirectory",
+        "operation": "findUnique",
+        "path": "apps/web/modules/ee/feedback-directory/lib/feedback-directory.ts:624"
+      },
+      "expectedAuthorizationEvidence": {
+        "state": "incomplete",
+        "kind": "query_predicate",
+        "category": "principal",
+        "limitation": "selector_source_unresolved"
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "wrapper_parsed_selector_not_in_contract",
+      "exclusion": {
+        "code": "wrapper_parsed_selector_not_in_contract",
+        "boundary": "The handler receives parsedInput.params from a wrapper/Zod pipeline; the current selector contract does not equate that value with Next context.params."
+      },
+      "expectedStatus": "partial",
+      "expectedPrimaryReason": "selector_source_unresolved",
+      "missFamily": "callable_wrapper_reexport",
+      "reviewerNote": "The deeper Prisma lookup is grounded, while the route-to-parsedInput selector relationship is not.",
+      "recordSha256": "3abb2612dbbd6a74792dd771edb77461f9a1a14c682f9599e640f6cf3991aa69"
+    },
+    {
+      "id": "v080-eval-19",
+      "project": "formbricks",
+      "repository": "formbricks/formbricks",
+      "commit": "b66c1dd978af618a0e402bd3343b456bed68594c",
+      "entry": "DELETE /api/v1/management/action-classes/[actionClassId]",
+      "source": {
+        "path": "apps/web/app/api/v1/management/action-classes/[actionClassId]/route.ts",
+        "line": 146,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/app/api/v1/management/action-classes/[actionClassId]/route.ts#L146"
+      },
+      "historical": {
+        "assessment": "known_miss",
+        "note": "The object route is inventoried; re-exported wrappers prevent a complete handler chain."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "next_route_param",
+        "field": "actionClassId",
+        "expressionClass": "wrapper_props_awaited_params"
+      },
+      "expectedCallablePath": [
+        "apps/web/app/api/v1/management/action-classes/[actionClassId]/route.ts#DELETE.handler",
+        "apps/web/app/api/v1/management/action-classes/[actionClassId]/route.ts#fetchAndAuthorizeActionClass",
+        "apps/web/lib/actionClass/service.ts#getActionClass"
+      ],
+      "expectedEdgeCount": 2,
+      "expectedDataOperation": {
+        "provider": "prisma",
+        "resource": "actionClass",
+        "operation": "findUnique",
+        "path": "apps/web/lib/actionClass/service.ts:73"
+      },
+      "expectedAuthorizationEvidence": {
+        "state": "incomplete",
+        "kind": "post_load_comparison",
+        "category": "tenant",
+        "limitation": "wrapper_handler_unresolved"
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "external_higher_order_wrapper_outside_contract",
+      "exclusion": {
+        "code": "external_higher_order_wrapper_outside_contract",
+        "boundary": "getActionClass is exported through React cache(callback); external higher-order wrapper semantics are not included."
+      },
+      "expectedStatus": "partial",
+      "expectedPrimaryReason": "wrapper_handler_unresolved",
+      "missFamily": "callable_wrapper_reexport",
+      "reviewerNote": "The local V1 handler wrapper is reducible; the later React cache wrapper remains the stop.",
+      "recordSha256": "074deaddc034ddca05d008662903e10e1461579cf065887013ccdd2d7b5a9cd6"
+    },
+    {
+      "id": "v080-eval-20",
+      "project": "formbricks",
+      "repository": "formbricks/formbricks",
+      "commit": "b66c1dd978af618a0e402bd3343b456bed68594c",
+      "entry": "GET /api/v1/management/responses/[responseId]",
+      "source": {
+        "path": "apps/web/app/api/v1/management/responses/[responseId]/route.ts",
+        "line": 48,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/app/api/v1/management/responses/[responseId]/route.ts#L48"
+      },
+      "historical": {
+        "assessment": "known_miss",
+        "note": "The object route is inventoried; handler-wrapper resolution is incomplete."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "next_route_param",
+        "field": "responseId",
+        "expressionClass": "wrapper_props_awaited_params"
+      },
+      "expectedCallablePath": [
+        "apps/web/app/api/v1/management/responses/[responseId]/route.ts#GET.handler",
+        "apps/web/app/api/v1/management/responses/[responseId]/route.ts#fetchAndAuthorizeResponse",
+        "apps/web/lib/response/service.ts#getResponse"
+      ],
+      "expectedEdgeCount": 2,
+      "expectedDataOperation": {
+        "provider": "prisma",
+        "resource": "response",
+        "operation": "findUnique",
+        "path": "apps/web/lib/response/service.ts:204"
+      },
+      "expectedAuthorizationEvidence": {
+        "state": "incomplete",
+        "kind": "post_load_comparison",
+        "category": "tenant",
+        "limitation": "wrapper_handler_unresolved"
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "external_higher_order_wrapper_outside_contract",
+      "exclusion": {
+        "code": "external_higher_order_wrapper_outside_contract",
+        "boundary": "getResponse is exported through React cache(callback); external higher-order wrapper semantics are not included."
+      },
+      "expectedStatus": "partial",
+      "expectedPrimaryReason": "wrapper_handler_unresolved",
+      "missFamily": "callable_wrapper_reexport",
+      "reviewerNote": "The wrapper handler and helper are exact; the external cache wrapper blocks the terminal callable identity.",
+      "recordSha256": "cdb7b4f17d202f381bfa4ec5109e044422a82dc1d9975ef3eff73fe5c673249e"
+    },
+    {
+      "id": "v080-eval-21",
+      "project": "formbricks",
+      "repository": "formbricks/formbricks",
+      "commit": "b66c1dd978af618a0e402bd3343b456bed68594c",
+      "entry": "GET /api/v1/management/surveys/[surveyId]",
+      "source": {
+        "path": "apps/web/app/api/v1/management/surveys/[surveyId]/route.ts",
+        "line": 52,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/app/api/v1/management/surveys/[surveyId]/route.ts#L52"
+      },
+      "historical": {
+        "assessment": "known_miss",
+        "note": "The object route is inventoried; handler-wrapper resolution is incomplete."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "next_route_param",
+        "field": "surveyId",
+        "expressionClass": "wrapper_props_awaited_params"
+      },
+      "expectedCallablePath": [
+        "apps/web/app/api/v1/management/surveys/[surveyId]/route.ts#GET.handler",
+        "apps/web/app/api/v1/management/surveys/[surveyId]/route.ts#fetchAndAuthorizeSurvey",
+        "apps/web/lib/survey/service.ts#getSurvey"
+      ],
+      "expectedEdgeCount": 2,
+      "expectedDataOperation": {
+        "provider": "prisma",
+        "resource": "survey",
+        "operation": "findUnique",
+        "path": "apps/web/lib/survey/service.ts:174"
+      },
+      "expectedAuthorizationEvidence": {
+        "state": "incomplete",
+        "kind": "post_load_comparison",
+        "category": "tenant",
+        "limitation": "wrapper_handler_unresolved"
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "external_higher_order_wrapper_outside_contract",
+      "exclusion": {
+        "code": "external_higher_order_wrapper_outside_contract",
+        "boundary": "getSurvey is exported through React cache(callback); external higher-order wrapper semantics are not included."
+      },
+      "expectedStatus": "partial",
+      "expectedPrimaryReason": "wrapper_handler_unresolved",
+      "missFamily": "callable_wrapper_reexport",
+      "reviewerNote": "The V1 wrapper itself is local and exact; React cache is the remaining higher-order boundary.",
+      "recordSha256": "18d93cbdec68a10e57060d08fa7b6076dd622be3d3c17435b4d88e0bb2f4bda7"
+    },
+    {
+      "id": "v080-eval-22",
+      "project": "formbricks",
+      "repository": "formbricks/formbricks",
+      "commit": "b66c1dd978af618a0e402bd3343b456bed68594c",
+      "entry": "DELETE /api/v1/webhooks/[webhookId]",
+      "source": {
+        "path": "apps/web/app/api/v1/webhooks/[webhookId]/route.ts",
+        "line": 36,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/app/api/v1/webhooks/[webhookId]/route.ts#L36"
+      },
+      "historical": {
+        "assessment": "known_miss",
+        "note": "The object route is inventoried; no supported one-hop data operation was established."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "next_route_param",
+        "field": "webhookId",
+        "expressionClass": "wrapper_props_awaited_params"
+      },
+      "expectedCallablePath": [
+        "apps/web/app/api/v1/webhooks/[webhookId]/route.ts#DELETE.handler",
+        "apps/web/app/api/v1/webhooks/[webhookId]/lib/webhook.ts#getWebhook"
+      ],
+      "expectedEdgeCount": 1,
+      "expectedDataOperation": {
+        "provider": "prisma",
+        "resource": "webhook",
+        "operation": "findUnique",
+        "path": "apps/web/app/api/v1/webhooks/[webhookId]/lib/webhook.ts:37"
+      },
+      "expectedAuthorizationEvidence": {
+        "state": "incomplete",
+        "kind": "none",
+        "category": "tenant",
+        "limitation": "constraint_expression_unresolved"
+      },
+      "eligibleForV080": true,
+      "eligibilityReason": "supported_wrapper_handler_direct_prisma_operation",
+      "exclusion": null,
+      "expectedStatus": "completed",
+      "expectedPrimaryReason": null,
+      "missFamily": "callable_wrapper_reexport",
+      "reviewerNote": "The object path to Prisma is exact. The custom hasPermission call remains a separate unresolved authorization candidate.",
+      "recordSha256": "17475bb5372a780f852a6f01954e0b7a51ad31a37f91752e013bfd837f2f2f09"
+    },
+    {
+      "id": "v080-eval-23",
+      "project": "formbricks",
+      "repository": "formbricks/formbricks",
+      "commit": "b66c1dd978af618a0e402bd3343b456bed68594c",
+      "entry": "POST /api/v2/client/[workspaceId]/responses",
+      "source": {
+        "path": "apps/web/app/api/v2/client/[workspaceId]/responses/route.ts",
+        "line": 201,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/app/api/v2/client/[workspaceId]/responses/route.ts#L201"
+      },
+      "historical": {
+        "assessment": "review_lead",
+        "note": "No route-scoped control was observed; public client semantics require owner classification."
+      },
+      "sampleKind": "expected_public_negative",
+      "selectorOrigin": {
+        "kind": "next_route_param",
+        "field": "workspaceId",
+        "expressionClass": "awaited_context_params"
+      },
+      "expectedCallablePath": [
+        "apps/web/app/api/v2/client/[workspaceId]/responses/route.ts#POST",
+        "apps/web/lib/utils/resolve-client-id.ts#resolveClientApiIds"
+      ],
+      "expectedEdgeCount": 1,
+      "expectedDataOperation": {
+        "provider": "prisma",
+        "resource": "workspace",
+        "operation": "findFirst",
+        "path": "apps/web/lib/utils/resolve-client-id.ts:17"
+      },
+      "expectedAuthorizationEvidence": {
+        "state": "not_applicable",
+        "kind": "none",
+        "category": "none",
+        "limitation": null
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "expected_public_ingestion_and_external_wrapper",
+      "exclusion": {
+        "code": "expected_public_ingestion_and_external_wrapper",
+        "boundary": "This public submission path intentionally lacks a principal and its first resolver is exported through React cache(callback)."
+      },
+      "expectedStatus": "partial",
+      "expectedPrimaryReason": "wrapper_handler_unresolved",
+      "missFamily": "none",
+      "reviewerNote": "Retained to prevent route-control logic from converting an expected public client endpoint into an authentication finding.",
+      "recordSha256": "5b3a5009f4466a32470be3c2c8a06fbab04431669bec8893f0ca9f8f7049c478"
+    },
+    {
+      "id": "v080-eval-24",
+      "project": "formbricks",
+      "repository": "formbricks/formbricks",
+      "commit": "b66c1dd978af618a0e402bd3343b456bed68594c",
+      "entry": "POST /api/v3/surveys/[surveyId]/archive",
+      "source": {
+        "path": "apps/web/app/api/v3/surveys/[surveyId]/archive/route.ts",
+        "line": 10,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/app/api/v3/surveys/[surveyId]/archive/route.ts#L10"
+      },
+      "historical": {
+        "assessment": "known_miss",
+        "note": "The state-changing object route is inventoried; wrapper and deeper-call evidence remain incomplete."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "next_wrapper_parsed_param_candidate",
+        "field": "surveyId",
+        "expressionClass": "withV3ApiWrapper_parsedInput_params"
+      },
+      "expectedCallablePath": [
+        "apps/web/app/api/v3/surveys/[surveyId]/archive/route.ts#POST.handler",
+        "apps/web/app/api/v3/surveys/lib/operations.ts#archiveV3Survey",
+        "apps/web/app/api/v3/surveys/lib/operations.ts#runV3SurveyLifecycleMutation",
+        "apps/web/app/api/v3/surveys/authorization.ts#getAuthorizedV3Survey"
+      ],
+      "expectedEdgeCount": 3,
+      "expectedDataOperation": {
+        "provider": "prisma",
+        "resource": "survey",
+        "operation": "findUnique",
+        "path": "apps/web/lib/survey/service.ts:174"
+      },
+      "expectedAuthorizationEvidence": {
+        "state": "incomplete",
+        "kind": "post_load_comparison",
+        "category": "tenant",
+        "limitation": "wrapper_handler_unresolved"
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "wrapper_selector_callback_and_external_cache_outside_contract",
+      "exclusion": {
+        "code": "wrapper_selector_callback_and_external_cache_outside_contract",
+        "boundary": "The route combines wrapper-produced parsedInput, a callback-based lifecycle helper and a React cache-wrapped query."
+      },
+      "expectedStatus": "partial",
+      "expectedPrimaryReason": "wrapper_handler_unresolved",
+      "missFamily": "callable_wrapper_reexport",
+      "reviewerNote": "Multiple independently named boundaries remain visible; none may be erased to claim completion.",
+      "recordSha256": "8303de25c1a933fec9b3dd87325a539e421d9e0144f470f227f5d7265375be88"
+    },
+    {
+      "id": "v080-eval-25",
+      "project": "formbricks",
+      "repository": "formbricks/formbricks",
+      "commit": "b66c1dd978af618a0e402bd3343b456bed68594c",
+      "entry": "ACTION getMembershipByUserIdOrganizationIdAction",
+      "source": {
+        "path": "apps/web/lib/membership/hooks/actions.ts",
+        "line": 8,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/lib/membership/hooks/actions.ts#L8"
+      },
+      "historical": {
+        "assessment": "correct_bounded_stop",
+        "note": "Alias resolution exposes two local-call candidates; both stop without inventing a completed data chain."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "server_action_parameter",
+        "field": "workspaceId,userId",
+        "expressionClass": "direct_parameters"
+      },
+      "expectedCallablePath": [
+        "apps/web/lib/membership/hooks/actions.ts#getMembershipByUserIdOrganizationIdAction",
+        "apps/web/lib/organization/service.ts#getOrganizationByWorkspaceId",
+        "apps/web/lib/membership/hooks/actions.ts#getMembershipRole"
+      ],
+      "expectedEdgeCount": 2,
+      "expectedDataOperation": {
+        "provider": "prisma",
+        "resource": "organization",
+        "operation": "findFirst",
+        "path": "apps/web/lib/organization/service.ts:123"
+      },
+      "expectedAuthorizationEvidence": {
+        "state": "incomplete",
+        "kind": "query_predicate",
+        "category": "tenant",
+        "limitation": "wrapper_handler_unresolved"
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "external_higher_order_wrapper_outside_contract",
+      "exclusion": {
+        "code": "external_higher_order_wrapper_outside_contract",
+        "boundary": "The first ordinary data functions are exported through React cache(callback)."
+      },
+      "expectedStatus": "partial",
+      "expectedPrimaryReason": "wrapper_handler_unresolved",
+      "missFamily": "depth_propagation",
+      "reviewerNote": "Both arguments are client-selected facts; userId is not promoted to a current-principal fact by its name.",
+      "recordSha256": "13791a148674c67fa09a36e6d926b76fa4d8e28a7fb7010301a0102d46b8a13e"
+    },
+    {
+      "id": "v080-eval-26",
+      "project": "formbricks",
+      "repository": "formbricks/formbricks",
+      "commit": "b66c1dd978af618a0e402bd3343b456bed68594c",
+      "entry": "ACTION getMembershipRole",
+      "source": {
+        "path": "apps/web/lib/membership/hooks/actions.ts",
+        "line": 20,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/lib/membership/hooks/actions.ts#L20"
+      },
+      "historical": {
+        "assessment": "correct_bounded_stop",
+        "note": "One exact local call is followed, then analysis stops before the next local call."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "server_action_parameter",
+        "field": "userId,organizationId",
+        "expressionClass": "direct_parameters"
+      },
+      "expectedCallablePath": [
+        "apps/web/lib/membership/hooks/actions.ts#getMembershipRole",
+        "apps/web/lib/membership/service.ts#getMembershipByUserIdOrganizationId",
+        "apps/web/lib/membership/service.ts#getMembershipByUserIdOrganizationIdCached",
+        "apps/web/lib/membership/service.ts#getMembershipByUserIdOrganizationIdUncached"
+      ],
+      "expectedEdgeCount": 3,
+      "expectedDataOperation": {
+        "provider": "prisma",
+        "resource": "membership",
+        "operation": "findUnique",
+        "path": "apps/web/lib/membership/service.ts:25"
+      },
+      "expectedAuthorizationEvidence": {
+        "state": "incomplete",
+        "kind": "query_predicate",
+        "category": "tenant",
+        "limitation": "data_client_unresolved"
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "external_cache_and_dynamic_data_client_outside_contract",
+      "exclusion": {
+        "code": "external_cache_and_dynamic_data_client_outside_contract",
+        "boundary": "The path crosses React cache(callback) and getDbClient(tx), whose receiver depends on an optional transaction."
+      },
+      "expectedStatus": "partial",
+      "expectedPrimaryReason": "data_client_unresolved",
+      "missFamily": "depth_propagation",
+      "reviewerNote": "The compound key is grounded source evidence, but the caller-supplied userId is not an authenticated principal.",
+      "recordSha256": "bb697cc76ce36fdb255d418746bc5d9843dca5e8209b58a04fd44b3054ba5d1d"
+    },
+    {
+      "id": "v080-eval-27",
+      "project": "formbricks",
+      "repository": "formbricks/formbricks",
+      "commit": "b66c1dd978af618a0e402bd3343b456bed68594c",
+      "entry": "ACTION logSignOutAction",
+      "source": {
+        "path": "apps/web/modules/auth/actions/sign-out.ts",
+        "line": 12,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/modules/auth/actions/sign-out.ts#L12"
+      },
+      "historical": {
+        "assessment": "correct_bounded_stop",
+        "note": "The first local call is resolved and the second edge is left incomplete."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "server_action_parameter_candidate",
+        "field": "userId",
+        "expressionClass": "direct_parameter"
+      },
+      "expectedCallablePath": [
+        "apps/web/modules/auth/actions/sign-out.ts#logSignOutAction",
+        "apps/web/modules/auth/lib/utils.ts#logSignOut"
+      ],
+      "expectedEdgeCount": 1,
+      "expectedDataOperation": null,
+      "expectedAuthorizationEvidence": {
+        "state": "not_applicable",
+        "kind": "none",
+        "category": "none",
+        "limitation": null
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "no_supported_object_operation",
+      "exclusion": {
+        "code": "no_supported_object_operation",
+        "boundary": "The action emits an audit/auth event and does not reach a supported object data operation."
+      },
+      "expectedStatus": "not_applicable",
+      "expectedPrimaryReason": null,
+      "missFamily": "depth_propagation",
+      "reviewerNote": "A parameter named userId is not sufficient to create an object-authorization path without a supported object operation.",
+      "recordSha256": "aced466e2902c7c018791ca4aa832e40fb0c96e301f06e8e2e92a350d3bd2c07"
+    },
+    {
+      "id": "v080-eval-28",
+      "project": "formbricks",
+      "repository": "formbricks/formbricks",
+      "commit": "b66c1dd978af618a0e402bd3343b456bed68594c",
+      "entry": "ACTION checkRoleManagementPermission",
+      "source": {
+        "path": "apps/web/modules/ee/role-management/actions.ts",
+        "line": 26,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/modules/ee/role-management/actions.ts#L26"
+      },
+      "historical": {
+        "assessment": "correct_bounded_stop",
+        "note": "Alias resolution adds bounded call evidence without upgrading it to authorization proof."
+      },
+      "sampleKind": "ordinary",
+      "selectorOrigin": {
+        "kind": "server_action_parameter",
+        "field": "organizationId",
+        "expressionClass": "direct_parameter"
+      },
+      "expectedCallablePath": [
+        "apps/web/modules/ee/role-management/actions.ts#checkRoleManagementPermission",
+        "apps/web/lib/organization/service.ts#getOrganization",
+        "apps/web/modules/ee/license-check/lib/utils.ts#getAccessControlPermission"
+      ],
+      "expectedEdgeCount": 2,
+      "expectedDataOperation": {
+        "provider": "prisma",
+        "resource": "organization",
+        "operation": "findUnique",
+        "path": "apps/web/lib/organization/service.ts:150"
+      },
+      "expectedAuthorizationEvidence": {
+        "state": "incomplete",
+        "kind": "none",
+        "category": "tenant",
+        "limitation": "wrapper_handler_unresolved"
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "external_higher_order_wrapper_outside_contract",
+      "exclusion": {
+        "code": "external_higher_order_wrapper_outside_contract",
+        "boundary": "getOrganization is exported through React cache(callback), and the later feature check is not authorization evidence."
+      },
+      "expectedStatus": "partial",
+      "expectedPrimaryReason": "wrapper_handler_unresolved",
+      "missFamily": "depth_propagation",
+      "reviewerNote": "The function name is not an authorization conclusion and no current-principal fact is present.",
+      "recordSha256": "7a134253ae888ff583180503822c904be5f339464b69ada0917774dd0cc02ed6"
+    },
+    {
+      "id": "v080-eval-29",
+      "project": "documenso",
+      "repository": "documenso/documenso",
+      "commit": "75330166cc00b29c14399bc2e391e4b4d8080c00",
+      "entry": "GET /llms-full.txt",
+      "source": {
+        "path": "apps/docs/src/app/llms-full.txt/route.ts",
+        "line": 5,
+        "url": "https://github.com/documenso/documenso/blob/75330166cc00b29c14399bc2e391e4b4d8080c00/apps/docs/src/app/llms-full.txt/route.ts#L5"
+      },
+      "historical": {
+        "assessment": "expected_public",
+        "note": "Public documentation route; no route-scoped authentication is expected."
+      },
+      "sampleKind": "expected_public_negative",
+      "selectorOrigin": null,
+      "expectedCallablePath": [],
+      "expectedEdgeCount": null,
+      "expectedDataOperation": null,
+      "expectedAuthorizationEvidence": {
+        "state": "not_applicable",
+        "kind": "none",
+        "category": "none",
+        "limitation": null
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "no_supported_object_selector",
+      "exclusion": {
+        "code": "no_supported_object_selector",
+        "boundary": "No supported client-selected object identifier enters this entry."
+      },
+      "expectedStatus": "not_applicable",
+      "expectedPrimaryReason": null,
+      "missFamily": "none",
+      "reviewerNote": "Retained as a labeled negative; it is outside the access-path completion denominator.",
+      "recordSha256": "8475254ef0b113258e5b9987b68056acc6e257adabf718f3c401cc7749d5237c"
+    },
+    {
+      "id": "v080-eval-30",
+      "project": "documenso",
+      "repository": "documenso/documenso",
+      "commit": "75330166cc00b29c14399bc2e391e4b4d8080c00",
+      "entry": "GET /llms.txt",
+      "source": {
+        "path": "apps/docs/src/app/llms.txt/route.ts",
+        "line": 5,
+        "url": "https://github.com/documenso/documenso/blob/75330166cc00b29c14399bc2e391e4b4d8080c00/apps/docs/src/app/llms.txt/route.ts#L5"
+      },
+      "historical": {
+        "assessment": "expected_public",
+        "note": "Public documentation route; no route-scoped authentication is expected."
+      },
+      "sampleKind": "expected_public_negative",
+      "selectorOrigin": null,
+      "expectedCallablePath": [],
+      "expectedEdgeCount": null,
+      "expectedDataOperation": null,
+      "expectedAuthorizationEvidence": {
+        "state": "not_applicable",
+        "kind": "none",
+        "category": "none",
+        "limitation": null
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "no_supported_object_selector",
+      "exclusion": {
+        "code": "no_supported_object_selector",
+        "boundary": "No supported client-selected object identifier enters this entry."
+      },
+      "expectedStatus": "not_applicable",
+      "expectedPrimaryReason": null,
+      "missFamily": "none",
+      "reviewerNote": "Retained as a labeled negative; it is outside the access-path completion denominator.",
+      "recordSha256": "72aaa666fbd843151d54b1620ddad42f1ba96dfc62e2924db5c8d7a19189e2ad"
+    },
+    {
+      "id": "v080-eval-31",
+      "project": "documenso",
+      "repository": "documenso/documenso",
+      "commit": "75330166cc00b29c14399bc2e391e4b4d8080c00",
+      "entry": "GET /llms.mdx/docs/[[...slug]]",
+      "source": {
+        "path": "apps/docs/src/app/llms.mdx/docs/[[...slug]]/route.ts",
+        "line": 7,
+        "url": "https://github.com/documenso/documenso/blob/75330166cc00b29c14399bc2e391e4b4d8080c00/apps/docs/src/app/llms.mdx/docs/[[...slug]]/route.ts#L7"
+      },
+      "historical": {
+        "assessment": "expected_public",
+        "note": "Public documentation route; the dynamic slug is not treated as an authorization object ID."
+      },
+      "sampleKind": "expected_public_negative",
+      "selectorOrigin": null,
+      "expectedCallablePath": [],
+      "expectedEdgeCount": null,
+      "expectedDataOperation": null,
+      "expectedAuthorizationEvidence": {
+        "state": "not_applicable",
+        "kind": "none",
+        "category": "none",
+        "limitation": null
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "slug_is_not_object_identifier",
+      "exclusion": {
+        "code": "slug_is_not_object_identifier",
+        "boundary": "The dynamic documentation slug is intentionally outside the ID selector naming contract."
+      },
+      "expectedStatus": "not_applicable",
+      "expectedPrimaryReason": null,
+      "missFamily": "none",
+      "reviewerNote": "Retained as a labeled negative; it is outside the access-path completion denominator.",
+      "recordSha256": "431133588edf62ea3d59330826d6f9d0b28996fbba14c95294feefb59eed161b"
+    },
+    {
+      "id": "v080-eval-32",
+      "project": "documenso",
+      "repository": "documenso/documenso",
+      "commit": "75330166cc00b29c14399bc2e391e4b4d8080c00",
+      "entry": "GET /og/docs/[...slug]",
+      "source": {
+        "path": "apps/docs/src/app/og/docs/[...slug]/route.tsx",
+        "line": 27,
+        "url": "https://github.com/documenso/documenso/blob/75330166cc00b29c14399bc2e391e4b4d8080c00/apps/docs/src/app/og/docs/[...slug]/route.tsx#L27"
+      },
+      "historical": {
+        "assessment": "expected_public",
+        "note": "Public image route; no route-scoped authentication is expected."
+      },
+      "sampleKind": "expected_public_negative",
+      "selectorOrigin": null,
+      "expectedCallablePath": [],
+      "expectedEdgeCount": null,
+      "expectedDataOperation": null,
+      "expectedAuthorizationEvidence": {
+        "state": "not_applicable",
+        "kind": "none",
+        "category": "none",
+        "limitation": null
+      },
+      "eligibleForV080": false,
+      "eligibilityReason": "slug_is_not_object_identifier",
+      "exclusion": {
+        "code": "slug_is_not_object_identifier",
+        "boundary": "The dynamic image slug is intentionally outside the ID selector naming contract."
+      },
+      "expectedStatus": "not_applicable",
+      "expectedPrimaryReason": null,
+      "missFamily": "none",
+      "reviewerNote": "Retained as a labeled negative; it is outside the access-path completion denominator.",
+      "recordSha256": "aee475c9a2ab46ae266b4785c1a83f47dc06762eabfb43bbe9ccd63c305b4eb6"
+    }
+  ],
+  "ledgerSha256": "a4b1d9c2834accc30e35e2af2ff48e87b144ec7a74b8b75da2ab40fb15f64749"
+}
