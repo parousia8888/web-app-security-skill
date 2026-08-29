@@ -1,8 +1,7 @@
 import { walkJsTsAst } from './js-ts-ast-parser.mjs';
 import { expressionName } from './js-ts-module-graph.mjs';
-import { analyzeDataOperations } from './js-ts-data-operation-evidence.mjs';
+import { analyzeAccessPaths, createAccessPathBudget } from './js-ts-access-path.mjs';
 import { analyzeIdentityEvidence } from './js-ts-identity-evidence.mjs';
-import { analyzeOneHopAccess } from './js-ts-one-hop-access.mjs';
 import { importedBindings } from './frameworks/route-extractor-helpers.mjs';
 import { extractSelectorEvidence } from './js-ts-selector-evidence.mjs';
 import { prioritizeRoute } from './route-security-priority.mjs';
@@ -26,24 +25,6 @@ function unwrap(node) {
 
 function safeName(node) {
   return expressionName(unwrap(node));
-}
-
-function functionBodyNodes(root, visit) {
-  const stack = [{ node: root, root: true }];
-  while (stack.length) {
-    const { node, root: isRoot } = stack.pop();
-    if (!node || typeof node !== 'object') continue;
-    if (!isRoot && FUNCTION_TYPES.has(node.type)) continue;
-    if (typeof node.type === 'string') visit(node);
-    for (const [key, value] of Object.entries(node)) {
-      if (['loc', 'start', 'end', 'extra', 'errors', 'comments', 'tokens'].includes(key)) continue;
-      if (Array.isArray(value)) {
-        for (let index = value.length - 1; index >= 0; index -= 1) {
-          stack.push({ node: value[index], root: false });
-        }
-      } else if (value && typeof value === 'object') stack.push({ node: value, root: false });
-    }
-  }
 }
 
 function declarations(module) {
@@ -112,101 +93,25 @@ function handlerForRoute(module, route) {
   return null;
 }
 
-function routeExpression(node, aliases) {
-  const current = unwrap(node);
-  const name = safeName(current);
-  if (name && aliases.has(name)) return true;
-  if (current?.type === 'CallExpression' && ['String', 'Number', 'parseInt'].includes(safeName(current.callee))) {
-    return routeExpression(current.arguments[0], aliases);
-  }
-  return false;
-}
-
-function containsRouteExpression(node, aliases) {
-  const stack = [unwrap(node)];
-  let visited = 0;
-  while (stack.length && visited < 2_000) {
-    const current = stack.pop();
-    if (!current || typeof current !== 'object') continue;
-    visited += 1;
-    if (routeExpression(current, aliases)) return true;
-    if (FUNCTION_TYPES.has(current.type)) continue;
-    for (const [key, value] of Object.entries(current)) {
-      if (['loc', 'start', 'end', 'extra', 'comments'].includes(key)) continue;
-      if (Array.isArray(value)) stack.push(...value);
-      else if (value && typeof value === 'object') stack.push(value);
-    }
-  }
-  return false;
-}
-
-function delegatedSelectorObserved(handler, aliases) {
-  let observed = false;
-  functionBodyNodes(handler, (node) => {
-    if (observed || node.type !== 'CallExpression') return;
-    const callee = safeName(node.callee);
-    if (!callee?.includes('.') || /^(?:res|response|console)\./.test(callee)) return;
-    if (node.arguments.some((argument) => containsRouteExpression(argument, aliases))) observed = true;
-  });
-  return observed;
-}
-
-function directAccessChains(graph, module, route, handler) {
+function directAccessChains(graph, module, route, handler, budget) {
   const identity = analyzeIdentityEvidence(graph, module, handler);
   const selected = extractSelectorEvidence({
     module, handler, framework: route.framework, routePath: route.path, entryKind: 'route',
     imports: importedBindings(module), principalAliases: identity.principalAliases,
   });
   const objectSelectors = selected.selectors.filter((selector) => selector.origin === 'request_selected');
-  const analyzedGroups = selected.selectorGroups.map((group) => ({ group,
-    analyzed: analyzeDataOperations(graph, module, handler, {
-      objectAliases: group.aliases, objectNodes: group.nodes,
-      principalAliases: identity.principalAliases,
-    }) }));
-  const directChains = analyzedGroups.flatMap(({ group, analyzed }) =>
-    analyzed.operations.map((dataOperation) => {
-      const constrained = dataOperation.principalConstraint === 'observed'
-        || dataOperation.tenantConstraint === 'observed';
-      const outcome = constrained ? 'principal_constraint_observed'
-        : dataOperation.externalPolicy === 'external_policy_required'
-          ? 'external_policy_required' : 'principal_constraint_not_observed';
-      return accessChainRecord({
-        entryKind: 'route', entryId: route.id, status: 'completed', outcome,
-        identity: identity.identity, objectSelectors: [group.selector], callEdges: [], dataOperation,
-        evidenceBoundary: dataOperation.externalPolicy === 'external_policy_required'
-          ? 'The request-selected object reaches a supported Supabase operation. Query constraints are static evidence only, and database row-level security must be checked separately.'
-          : 'The request-selected object reaches a supported same-handler data operation. Visible query constraints do not prove runtime authorization, and missing visible constraints do not prove a vulnerability.',
-      });
-    }));
-  const incompleteReasons = analyzedGroups.flatMap(({ analyzed }) => analyzed.incomplete)
-    .filter((item, index, items) => items.findIndex((candidate) => candidate.code === item.code
-      && candidate.location.path === item.location.path
-      && candidate.location.line === item.location.line) === index);
-  const incompleteChains = incompleteReasons.map((reason) => accessChainRecord({
-    entryKind: 'route', entryId: route.id, status: 'partial', outcome: 'incomplete',
-    identity: identity.identity,
-    objectSelectors: objectSelectors.map((selector) => ({ ...selector, origin: 'unknown' })),
-    callEdges: [], dataOperation: null,
-    reason: reason.code === 'prisma_client_identity_unresolved'
-      ? 'data_client_unresolved' : 'module_or_parser_evidence_incomplete',
-    limitations: [reason.code],
-    evidenceBoundary: `A Prisma-shaped data operation was observed at ${reason.location.path}:${reason.location.line || '?'} but the client identity could not be resolved to an imported PrismaClient. No authorization conclusion is available.`,
-  }));
-  const oneHop = selected.selectorGroups.flatMap((group) => analyzeOneHopAccess({
+  const paths = analyzeAccessPaths({
     graph, module, handler, entry: { kind: 'route', id: route.id,
       name: route.handler || route.id, module },
-    identity: identity.identity, objectAliases: group.aliases,
-    objectNodes: group.nodes,
-    principalAliases: identity.principalAliases, objectSelectors: [group.selector],
-  }));
-  const delegatedUnresolved = !directChains.length && !incompleteChains.length && !oneHop.length
-    && delegatedSelectorObserved(handler, selected.objectAliases);
+    identity: identity.identity, selectorGroups: selected.selectorGroups,
+    principalAliases: identity.principalAliases, budget,
+  });
+  const pathChains = paths.chains.map(accessChainRecord);
   const selectorIncomplete = selected.limitations.length > 0;
   const unresolvedSelectors = selected.selectors.some((selector) => selector.origin === 'unknown')
     ? selected.selectors.filter((selector) => selector.origin === 'unknown')
     : objectSelectors.map((selector) => ({ ...selector, origin: 'unknown' }));
-  const selectorIncompleteChain = selectorIncomplete && !directChains.length
-    && !incompleteChains.length && !oneHop.length && unresolvedSelectors.length
+  const selectorIncompleteChain = selectorIncomplete && !pathChains.length && unresolvedSelectors.length
     ? [accessChainRecord({
       entryKind: 'route', entryId: route.id, status: 'partial', outcome: 'incomplete',
       identity: identity.identity,
@@ -216,14 +121,12 @@ function directAccessChains(graph, module, route, handler) {
       evidenceBoundary: 'A dynamic or ambiguous request selector was observed, but its exact field or value origin could not be established. No object-authorization conclusion is available.',
     })] : [];
   return {
-    chains: [...directChains, ...incompleteChains, ...oneHop.map(accessChainRecord),
-      ...selectorIncompleteChain],
-    operations: [...analyzedGroups.flatMap(({ analyzed }) => analyzed.operations),
-      ...oneHop.map((item) => item.dataOperation).filter(Boolean)],
+    chains: [...pathChains, ...selectorIncompleteChain],
+    operations: paths.operations,
     limitations: [...selected.limitations.map((item) => item.code),
-      ...incompleteReasons.map((item) => item.code),
-      ...(delegatedUnresolved ? ['delegated-object-authorization-unresolved'] : []),
-      ...oneHop.map((item) => item.reason).filter(Boolean)],
+      ...paths.limitations,
+      ...paths.chains.map((item) => item.reason).filter(Boolean)],
+    coverageReasons: paths.coverage.reasons,
     selectors: selected.selectors,
   };
 }
@@ -243,6 +146,7 @@ function aggregateReasons(items) {
 
 export function auditJsTsRouteAuthorization(graph, routes) {
   const reasons = [...graph.reasons];
+  const accessBudget = createAccessPathBudget();
   const reviewedRoutes = [];
   let scanned = 0;
   let eligible = 0;
@@ -273,7 +177,7 @@ export function auditJsTsRouteAuthorization(graph, routes) {
       } else reviewedRoutes.push(route);
       continue;
     }
-    const access = directAccessChains(graph, module, route, handler);
+    const access = directAccessChains(graph, module, route, handler, accessBudget);
     if (!route.objectAddressed && !access.selectors.length) {
       reviewedRoutes.push(route);
       continue;
@@ -283,6 +187,7 @@ export function auditJsTsRouteAuthorization(graph, routes) {
     for (const code of access.limitations.filter((item) => item.startsWith('selector_'))) {
       reasons.push({ code, path: route.location.path });
     }
+    for (const code of access.coverageReasons) reasons.push({ code, path: route.location.path });
     const operations = access.operations.map((item) => `${item.provider}-${item.operation}`);
     const limitations = [...route.limitations];
     limitations.push(...access.limitations);

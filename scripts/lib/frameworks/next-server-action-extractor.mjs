@@ -1,6 +1,5 @@
-import { analyzeDataOperations } from '../js-ts-data-operation-evidence.mjs';
+import { analyzeAccessPaths, createAccessPathBudget } from '../js-ts-access-path.mjs';
 import { analyzeIdentityEvidence } from '../js-ts-identity-evidence.mjs';
-import { analyzeOneHopAccess } from '../js-ts-one-hop-access.mjs';
 import { extractSelectorEvidence } from '../js-ts-selector-evidence.mjs';
 import {
   accessChainRecord, controlEvidence, routeScopedControlEvidence, serverActionRecord,
@@ -76,25 +75,6 @@ function authenticationEvidence(identity) {
     'An exact supported identity-provider call was observed in this Server Action; denial behavior and session validity are not proved.');
 }
 
-function chainOutcome(operation) {
-  if (operation.principalConstraint === 'observed' || operation.tenantConstraint === 'observed') {
-    return 'principal_constraint_observed';
-  }
-  return operation.externalPolicy === 'external_policy_required'
-    ? 'external_policy_required' : 'principal_constraint_not_observed';
-}
-
-function directChain(action, identity, selectors, operation) {
-  return accessChainRecord({
-    entryKind: 'server-action', entryId: action.id, status: 'completed',
-    outcome: chainOutcome(operation), identity, objectSelectors: selectors,
-    callEdges: [], dataOperation: operation,
-    evidenceBoundary: operation.externalPolicy === 'external_policy_required'
-      ? 'A client-selected Server Action value reaches a supported Supabase operation. Database row-level security remains external evidence.'
-      : 'A client-selected Server Action value reaches a supported same-function data operation. Runtime authorization and exploitability are not proved.',
-  });
-}
-
 function priorityFor(action) {
   const reasons = [];
   if (action.accessChains.some((chain) => ['authorization_constraint_not_observed',
@@ -111,6 +91,7 @@ function priorityFor(action) {
 export function extractNextServerActions(graph) {
   const records = [];
   const reasons = [];
+  const accessBudget = createAccessPathBudget();
   let eligible = 0;
   for (const module of graph.modules.values()) {
     if (!module.ast) continue;
@@ -136,23 +117,14 @@ export function extractNextServerActions(graph) {
         actionScopedControl, limitations: selected.limitations.map((item) => item.code),
       });
       const exactSelectors = selected.selectors.filter((selector) => selector.origin === 'request_selected');
-      const analyzedGroups = selected.selectorGroups.map((group) => ({ group,
-        analyzed: analyzeDataOperations(graph, module, candidate.handler, {
-          objectAliases: group.aliases, objectNodes: group.nodes,
-          principalAliases: identity.principalAliases,
-        }) }));
-      const oneHop = selected.selectorGroups.flatMap((group) => analyzeOneHopAccess({
+      const paths = analyzeAccessPaths({
         graph, module, handler: candidate.handler, entry: { kind: 'server-action', id: seed.id,
           name: candidate.name, module },
-        identity: identity.identity, objectAliases: group.aliases,
-        objectNodes: group.nodes,
-        principalAliases: identity.principalAliases, objectSelectors: [group.selector],
-      }));
-      const accessChains = [
-        ...analyzedGroups.flatMap(({ group, analyzed }) => analyzed.operations
-          .map((operation) => directChain(seed, identity.identity, [group.selector], operation))),
-        ...oneHop.map(accessChainRecord),
-      ];
+        identity: identity.identity, selectorGroups: selected.selectorGroups,
+        principalAliases: identity.principalAliases, budget: accessBudget,
+      });
+      reasons.push(...paths.coverage.reasons.map((code) => ({ code, path: module.path })));
+      const accessChains = paths.chains.map(accessChainRecord);
       if (!accessChains.length && selected.limitations.length && selected.selectors.length) {
         const unresolvedSelectors = selected.selectors.some((selector) => selector.origin === 'unknown')
           ? selected.selectors.filter((selector) => selector.origin === 'unknown')
@@ -168,11 +140,9 @@ export function extractNextServerActions(graph) {
       }
       const action = serverActionRecord({
         ...seed, accessChains,
-        operations: [...analyzedGroups.flatMap(({ analyzed }) => analyzed.operations),
-          ...oneHop.map((item) => item.dataOperation).filter(Boolean)]
-          .map((item) => `${item.provider}-${item.operation}`),
+        operations: paths.operations.map((item) => `${item.provider}-${item.operation}`),
         limitations: [...selected.limitations.map((item) => item.code),
-          ...oneHop.map((item) => item.reason).filter(Boolean)],
+          ...paths.limitations, ...paths.chains.map((item) => item.reason).filter(Boolean)],
       });
       records.push({ ...action, priority: priorityFor(action) });
     }

@@ -132,9 +132,12 @@ function runAudit(sourceFiles) {
 }
 
 const { graph, routes, result } = runAudit(files);
-assert.equal(result.coverage.status, 'completed');
+assert.deepEqual(runAudit(files).result, result);
+assert.equal(result.coverage.status, 'partial');
 const delegated = result.routes.find((route) => route.path === '/delegated/:id');
-assert.ok(delegated.limitations.includes('delegated-object-authorization-unresolved'));
+assert.ok(delegated.limitations.includes('call_target_unresolved'));
+assert.equal(delegated.accessChains[0].status, 'partial');
+assert.equal(delegated.accessChains[0].reason, 'call_target_unresolved');
 assert.ok(result.routes.find((route) => route.path === '/projects/:id' && route.framework === 'nestjs')
   .operations.includes('prisma-find-unique'));
 const nestAccess = result.routes.find((route) => route.path === '/projects/:id'
