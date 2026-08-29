@@ -6,16 +6,18 @@ import { sha256Bytes, toolSourceIdentity } from './lib/journey-contract.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const HISTORICAL = join(ROOT, 'docs', 'case-studies', 'journeys', 'evidence.json');
-const DEFAULT_OUTPUT = join(ROOT, 'docs', 'case-studies', 'journeys', 'evidence-v0.7.3.json');
+const VERSION = readFileSync(join(ROOT, 'VERSION'), 'utf8').trim();
+const RELEASE = `v${VERSION}`;
+const DEFAULT_OUTPUT = join(ROOT, 'docs', 'case-studies', 'journeys', `evidence-${RELEASE}.json`);
 
 function usage(code, message) {
   if (message) console.error(`error: ${message}`);
   console.log(`node scripts/refresh-case-journey-catalog.mjs [options]
 
 Options:
-  --initialize           Create a refresh-pending v0.7.3 catalog from immutable historical metadata
+  --initialize           Create a refresh-pending ${RELEASE} catalog from immutable historical metadata
   --observations <dir>   Promote <dir>/<journey-id>/observed-corpus.json into the active catalog
-  --out <json>           Output path (default: docs/case-studies/journeys/evidence-v0.7.3.json)
+  --out <json>           Output path (default: docs/case-studies/journeys/evidence-${RELEASE}.json)
 
 Initialization and promotion never modify the historical evidence.json snapshot.`);
   process.exit(code);
@@ -34,7 +36,7 @@ function initialize() {
   const runDate = new Date().toISOString();
   return {
     schemaVersion: 3,
-    release: 'v0.7.3',
+    release: RELEASE,
     status: 'refresh_pending',
     evidenceType: 'active_ordinary_project_journey_contract',
     historicalSource: {

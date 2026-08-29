@@ -3,7 +3,7 @@
 These five project records preserve the original v2 source journeys against ordinary open-source
 web projects at exact commits. That dated `2026-08-14` evidence is historical: it is not presented
 as a current-tool reproduction gate. The separate
-[`evidence-v0.7.3.json`](evidence-v0.7.3.json) catalog records current source identity, exact adapter
+[`evidence-v0.8.0.json`](evidence-v0.8.0.json) catalog records current source identity, exact adapter
 selection, the exact target-commit boundary used for Gitleaks history, audit exit, byte digest,
 stable semantic digest and manual-annotation identity. Neither catalog is a vulnerability
 leaderboard or precision benchmark.

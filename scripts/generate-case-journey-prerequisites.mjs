@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { renderJourneyPrerequisiteBlock } from './lib/journey-contract.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const CATALOG = join(ROOT, 'docs', 'case-studies', 'journeys', 'evidence-v0.7.3.json');
+const VERSION = readFileSync(join(ROOT, 'VERSION'), 'utf8').trim();
+const CATALOG = join(ROOT, 'docs', 'case-studies', 'journeys', `evidence-v${VERSION}.json`);
 const README = join(ROOT, 'docs', 'case-studies', 'journeys', 'README.md');
 const START = '<!-- journey-prerequisites:start -->';
 const END = '<!-- journey-prerequisites:end -->';

@@ -10,8 +10,11 @@ import { adapterDefinitions } from './lib/adapter-definitions.mjs';
 import { SOURCE_RULES } from './lib/source-rules.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
+const VERSION = readFileSync(`${ROOT}/VERSION`, 'utf8').trim();
+const RELEASE = `v${VERSION}`;
 const args = process.argv.slice(2);
-const catalogPath = resolve(args.shift() || `${ROOT}/docs/case-studies/journeys/evidence-v0.7.3.json`);
+const catalogPath = resolve(args.shift()
+  || `${ROOT}/docs/case-studies/journeys/evidence-${RELEASE}.json`);
 if (args.length) {
   console.error('usage: node scripts/check-active-case-journeys.mjs [catalog.json]');
   process.exit(2);
@@ -21,7 +24,7 @@ const errors = [];
 const fail = (condition, message) => { if (!condition) errors.push(message); };
 const digest = (value) => /^[a-f0-9]{64}$/.test(value || '');
 
-fail(catalog.schemaVersion === 3 && catalog.release === 'v0.7.3', 'active catalog identity is invalid');
+fail(catalog.schemaVersion === 3 && catalog.release === RELEASE, 'active catalog identity is invalid');
 fail(catalog.status === 'active', 'active catalog is not promoted');
 fail(catalog.evidenceType === 'active_ordinary_project_journey_contract', 'evidence type changed');
 const historicalPath = catalog.historicalSource?.path ? `${ROOT}/${catalog.historicalSource.path}` : '';

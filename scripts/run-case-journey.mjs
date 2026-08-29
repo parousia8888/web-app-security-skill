@@ -13,7 +13,9 @@ import {
 import { sanitizeEvidence } from './lib/evidence-writer.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const DEFAULT_CATALOG = `${ROOT}/docs/case-studies/journeys/evidence-v0.7.3.json`;
+const VERSION = readFileSync(`${ROOT}/VERSION`, 'utf8').trim();
+const RELEASE = `v${VERSION}`;
+const DEFAULT_CATALOG = `${ROOT}/docs/case-studies/journeys/evidence-${RELEASE}.json`;
 const CLI = `${ROOT}/scripts/webapp-security.mjs`;
 
 function usage(code, message) {
@@ -21,7 +23,7 @@ function usage(code, message) {
   console.log(`node scripts/run-case-journey.mjs <journey-id> <checkout> --out <directory> [options]
 
 Options:
-  --catalog <json>  Active catalog (default: docs/case-studies/journeys/evidence-v0.7.3.json)
+  --catalog <json>  Active catalog (default: docs/case-studies/journeys/evidence-${RELEASE}.json)
   --refresh         Record observed evidence without claiming it matches the catalog
 
 The checkout must be a clean Git worktree at the journey's exact immutable commit. The output
