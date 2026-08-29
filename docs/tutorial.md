@@ -5,14 +5,14 @@ retest, upgrade and uninstall. The product promise is: **Scope, audit, harden, a
 projects with AI coding agents and reproducible evidence.**
 
 The deterministic path shown here reads local source files and does not contact a deployment. In
-the published v0.7.3 release it runs 25 built-in risk rules and 3 evidence-integrity rules, with
+the published v0.8.0 release it runs 25 built-in risk rules and 3 evidence-integrity rules, with
 deeper JavaScript/TypeScript and Python coverage. Supported Express, NestJS and Next.js App Router
 projects also receive a separate route-security review with bounded access-control chains and
 separate Next.js Server Actions. It remains a bounded first pass, not a general SAST scan,
 automatic BOLA proof or proof that a project is secure. Effective lexical token and operation
 budgets are recorded in the report; exhaustion is incomplete evidence with exit `3`, not a pass.
 
-The current v0.8.0 source candidate writes route-security v3. For exact supported selectors it can
+The current v0.8.0 release writes route-security v3. For exact supported selectors it can
 carry object, principal and tenant facts through at most four project-local call edges into bounded
 Prisma/Drizzle operations, then distinguish a visible query predicate from a supported post-load
 comparison. Read framework inventory coverage and `accessPathCoverage` separately. `completed`
@@ -33,21 +33,21 @@ See the [compatibility matrix](compatibility.md) for the tested environment boun
 
 ### Stable release
 
-Download every v0.7.3 asset, verify the checksums, extract the archive and install from that verified
+Download every v0.8.0 asset, verify the checksums, extract the archive and install from that verified
 payload:
 
 ```bash
 mkdir web-app-security-release && cd web-app-security-release
-gh release download v0.7.3 --repo parousia8888/web-app-security-skill
+gh release download v0.8.0 --repo parousia8888/web-app-security-skill
 sha256sum -c SHA256SUMS
-tar -xzf web-app-security-skill-0.7.3.tar.gz
-node web-app-security-skill-0.7.3/scripts/webapp-security.mjs install
+tar -xzf web-app-security-skill-0.8.0.tar.gz
+node web-app-security-skill-0.8.0/scripts/webapp-security.mjs install
 webapp-security version
 ```
 
 On macOS, use `shasum -a 256 -c SHA256SUMS` when GNU `sha256sum` is unavailable. The release page
 also publishes an SPDX SBOM, source manifest, build-provenance attestation and signed tag. See the
-[v0.7.3 release](https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.7.3).
+[v0.8.0 release](https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.8.0).
 
 ### Current checkout
 

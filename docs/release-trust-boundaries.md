@@ -26,21 +26,21 @@ commit.
 | npm OIDC/SLSA provenance | npm trusted publishing binds the package version to its publishing workflow and source context. | It covers the npm package. It is separate from the GitHub release-asset attestation and tag-signature check. |
 | SHA-256, manifest and SBOM checks | Downloaded bytes and declared asset relationships match the recorded values. | A checksum is an integrity value; its authenticity depends on how the trusted value was obtained. |
 
-## Candidate verification
+## Published-release verification
 
-After `v0.7.3` is public, verify the local tag policy and compare immutable identities:
+For published `v0.8.0`, verify the local tag policy and compare immutable identities:
 
 ```bash
 git fetch --tags --force
-git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.7.3
-git rev-parse 'v0.7.3^{}'
-npm view web-app-security-skill@0.7.3 gitHead
+git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.8.0
+git rev-parse 'v0.8.0^{}'
+npm view web-app-security-skill@0.8.0 gitHead
 ```
 
 Inspect the exact tag object's GitHub verification separately:
 
 ```bash
-tag_object="$(git rev-parse v0.7.3)"
+tag_object="$(git rev-parse v0.8.0)"
 gh api "repos/parousia8888/web-app-security-skill/git/tags/$tag_object" \
   --jq '.verification | {verified,reason,verified_at}'
 ```

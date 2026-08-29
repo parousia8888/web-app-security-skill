@@ -11,7 +11,7 @@ Show HN: Web App Security Skill - one command, readable findings, and retests
 I built Web App Security Skill for Web builders using AI coding agents who need a local security first pass they can actually review. From a project root:
 
 ```bash
-npx --yes web-app-security-skill@0.7.3 audit . --fail-on never
+npx --yes web-app-security-skill@0.8.0 audit . --fail-on never
 ```
 
 The report pairs the security term with a plain-language consequence, says what the evidence does not prove, proposes a change for review, names likely side effects, and asks for separate security and normal-behavior retests. It does not edit the project or contact a deployment.

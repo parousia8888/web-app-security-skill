@@ -3,13 +3,13 @@
 本教程覆盖从干净环境安装，到范围记录、源码检查、补丁审查、复测、升级和卸载的完整流程。产品承诺是：
 **把 Web 项目交给 AI coding agent，完成范围确认、风险检查、最小加固、复测和证据交付。**
 
-这里的确定性路径只读取本地源码，不访问部署实例。已发布的 v0.7.3 会运行 25 条 built-in risk 与
+这里的确定性路径只读取本地源码，不访问部署实例。已发布的 v0.8.0 会运行 25 条 built-in risk 与
 3 条证据完整性规则，并加深 JavaScript/TypeScript 和 Python 覆盖。受支持的 Express、NestJS 与
 Next.js App Router 项目还会得到带有边界访问控制链的路由安全审查，并单独列出 Next.js Server
 Action。它仍然是范围明确的首次检查，不是通用 SAST、自动 BOLA 证明，也不证明项目已经安全。
 实际生效的词法 token 与 operation 预算会写入报告；预算触顶属于证据不完整并退出 `3`，不是通过。
 
-当前 v0.8.0 source candidate 会写出 route-security v3。对精确且受支持的 selector，它可把 object、
+当前 v0.8.0 release 会写出 route-security v3。对精确且受支持的 selector，它可把 object、
 principal 和 tenant 事实经最多四条项目内调用边带到限定的 Prisma/Drizzle 操作，再区分可见 query
 predicate 与受支持的加载后比较。框架清单覆盖率和 `accessPathCoverage` 必须分开阅读；`completed`
 只表示限定分析走完，不表示授权正确或存在 BOLA/IDOR。route-security v1/v2 与 v3 对比时只会得到
@@ -28,20 +28,20 @@ predicate 与受支持的加载后比较。框架清单覆盖率和 `accessPathC
 
 ### 稳定 release
 
-下载 v0.7.3 的全部产物，验证 checksum，解包并从已验证的 payload 安装：
+下载 v0.8.0 的全部产物，验证 checksum，解包并从已验证的 payload 安装：
 
 ```bash
 mkdir web-app-security-release && cd web-app-security-release
-gh release download v0.7.3 --repo parousia8888/web-app-security-skill
+gh release download v0.8.0 --repo parousia8888/web-app-security-skill
 sha256sum -c SHA256SUMS
-tar -xzf web-app-security-skill-0.7.3.tar.gz
-node web-app-security-skill-0.7.3/scripts/webapp-security.mjs install
+tar -xzf web-app-security-skill-0.8.0.tar.gz
+node web-app-security-skill-0.8.0/scripts/webapp-security.mjs install
 webapp-security version
 ```
 
 macOS 没有 GNU `sha256sum` 时，使用 `shasum -a 256 -c SHA256SUMS`。Release 还提供 SPDX SBOM、
 源码 manifest、build provenance attestation 和签名 tag：
-[v0.7.3 release](https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.7.3)。
+[v0.8.0 release](https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.8.0)。
 
 ### 当前 checkout
 

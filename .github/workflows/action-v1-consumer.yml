@@ -1,6 +1,15 @@
 name: "Action v1 consumer"
 on:
   workflow_dispatch:
+    inputs:
+      phase:
+        description: "Run only the immutable release consumer, or the final immutable + v1 verification"
+        required: true
+        default: "immutable-only"
+        type: "choice"
+        options:
+          - "immutable-only"
+          - "final"
 permissions:
   contents: "read"
 jobs:
@@ -11,55 +20,41 @@ jobs:
       - uses: "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38" # v6
         with:
           node-version: "22"
-      - name: "Create owned NestJS route-control fixture"
+      - name: "Create owned Express bounded-access fixture"
         shell: "bash"
         run: |
-          mkdir -p "$RUNNER_TEMP/v073-route-fixture/src"
-          printf '%s\n' '{"private":true,"dependencies":{"@nestjs/common":"fixture","@nestjs/core":"fixture","@nestjs/passport":"fixture"}}' > "$RUNNER_TEMP/v073-route-fixture/package.json"
-          printf '%s\n' '{"lockfileVersion":3}' > "$RUNNER_TEMP/v073-route-fixture/package-lock.json"
-          cat > "$RUNNER_TEMP/v073-route-fixture/src/auth.guard.ts" <<'SOURCE'
-          import { AuthGuard } from '@nestjs/passport';
-          export class JwtAuthGuard extends AuthGuard('jwt') {}
-          SOURCE
-          cat > "$RUNNER_TEMP/v073-route-fixture/src/roles.guard.ts" <<'SOURCE'
-          import { Reflector } from '@nestjs/core';
-          export class RolesGuard {
-            constructor(private reflector: Reflector) {}
-            canActivate(context) {
-              return this.reflector.getAllAndOverride('roles', [context.getHandler(), context.getClass()]);
-            }
+          mkdir -p "$RUNNER_TEMP/v080-access-fixture/src"
+          printf '%s\n' '{"private":true,"dependencies":{"@clerk/nextjs":"fixture","@prisma/client":"fixture","express":"fixture"}}' > "$RUNNER_TEMP/v080-access-fixture/package.json"
+          printf '%s\n' '{"lockfileVersion":3}' > "$RUNNER_TEMP/v080-access-fixture/package-lock.json"
+          cat > "$RUNNER_TEMP/v080-access-fixture/src/project-repository.ts" <<'SOURCE'
+          import { PrismaClient } from '@prisma/client';
+          const prisma = new PrismaClient();
+          export function loadProject(projectId, principalId) {
+            return prisma.project.findFirst({ where: { id: projectId, ownerId: principalId } });
           }
           SOURCE
-          cat > "$RUNNER_TEMP/v073-route-fixture/src/rate-limit.guard.ts" <<'SOURCE'
-          export class RateLimitGuard { canActivate() { return true; } }
+          cat > "$RUNNER_TEMP/v080-access-fixture/src/app.ts" <<'SOURCE'
+          import express from 'express';
+          import { currentUser } from '@clerk/nextjs/server';
+          import { loadProject } from './project-repository';
+          const app = express();
+          app.get('/projects/:id', async (req, res) => {
+            const principal = await currentUser();
+            return res.json(await loadProject(req.params.id, principal.id));
+          });
           SOURCE
-          cat > "$RUNNER_TEMP/v073-route-fixture/src/app.module.ts" <<'SOURCE'
-          import { APP_GUARD } from '@nestjs/core';
-          import { RateLimitGuard } from './rate-limit.guard';
-          export const providers = [{ provide: APP_GUARD, useClass: RateLimitGuard }];
-          SOURCE
-          cat > "$RUNNER_TEMP/v073-route-fixture/src/audit.controller.ts" <<'SOURCE'
-          import { Controller, Get, Patch, UseGuards } from '@nestjs/common';
-          import { JwtAuthGuard } from './auth.guard';
-          import { RolesGuard } from './roles.guard';
-          @Controller('admin')
-          export class AuditController {
-            @UseGuards(JwtAuthGuard, RolesGuard) @Get('audit') audit() {}
-            @Patch('projects/:id') unguardedMutation() {}
-          }
-          SOURCE
-      - name: "Consume immutable v0.7.3 Action"
-        uses: "parousia8888/web-app-security-skill@28494afd3470897e9b25e7c90187eac35a016186"
+      - name: "Consume immutable v0.8.0 Action"
+        uses: "parousia8888/web-app-security-skill@119cbcc7f8d327482df8abfa50a4af0b69fcceee"
         with:
           mode: "source"
-          project: "${{ runner.temp }}/v073-route-fixture"
+          project: "${{ runner.temp }}/v080-access-fixture"
           adapters: "builtin"
           fail-on: "never"
-          output-dir: "${{ runner.temp }}/v073-route-report"
-      - name: "Verify route-security v2 control separation"
+          output-dir: "${{ runner.temp }}/v080-access-report"
+      - name: "Verify route-security v3 bounded access path"
         shell: "bash"
         env:
-          ROUTE_REPORT: "${{ runner.temp }}/v073-route-report"
+          ROUTE_REPORT: "${{ runner.temp }}/v080-access-report"
         run: |
           node <<'NODE'
           const fs = require('node:fs');
@@ -67,32 +62,33 @@ jobs:
           const root = process.env.ROUTE_REPORT;
           const routes = JSON.parse(fs.readFileSync(path.join(root, 'route-security.json'), 'utf8'));
           const report = JSON.parse(fs.readFileSync(path.join(root, 'report.json'), 'utf8'));
-          if (routes.schemaVersion !== 2) throw new Error(`expected route schema v2, got ${routes.schemaVersion}`);
-          if (routes.routes.length !== 2) throw new Error(`expected two routes, got ${routes.routes.length}`);
-          if (routes.applicationControls.length !== 1 || routes.applicationControls[0].origin !== 'RateLimitGuard') {
-            throw new Error('global RateLimitGuard must be listed once as an application control');
+          if (routes.schemaVersion !== 3 || routes.analyzer.revision !== '3') {
+            throw new Error(`expected route schema/analyzer v3, got ${routes.schemaVersion}/${routes.analyzer.revision}`);
           }
-          const guarded = routes.routes.find((route) => route.method === 'GET');
-          const unguarded = routes.routes.find((route) => route.method === 'PATCH');
-          if (!guarded || !unguarded) throw new Error('expected GET and PATCH route identities');
-          if (guarded.authentication.state !== 'local_observed'
-              || guarded.authorization.state !== 'candidate_observed') {
-            throw new Error('classified authentication and authorization signals were not separated');
+          if (routes.accessPathCoverage.status !== 'completed') {
+            throw new Error(`expected completed access-path coverage, got ${routes.accessPathCoverage.status}`);
           }
-          if (guarded.authentication.signals.some((signal) => signal.origin === 'RateLimitGuard')
-              || guarded.authorization.signals.some((signal) => signal.origin === 'RateLimitGuard')) {
-            throw new Error('application rate limit leaked into route authentication or authorization');
+          const route = routes.routes.find((item) => item.method === 'GET' && item.path === '/projects/:id');
+          if (!route || route.accessChains.length !== 1) throw new Error('expected one object-addressed route and chain');
+          const chain = route.accessChains[0];
+          if (chain.status !== 'completed' || chain.outcome !== 'authorization_constraint_observed') {
+            throw new Error(`expected a completed constrained chain, got ${chain.status}/${chain.outcome}`);
           }
-          if (unguarded.authentication.state !== 'not_observed'
-              || unguarded.authorization.state !== 'not_observed'
-              || unguarded.routeScopedControl.state !== 'no_route_scoped_control_observed') {
-            throw new Error('unguarded state-changing object route was not kept in the review queue');
+          if (chain.objectSelectors[0]?.origin !== 'request_selected'
+              || !chain.callEdges.some((edge) => edge.kind === 'local_import')
+              || chain.dataOperation?.provider !== 'prisma'
+              || chain.dataOperation?.objectConstraint !== 'observed'
+              || chain.dataOperation?.principalConstraint !== 'observed'
+              || !chain.authorizationEvidence.some((item) =>
+                item.kind === 'query_predicate' && item.category === 'principal' && item.field === 'ownerId')) {
+            throw new Error('bounded selector/call/query evidence is incomplete');
           }
           if (report.findings.some((finding) => finding.state === 'confirmed')) {
-            throw new Error('route review created a confirmed vulnerability');
+            throw new Error('bounded access review created a confirmed vulnerability');
           }
           NODE
   consumer:
+    if: "${{ inputs.phase == 'final' }}"
     runs-on: "ubuntu-latest"
     steps:
       - uses: "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803" # v6
@@ -172,6 +168,7 @@ jobs:
           fi
   live-verification:
     needs: [immutable-route-consumer, consumer]
+    if: "${{ always() && inputs.phase == 'final' && needs.immutable-route-consumer.result == 'success' && needs.consumer.result == 'success' }}"
     permissions:
       contents: "write"
     runs-on: "ubuntu-latest"

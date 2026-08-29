@@ -15,11 +15,11 @@ const workflows = [
   '.github/workflows/action-v1-consumer.yml',
   '.github/workflows/npm-publish.yml',
 ];
-const RELEASE_ACTION_COMMIT = '28494afd3470897e9b25e7c90187eac35a016186';
-const BOOTSTRAP_COMMIT = '5de57e8a974247a2f519ac93cea580923aaaff6a';
-const BOOTSTRAP_SHA256 = '2226efeed8127d2cd33fb05cbb0a3197952f8686d8ea9cf497bba1c6d33e6ef9';
-const VERIFIER_COMMIT = 'ab80e144171b0e3ff350514c5d342e07737604fc';
-const VERIFIER_SHA256 = '74d166797fb3630dd3764fad4feee9f8dacee23acc9f1a22ef22bc039a54c44a';
+const RELEASE_ACTION_COMMIT = '119cbcc7f8d327482df8abfa50a4af0b69fcceee';
+const BOOTSTRAP_COMMIT = '12cb085d7f3a21c2b6ffb6cb2758ee4247e2af9f';
+const BOOTSTRAP_SHA256 = '137b5d8fdf6f616be3aa2631e0134b354fd9142ce19419bad6c37e5b0409480f';
+const VERIFIER_COMMIT = 'f55c80e7c5014ff6d39d61ca8cbb4fec2ec1fbac';
+const VERIFIER_SHA256 = '0e3e27ae7f00314668337b9d0a2d8a350ac01b908ab65aa0b2856c614278d5a7';
 let failed = false;
 
 function requireText(path, marker) {
@@ -64,6 +64,7 @@ for (const [path, markers] of [
   ]],
   ['.github/workflows/action-v1-consumer.yml', [
     'workflow_dispatch:',
+    'immutable-only',
     'parousia8888/web-app-security-skill@v1',
     `parousia8888/web-app-security-skill@${RELEASE_ACTION_COMMIT}`,
     'route-security.json',

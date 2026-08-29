@@ -21,18 +21,18 @@ function run(program, commandArgs, options = {}) {
 
 try {
   const state = JSON.parse(readFileSync(join(ROOT, 'docs', 'release-state.json'), 'utf8'));
-  assert.equal(state.publishedRelease.version, '0.7.3');
+  assert.equal(state.publishedRelease.version, '0.8.0');
   assert.equal(state.stableAction.tag, 'v1');
   assert.equal(state.stableAction.sourceCommit, '28494afd3470897e9b25e7c90187eac35a016186');
   assert.equal(state.npmPackage.name, 'web-app-security-skill');
-  assert.equal(state.npmPackage.version, '0.7.3');
-  assert.equal(state.npmPackage.shasum, '478e9e5eac15fde316860e5278bc5a9a1b4e58b2');
+  assert.equal(state.npmPackage.version, '0.8.0');
+  assert.equal(state.npmPackage.shasum, '1b45330758998f04eeacf71166ab20310fd1c1e7');
   assert.equal(state.npmPackage.integrity,
-    'sha512-XNEzUecyqg9CgrvmF3tuEIFJ5Jyy3RMTQPg47dHKP4RTJCmyUVwzYTDZfrqhs5thnvSLyNKjPpPG27dMjaBU7g==');
+    'sha512-zbnRkSZ4bdMgRtXprWSp8uvgMswAGjdZstXbcObLJlOIvjnpbmmSHQzdzWPTTlID3giNFfsDH8hchnomYQfUNQ==');
   assert.equal(state.npmPackage.provenance.predicateType, 'https://slsa.dev/provenance/v1');
-  assert.equal(state.verifiedInstaller.defaultVersion, '0.7.3');
+  assert.equal(state.verifiedInstaller.defaultVersion, '0.8.0');
   assert.deepEqual(state.verifiedInstaller.trustedVersions,
-    ['0.3.0', '0.4.0', '0.5.0', '0.5.1', '0.5.2', '0.5.3', '0.5.4', '0.6.0', '0.7.0', '0.7.1', '0.7.2', '0.7.3']);
+    ['0.3.0', '0.4.0', '0.5.0', '0.5.1', '0.5.2', '0.5.3', '0.5.4', '0.6.0', '0.7.0', '0.7.1', '0.7.2', '0.7.3', '0.8.0']);
   run(process.execPath, [join(ROOT, 'scripts', 'check-release-state.mjs')]);
 
   const candidateCommit = run('git', ['rev-parse', 'HEAD']).trim();
@@ -57,21 +57,21 @@ try {
     recursive: true,
     filter: (source) => !source.split('/').includes('.git'),
   });
-  writeFileSync(join(candidate, 'VERSION'), '0.7.4\n');
+  writeFileSync(join(candidate, 'VERSION'), '0.8.1\n');
   const pkgPath = join(candidate, 'package.json');
   const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
-  pkg.version = '0.7.4';
+  pkg.version = '0.8.1';
   writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
   const changelogPath = join(candidate, 'CHANGELOG.md');
   const changelog = readFileSync(changelogPath, 'utf8').replace(
     '## [Unreleased]\n',
-    '## [Unreleased]\n\n## [0.7.4] — 2026-08-26\n',
+    '## [Unreleased]\n\n## [0.8.1] — 2026-08-30\n',
   );
   writeFileSync(changelogPath, changelog);
-  const release073 = readFileSync(join(candidate, 'docs', 'releases', 'v0.7.3.md'), 'utf8');
+  const release080 = readFileSync(join(candidate, 'docs', 'releases', 'v0.8.0.md'), 'utf8');
   writeFileSync(
-    join(candidate, 'docs', 'releases', 'v0.7.4.md'),
-    release073.replaceAll('v0.7.3', 'v0.7.4'),
+    join(candidate, 'docs', 'releases', 'v0.8.1.md'),
+    release080.replaceAll('v0.8.0', 'v0.8.1'),
   );
 
   run(process.execPath, [join(candidate, 'scripts', 'generate-launch-evidence.mjs')], { cwd: candidate });
@@ -82,8 +82,8 @@ try {
     readFileSync(join(candidate, 'docs', 'adoption', 'citations.md'), 'utf8'),
     readFileSync(join(candidate, 'docs', 'adoption', 'share-metadata.json'), 'utf8'),
   ].join('\n');
-  assert.match(generated, /v0\.7\.3/);
-  assert.doesNotMatch(generated, /releases\/tag\/v0\.7\.4|v0\.7\.4 records a signed tag/);
+  assert.match(generated, /v0\.8\.0/);
+  assert.doesNotMatch(generated, /releases\/tag\/v0\.8\.1|v0\.8\.1 records a signed tag/);
   console.log('release state ok: candidate version cannot become a published-release claim');
 } finally {
   rmSync(temp, { recursive: true, force: true });

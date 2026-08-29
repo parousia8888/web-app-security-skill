@@ -134,9 +134,9 @@ precision/recall, vulnerability confirmation or proof of deployed enforcement. R
 The stable rule inventory remains 25 built-in risk rules, 3 evidence-integrity rules and 16 opt-in
 external-adapter risk rules, for 44 total. Access paths are a separate capability, not additional
 vulnerability rules. Pattern matches remain `suspected`; incomplete analysis remains `unknown` and
-may exit 3. The signed v0.8.0 tag, GitHub Release, npm package and public consumers remain pending
-until the candidate and hosted release gates pass; published installer and Action examples below
-continue to identify v0.7.3 in the meantime.
+may exit 3. The signed v0.8.0 tag, GitHub Release, npm package and verified installer are public and
+identify source commit `119cbcc7f8d327482df8abfa50a4af0b69fcceee`. The moving `v1` Action still
+identifies v0.7.3 until the immutable v0.8.0 consumer and final promotion gate pass.
 
 ## Install
 
@@ -175,7 +175,7 @@ Attestation runs when GitHub CLI is installed and authenticated; pass `--attesta
 make an unavailable or failed attestation stop installation.
 
 ```bash
-( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/5de57e8a974247a2f519ac93cea580923aaaff6a/scripts/bootstrap-install.sh?immutable=5de57e8a974247a2f519ac93cea580923aaaff6a'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" '2226efeed8127d2cd33fb05cbb0a3197952f8686d8ea9cf497bba1c6d33e6ef9'; sh "$p" )
+( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/12cb085d7f3a21c2b6ffb6cb2758ee4247e2af9f/scripts/bootstrap-install.sh?immutable=12cb085d7f3a21c2b6ffb6cb2758ee4247e2af9f'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" '137b5d8fdf6f616be3aa2631e0134b354fd9142ce19419bad6c37e5b0409480f'; sh "$p" )
 ```
 
 Select a surface when needed:
@@ -393,7 +393,7 @@ requires deployment authorization acknowledgement:
 
 ```yaml
 - name: Audit public crawl boundary
-  uses: parousia8888/web-app-security-skill@28494afd3470897e9b25e7c90187eac35a016186
+  uses: parousia8888/web-app-security-skill@119cbcc7f8d327482df8abfa50a4af0b69fcceee
   with:
     site: https://example.com
     acknowledge-authorization: true
@@ -401,21 +401,22 @@ requires deployment authorization acknowledgement:
     fail-on: high
 ```
 
-For repeatable CI, use the immutable v0.7.3 commit above. The signed stable major-version alias now
-targets the same v0.7.3 source commit; it remains intentionally movable:
+For repeatable CI, use the immutable v0.8.0 commit above. The signed stable major-version alias
+still targets v0.7.3 until the v0.8.0 immutable consumer and promotion lease pass; it remains
+intentionally movable:
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
 ```
 
-Source mode defaults to the bundled adapter. The immutable v0.7.3 Action runs the v3 source
+Source mode defaults to the bundled adapter. The immutable v0.8.0 Action runs the v3 source
 contract, 25 built-in risk rules, 3 evidence-integrity rules, bounded Express/NestJS/Next.js route
 and Server Action inventory, and bounded access-control-chain review. External binaries must be
 installed and pinned by the caller; the Action never downloads them:
 
 ```yaml
 - name: Audit source
-  uses: parousia8888/web-app-security-skill@28494afd3470897e9b25e7c90187eac35a016186
+  uses: parousia8888/web-app-security-skill@119cbcc7f8d327482df8abfa50a4af0b69fcceee
   with:
     mode: source
     project: .
@@ -423,9 +424,9 @@ installed and pinned by the caller; the Action never downloads them:
     fail-on: high
 ```
 
-The moving `v1` tag was promoted to v0.7.3 with a guarded lease after the versioned source and
-installation gates passed. Review release notes before accepting a future update; use the full
-commit above when the workflow must not move.
+The moving `v1` tag remains at v0.7.3 while the immutable v0.8.0 Action consumer is checked. It will
+move only under the guarded promotion lease after that gate passes. Review release notes before
+accepting an update; use the full commit above when the workflow must not move.
 
 ## Trust and release evidence
 
