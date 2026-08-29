@@ -104,7 +104,7 @@ function directAccessChains(graph, module, route, handler, budget) {
     graph, module, handler, entry: { kind: 'route', id: route.id,
       name: route.handler || route.id, module },
     identity: identity.identity, selectorGroups: selected.selectorGroups,
-    principalAliases: identity.principalAliases, budget,
+    principalAliases: identity.principalAliases, tenantAliases: identity.tenantAliases, budget,
   });
   const pathChains = paths.chains.map(accessChainRecord);
   const selectorIncomplete = selected.limitations.length > 0;

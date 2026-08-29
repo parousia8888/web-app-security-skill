@@ -1,5 +1,6 @@
 import { analyzeDataOperations } from './js-ts-data-operation-evidence.mjs';
 import { callableIndexForGraph } from './js-ts-callable-index.mjs';
+import { analyzeIdentityEvidence } from './js-ts-identity-evidence.mjs';
 import { expressionName } from './js-ts-module-graph.mjs';
 import {
   callCarriesObject, expandSummaryFacts, mapCallFacts, summarizeCallable,
@@ -26,6 +27,67 @@ function entryTarget(module, handler, entry) {
 function normalizedFacts(facts) {
   return ['objectAliases', 'principalAliases', 'tenantAliases'].map((key) =>
     [...facts[key]].sort().join(',')).join('\u0000');
+}
+
+function mergeIdentity(left, right) {
+  if (!right || right.state === 'not_observed') return left;
+  if (!left || left.state === 'not_observed') return right;
+  const signals = [...(left.signals || []), ...(right.signals || [])].filter((signal, index, items) =>
+    items.findIndex((candidate) => candidate.kind === signal.kind
+      && candidate.location?.path === signal.location?.path
+      && candidate.location?.line === signal.location?.line) === index);
+  if (left.state === right.state && left.provider === right.provider) {
+    return { ...left, signals };
+  }
+  return {
+    state: left.state === 'incomplete' && right.state === 'incomplete'
+      ? 'incomplete' : 'candidate_observed',
+    provider: left.provider === right.provider ? left.provider : 'multiple',
+    signals,
+    boundary: 'Multiple bounded identity observations contribute to this path; their runtime relationship and enforcement are not proved.',
+  };
+}
+
+function addReturnedIdentityAlias(facts, category, name) {
+  if (!name || !['principal', 'tenant'].includes(category)) return;
+  facts[`${category}Aliases`].add(name);
+}
+
+function applyReturnedIdentityFacts(graph, summary, facts) {
+  const identities = [];
+  const limitations = new Set();
+  for (const call of summary.calls) {
+    if (call.resolution?.state !== 'exact' || call.resultMapping.kind === 'unused') continue;
+    const returned = analyzeIdentityEvidence(graph, call.resolution.target.module,
+      call.resolution.target.node);
+    if (returned.returnFacts?.state === 'incomplete') {
+      limitations.add('identity_return_mapping_unresolved');
+      continue;
+    }
+    if (returned.returnFacts?.state !== 'exact') continue;
+    identities.push(returned.identity);
+    for (const limitation of returned.limitations || []) limitations.add(limitation);
+    const shape = returned.returnFacts.shape;
+    if (shape.kind === 'scalar' && call.resultMapping.kind === 'identifier') {
+      addReturnedIdentityAlias(facts, shape.category, call.resultMapping.name);
+      continue;
+    }
+    if (shape.kind === 'object' && call.resultMapping.kind === 'identifier') {
+      for (const field of shape.fields) {
+        addReturnedIdentityAlias(facts, field.category, `${call.resultMapping.name}.${field.field}`);
+      }
+      continue;
+    }
+    if (shape.kind === 'object' && call.resultMapping.kind === 'object_pattern') {
+      for (const binding of call.resultMapping.bindings) {
+        const field = shape.fields.find((candidate) => candidate.field === binding.field);
+        if (field) addReturnedIdentityAlias(facts, field.category, binding.local);
+      }
+      continue;
+    }
+    limitations.add('identity_return_mapping_unresolved');
+  }
+  return { facts, identities, limitations: [...limitations].sort() };
 }
 
 function stateKey(state) {
@@ -204,20 +266,39 @@ export function analyzeAccessPaths(input) {
     const summary = summarizeCallable(index, state.target,
       { maxCallSites: limits.maxExaminedCallSitesPerSummary });
     counts.callSites += summary.calls.length;
-    const facts = expandSummaryFacts(summary, state.facts);
+    const localIdentity = analyzeIdentityEvidence(input.graph, state.target.module, state.target.node);
+    const identitySeed = {
+      ...state.facts,
+      principalAliases: new Set([
+        ...state.facts.principalAliases, ...localIdentity.principalAliases,
+      ]),
+      tenantAliases: new Set([
+        ...state.facts.tenantAliases, ...localIdentity.tenantAliases,
+      ]),
+    };
+    let facts = expandSummaryFacts(summary, identitySeed);
+    const returnedIdentity = applyReturnedIdentityFacts(input.graph, summary, facts);
+    facts = expandSummaryFacts(summary, returnedIdentity.facts);
+    const identity = returnedIdentity.identities.reduce(mergeIdentity,
+      mergeIdentity(state.identity, localIdentity.identity));
     const active = { ...state, facts, limitations: [...new Set([
-      ...state.limitations, ...facts.limitations,
-    ])].sort() };
+      ...state.limitations, ...facts.limitations, ...(localIdentity.limitations || []),
+      ...returnedIdentity.limitations,
+    ])].sort(), identity };
     const analyzed = analyzeDataOperations(input.graph, state.target.module, state.target.node, {
       objectAliases: facts.objectAliases,
       objectNodes: facts.objectNodes,
       principalAliases: facts.principalAliases,
+      tenantAliases: facts.tenantAliases,
     });
     for (const operation of analyzed.operations) {
       operations.push(operation);
       if (!emit(completed(active, operation))) chainLimitRecorded = true;
     }
     for (const item of analyzed.incomplete) emit(incompleteOperation(active, item));
+    if (active.limitations.includes('identity_provider_wrapper_unresolved')) {
+      emit(partial(active, 'identity_source_unresolved', 'identity_provider_wrapper_unresolved'));
+    }
     if (summary.limitations.includes('call_site_budget_reached')) {
       emit(partial(active, 'call_site_budget_reached'));
       counts.truncated += Math.max(0, summary.counts.callSites - summary.counts.retainedCallSites);

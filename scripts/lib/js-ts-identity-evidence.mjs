@@ -1,12 +1,13 @@
 import { walkJsTsAst } from './js-ts-ast-parser.mjs';
 import { expressionName } from './js-ts-module-graph.mjs';
 import { importedBindings, sourceLocation } from './frameworks/route-extractor-helpers.mjs';
+import { accessControlKeyCategory } from './access-control-vocabulary.mjs';
 
 const FUNCTION_TYPES = new Set([
   'ArrowFunctionExpression', 'FunctionDeclaration', 'FunctionExpression', 'ClassMethod',
   'ClassPrivateMethod', 'ObjectMethod',
 ]);
-const PRINCIPAL_NAME = /^(?:id|user|userId|ownerId|tenantId|organizationId|orgId|accountId|memberId)$/i;
+const SCALAR_CONVERSIONS = new Set(['String', 'Number', 'parseInt']);
 
 const DIRECT = new Map([
   ['next-auth:getServerSession', { provider: 'authjs', kind: 'next-auth-server-session', state: 'session_lookup_observed' }],
@@ -195,27 +196,128 @@ function objectBindings(pattern, prefix = []) {
   return output;
 }
 
-function addPrincipalBindings(aliases, pattern, descriptor) {
+function addIdentityBindings(principalAliases, tenantAliases, pattern, descriptor) {
   if (pattern?.type === 'Identifier') {
     const local = pattern.name;
-    if (descriptor.kind === 'clerk-current-user') aliases.add(`${local}.id`);
+    if (descriptor.kind === 'clerk-current-user') principalAliases.add(`${local}.id`);
     else if (descriptor.kind === 'clerk-auth') {
-      aliases.add(`${local}.userId`);
-      aliases.add(`${local}.orgId`);
-    } else if (descriptor.kind === 'supabase-auth-get-user') aliases.add(`${local}.data.user.id`);
+      principalAliases.add(`${local}.userId`);
+      tenantAliases.add(`${local}.orgId`);
+    } else if (descriptor.kind === 'supabase-auth-get-user') {
+      principalAliases.add(`${local}.data.user.id`);
+    }
     else {
-      aliases.add(`${local}.user.id`);
-      aliases.add(`${local}.userId`);
-      aliases.add(`${local}.tenantId`);
-      aliases.add(`${local}.organizationId`);
+      principalAliases.add(`${local}.user.id`);
+      principalAliases.add(`${local}.userId`);
+      tenantAliases.add(`${local}.tenantId`);
+      tenantAliases.add(`${local}.organizationId`);
+      tenantAliases.add(`${local}.orgId`);
     }
     return;
   }
   for (const binding of objectBindings(pattern)) {
     const tail = binding.path.at(-1) || '';
-    if (PRINCIPAL_NAME.test(tail)) aliases.add(binding.local);
-    if (/^(?:user|currentUser)$/i.test(tail)) aliases.add(`${binding.local}.id`);
+    const category = accessControlKeyCategory(tail);
+    if (category === 'principal') principalAliases.add(binding.local);
+    if (category === 'tenant') tenantAliases.add(binding.local);
+    if (/^(?:user|currentUser)$/i.test(tail)) principalAliases.add(`${binding.local}.id`);
   }
+}
+
+function expressionIdentityCategory(raw, principalAliases, tenantAliases) {
+  const node = unwrap(raw);
+  if (!node) return null;
+  const name = safeName(node);
+  const categories = [];
+  if (name && principalAliases.has(name)) categories.push('principal');
+  if (name && tenantAliases.has(name)) categories.push('tenant');
+  if (node.type === 'CallExpression' && SCALAR_CONVERSIONS.has(safeName(node.callee))
+      && node.arguments.length === 1 && node.arguments[0].type !== 'SpreadElement') {
+    const converted = expressionIdentityCategory(node.arguments[0], principalAliases, tenantAliases);
+    if (converted) categories.push(converted);
+  }
+  const unique = [...new Set(categories)];
+  return unique.length === 1 ? unique[0] : unique.length ? 'ambiguous' : null;
+}
+
+function returnedIdentityFacts(handler, principalAliases, tenantAliases) {
+  const returns = [];
+  functionWalk(handler, (node) => {
+    if (node.type === 'ReturnStatement' && node.argument) returns.push(unwrap(node.argument));
+  });
+  if (handler.type === 'ArrowFunctionExpression' && handler.body?.type !== 'BlockStatement') {
+    returns.push(unwrap(handler.body));
+  }
+  const shapes = [];
+  let observed = false;
+  let unresolved = false;
+  for (const returned of returns) {
+    const scalar = expressionIdentityCategory(returned, principalAliases, tenantAliases);
+    if (scalar && scalar !== 'ambiguous') {
+      observed = true;
+      shapes.push({ kind: 'scalar', category: scalar });
+      continue;
+    }
+    if (scalar === 'ambiguous') {
+      observed = true;
+      unresolved = true;
+      continue;
+    }
+    if (returned?.type !== 'ObjectExpression') {
+      if (observed) unresolved = true;
+      continue;
+    }
+    const fields = [];
+    let objectObserved = false;
+    let objectUnresolved = false;
+    for (const property of returned.properties || []) {
+      if (property.type !== 'ObjectProperty' || property.computed) {
+        objectUnresolved = true;
+        continue;
+      }
+      const field = propertyName(property);
+      const category = expressionIdentityCategory(property.value, principalAliases, tenantAliases);
+      if (category === 'ambiguous') objectUnresolved = true;
+      else if (field && category) {
+        objectObserved = true;
+        fields.push({ field, category });
+      }
+    }
+    if (objectObserved) {
+      observed = true;
+      unresolved ||= objectUnresolved;
+      shapes.push({ kind: 'object', fields: fields.sort((left, right) =>
+        left.field.localeCompare(right.field)) });
+    } else if (observed) unresolved = true;
+  }
+  if (!observed) return { state: 'not_observed', shape: null };
+  const normalized = [...new Set(shapes.map((shape) => JSON.stringify(shape)))];
+  if (unresolved || normalized.length !== 1 || shapes.length !== returns.length) {
+    return { state: 'incomplete', shape: null };
+  }
+  return { state: 'exact', shape: JSON.parse(normalized[0]) };
+}
+
+function unresolvedProviderWrappers(declarations, symbols, module) {
+  const wrappers = [];
+  for (const declaration of declarations) {
+    const call = unwrap(declaration.init);
+    if (call?.type !== 'CallExpression' || callDescriptor(call, symbols)?.state) continue;
+    const providers = [];
+    for (const argument of call.arguments || []) {
+      if (argument.type === 'SpreadElement') continue;
+      const descriptor = symbols.get(safeName(argument));
+      if (descriptor?.state || descriptor?.factory || descriptor?.instance) {
+        providers.push(descriptor.provider);
+      }
+    }
+    for (const provider of [...new Set(providers.filter(Boolean))]) {
+      wrappers.push({ provider, kind: `${provider}-provider-wrapper-unresolved`,
+        origin: `${provider}:${safeName(call.callee) || '<dynamic-wrapper>'}`,
+        location: sourceLocation(module.path, call) });
+    }
+  }
+  return wrappers;
 }
 
 function localSymbolsForHandler(handler, baseSymbols) {
@@ -245,6 +347,7 @@ export function analyzeIdentityEvidence(graph, module, handler) {
   const { symbols, declarations } = localSymbolsForHandler(handler, baseSymbols);
   const calls = [];
   const principalAliases = new Set();
+  const tenantAliases = new Set();
   functionWalk(handler, (node) => {
     if (node.type !== 'CallExpression') return;
     const descriptor = callDescriptor(node, symbols);
@@ -258,14 +361,24 @@ export function analyzeIdentityEvidence(graph, module, handler) {
       const descriptor = callDescriptor(node, symbols);
       if (descriptor?.state) matched = descriptor;
     });
-    if (matched) addPrincipalBindings(principalAliases, declaration.id, matched);
+    if (matched) addIdentityBindings(principalAliases, tenantAliases, declaration.id, matched);
   }
+  const unresolvedWrappers = unresolvedProviderWrappers(declarations, symbols, module);
   const unique = calls.filter((item, index, items) => items.findIndex((candidate) =>
     candidate.descriptor.kind === item.descriptor.kind && candidate.node.start === item.node.start) === index);
   if (!unique.length) return {
-    identity: { state: 'not_observed', provider: null, signals: [],
+    identity: unresolvedWrappers.length ? {
+      state: 'incomplete',
+      provider: [...new Set(unresolvedWrappers.map((item) => item.provider))].length === 1
+        ? unresolvedWrappers[0].provider : 'multiple',
+      signals: unresolvedWrappers,
+      boundary: 'A supported identity-provider value enters an unresolved wrapper. Authentication, returned identity and enforcement are not established.',
+    } : { state: 'not_observed', provider: null, signals: [],
       boundary: 'No exact supported identity-provider call was observed in this bounded handler.' },
     principalAliases,
+    tenantAliases,
+    returnFacts: { state: 'not_observed', shape: null },
+    limitations: unresolvedWrappers.length ? ['identity_provider_wrapper_unresolved'] : [],
   };
   const providers = [...new Set(unique.map((item) => item.descriptor.provider))];
   const states = [...new Set(unique.map((item) => item.descriptor.state))];
@@ -282,6 +395,9 @@ export function analyzeIdentityEvidence(graph, module, handler) {
         : 'An exact supported identity-provider call was observed; returned identity, session validity and downstream enforcement are not proved.',
     },
     principalAliases,
+    tenantAliases,
+    returnFacts: returnedIdentityFacts(handler, principalAliases, tenantAliases),
+    limitations: unresolvedWrappers.length ? ['identity_provider_wrapper_unresolved'] : [],
   };
 }
 

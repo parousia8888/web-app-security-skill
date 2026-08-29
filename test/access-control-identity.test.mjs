@@ -23,11 +23,14 @@ import { auth as authjs } from './auth';
 import { auth as better } from './better';
 import { createClient } from './supabase';
 import { auth as clerkAuth, currentUser } from '@clerk/nextjs/server';
+import { getServerSession } from 'next-auth';
+const wrapProvider = (provider) => provider;
 async function authjsHandler() { const session = await authjs(); return session.user.id; }
 async function betterHandler(headers) { const session = await better.api.getSession({ headers }); return session.user.id; }
-async function clerkHandler() { const { userId } = await clerkAuth(); const user = await currentUser(); return [userId, user.id]; }
+async function clerkHandler() { const { userId, orgId } = await clerkAuth(); const user = await currentUser(); return [userId, orgId, user.id]; }
 async function supabaseHandler() { const client = await createClient(); const { data: { user } } = await client.auth.getUser(); return user.id; }
 async function benignHandler() { const auth = () => ({ userId: 'fixture' }); return auth(); }
+async function wrappedHandler() { const wrapped = wrapProvider(getServerSession); const session = await wrapped(); return session.user.id; }
 ` },
 ];
 
@@ -56,6 +59,8 @@ assert.equal(clerk.identity.provider, 'clerk');
 assert.equal(clerk.identity.state, 'identity_call_observed');
 assert.ok(clerk.principalAliases.has('userId'));
 assert.ok(clerk.principalAliases.has('user.id'));
+assert.ok(clerk.tenantAliases.has('orgId'));
+assert.equal(clerk.principalAliases.has('orgId'), false);
 
 const supabase = analyzeIdentityEvidence(graph, module, handler('supabaseHandler'));
 assert.equal(supabase.identity.provider, 'supabase');
@@ -66,6 +71,11 @@ const benign = analyzeIdentityEvidence(graph, module, handler('benignHandler'));
 assert.equal(benign.identity.state, 'not_observed');
 assert.equal(benign.identity.signals.length, 0);
 assert.equal(identityProviderSymbolsForHandler(graph, module, handler('benignHandler')).has('benignHandler'),
-  false, 'a handler that calls a local helper is not itself a provider factory');
+    false, 'a handler that calls a local helper is not itself a provider factory');
+
+const wrapped = analyzeIdentityEvidence(graph, module, handler('wrappedHandler'));
+assert.equal(wrapped.identity.state, 'incomplete');
+assert.deepEqual(wrapped.limitations, ['identity_provider_wrapper_unresolved']);
+assert.equal(wrapped.principalAliases.has('session.user.id'), false);
 
 console.log('access-control identity ok: exact providers, one-local-module factories and benign names');

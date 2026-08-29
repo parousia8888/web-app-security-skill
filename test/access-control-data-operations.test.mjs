@@ -34,7 +34,11 @@ async function supabaseUnsafe(objectId, userId) {
   const client = await createClient();
   return client.from('orders').select('*').eq('id', objectId);
 }
-async function supabaseSafe(objectId, userId) {
+async function supabaseSafe(objectId, tenantId) {
+  const client = await createClient();
+  return client.from('orders').update({ status: 'done' }).eq('id', objectId).eq('tenant_id', tenantId);
+}
+async function supabasePrincipalIsNotTenant(objectId, userId) {
   const client = await createClient();
   return client.from('orders').update({ status: 'done' }).eq('id', objectId).eq('tenant_id', userId);
 }
@@ -57,6 +61,7 @@ function handler(name) {
 function operation(name) {
   const result = analyzeDataOperations(graph, module, handler(name), {
     objectAliases: new Set(['objectId']), principalAliases: new Set(['userId']),
+    tenantAliases: new Set(['tenantId']),
   });
   assert.equal(result.operations.length, 1, name);
   return result.operations[0];
@@ -72,6 +77,7 @@ assert.equal(supabaseUnsafe.externalPolicy, 'external_policy_required');
 const supabaseSafe = operation('supabaseSafe');
 assert.equal(supabaseSafe.tenantConstraint, 'observed');
 assert.equal(supabaseSafe.externalPolicy, 'external_policy_required');
+assert.equal(operation('supabasePrincipalIsNotTenant').tenantConstraint, 'not_observed');
 assert.equal(analyzeDataOperations(graph, module, handler('benign'), {
   objectAliases: new Set(['objectId']), principalAliases: new Set(),
 }).operations.length, 0);

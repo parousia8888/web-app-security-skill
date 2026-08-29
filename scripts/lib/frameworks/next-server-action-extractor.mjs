@@ -121,7 +121,8 @@ export function extractNextServerActions(graph) {
         graph, module, handler: candidate.handler, entry: { kind: 'server-action', id: seed.id,
           name: candidate.name, module },
         identity: identity.identity, selectorGroups: selected.selectorGroups,
-        principalAliases: identity.principalAliases, budget: accessBudget,
+        principalAliases: identity.principalAliases, tenantAliases: identity.tenantAliases,
+        budget: accessBudget,
       });
       reasons.push(...paths.coverage.reasons.map((code) => ({ code, path: module.path })));
       const accessChains = paths.chains.map(accessChainRecord);

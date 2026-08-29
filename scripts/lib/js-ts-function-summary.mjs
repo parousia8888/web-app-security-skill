@@ -69,6 +69,24 @@ function callResultMapping(call, parents) {
   if (parent?.type === 'VariableDeclarator' && parent.init === current) {
     const target = parameterNode(parent.id);
     if (target?.type === 'Identifier') return { kind: 'identifier', name: target.name, reason: null };
+    if (target?.type === 'ObjectPattern') {
+      const bindings = [];
+      let unresolved = false;
+      for (const property of target.properties || []) {
+        if (property.type !== 'ObjectProperty' || property.computed) {
+          unresolved = true;
+          continue;
+        }
+        const field = propertyName(property);
+        const local = parameterNode(property.value);
+        if (!field || local?.type !== 'Identifier') unresolved = true;
+        else bindings.push({ field, local: local.name });
+      }
+      if (!unresolved && bindings.length) {
+        return { kind: 'object_pattern', name: null, bindings, reason: null };
+      }
+      return { kind: 'unresolved', name: null, reason: 'return_mapping_unresolved' };
+    }
     if (target?.type === 'ArrayPattern' && target.elements.length === 1
         && target.elements[0]?.type === 'Identifier') {
       return { kind: 'single_element_array', name: target.elements[0].name, reason: null };
