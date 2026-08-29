@@ -1,4 +1,7 @@
 import { analyzeDataOperations } from './js-ts-data-operation-evidence.mjs';
+import {
+  analyzePostLoadComparisons, callResourceFlow, operationResourceFlow,
+} from './js-ts-authorization-evidence.mjs';
 import { callableIndexForGraph } from './js-ts-callable-index.mjs';
 import { analyzeIdentityEvidence } from './js-ts-identity-evidence.mjs';
 import { expressionName } from './js-ts-module-graph.mjs';
@@ -106,29 +109,72 @@ function chainKey(chain) {
   ]);
 }
 
-function outcomeFor(operation) {
-  if (operation.principalConstraint === 'incomplete' || operation.tenantConstraint === 'incomplete'
-      || operation.objectConstraint === 'incomplete') return 'incomplete';
-  if (operation.principalConstraint === 'observed' || operation.tenantConstraint === 'observed') {
+function outcomeFor(operation, authorizationEvidence = []) {
+  if (operation.objectConstraint === 'incomplete') return 'incomplete';
+  if (authorizationEvidence.some((item) => item.state === 'observed'
+      && ['principal', 'tenant'].includes(item.category))
+      || operation.principalConstraint === 'observed' || operation.tenantConstraint === 'observed') {
     return 'principal_constraint_observed';
+  }
+  if (authorizationEvidence.some((item) => item.state === 'incomplete')
+      || operation.principalConstraint === 'incomplete' || operation.tenantConstraint === 'incomplete') {
+    return 'incomplete';
   }
   return operation.externalPolicy === 'external_policy_required'
     ? 'external_policy_required' : 'principal_constraint_not_observed';
 }
 
-function completed(state, operation) {
+function postLoadEvidence(state, summary, operation, index, limits) {
+  const evidence = [];
+  const limitations = new Set();
+  let flow = operationResourceFlow(summary, operation);
+  for (const limitation of flow.limitations) limitations.add(limitation);
+  if (flow.aliases.size) {
+    const local = analyzePostLoadComparisons(index, summary, {
+      resourceAliases: flow.aliases,
+      principalAliases: state.facts.principalAliases,
+      tenantAliases: state.facts.tenantAliases,
+    }, { maxEdges: Math.max(0, limits.maxLocalCallEdges - state.callEdges.length) });
+    evidence.push(...local.evidence);
+    for (const limitation of local.limitations) limitations.add(limitation);
+  }
+  for (let cursor = state.continuations.length - 1; flow.returned && cursor >= 0; cursor -= 1) {
+    const continuation = state.continuations[cursor];
+    flow = callResourceFlow(continuation.summary, continuation.call);
+    for (const limitation of flow.limitations) limitations.add(limitation);
+    if (flow.aliases.size) {
+      const local = analyzePostLoadComparisons(index, continuation.summary, {
+        resourceAliases: flow.aliases,
+        principalAliases: continuation.facts.principalAliases,
+        tenantAliases: continuation.facts.tenantAliases,
+      }, { maxEdges: Math.max(0, limits.maxLocalCallEdges - state.callEdges.length) });
+      evidence.push(...local.evidence);
+      for (const limitation of local.limitations) limitations.add(limitation);
+    }
+  }
+  return { evidence, limitations: [...limitations].sort() };
+}
+
+function completed(state, summary, operation, index, limits) {
+  const postLoad = postLoadEvidence(state, summary, operation, index, limits);
+  const authorizationEvidence = [
+    ...(operation.authorizationEvidence || []), ...postLoad.evidence,
+  ];
   return {
     entryKind: state.entry.kind,
     entryId: state.entry.id,
     status: 'completed',
-    outcome: outcomeFor(operation),
+    outcome: outcomeFor(operation, authorizationEvidence),
     identity: state.identity,
     objectSelectors: [state.selector],
     callEdges: state.callEdges,
     dataOperation: operation,
-    authorizationEvidence: operation.authorizationEvidence || null,
-    limitations: [...new Set([...state.limitations, ...(operation.limitations || [])])].sort(),
-    evidenceBoundary: state.callEdges.length
+    authorizationEvidence: authorizationEvidence.length ? authorizationEvidence : null,
+    limitations: [...new Set([...state.limitations, ...(operation.limitations || []),
+      ...postLoad.limitations])].sort(),
+    evidenceBoundary: postLoad.evidence.some((item) => item.state === 'observed')
+      ? 'An exact bounded path reached a supported data operation and an exact post-load owner or tenant comparison. The comparison does not prove control-flow dominance, deployed denial or exploitability.'
+      : state.callEdges.length
       ? 'An exact bounded local call path reached a supported data operation. Static source relationships do not prove deployed authorization or exploitability.'
       : 'The request-selected object reaches a supported same-handler data operation. Static source relationships do not prove deployed authorization or exploitability.',
     reason: null,
@@ -231,6 +277,7 @@ export function analyzeAccessPaths(input) {
       tenantAliases: new Set(input.tenantAliases || []),
       omittedAliases: new Set(),
     },
+    continuations: [],
     callEdges: [],
     visited: new Set([target.id]),
     limitations: [],
@@ -298,7 +345,7 @@ export function analyzeAccessPaths(input) {
     });
     for (const operation of analyzed.operations) {
       operations.push(operation);
-      if (!emit(completed(active, operation))) chainLimitRecorded = true;
+      if (!emit(completed(active, summary, operation, index, limits))) chainLimitRecorded = true;
     }
     for (const item of analyzed.incomplete) emit(incompleteOperation(active, item));
     if (active.limitations.includes('identity_provider_wrapper_unresolved')) {
@@ -358,6 +405,7 @@ export function analyzeAccessPaths(input) {
         callEdges: nextEdges,
         visited: new Set([...active.visited, call.resolution.target.id]),
         limitations: [...new Set([...active.limitations, ...mapped.limitations])].sort(),
+        continuations: [...active.continuations, { summary, call, facts }],
       });
     }
     if (state.callEdges.length && !analyzed.operations.length && !analyzed.incomplete.length

@@ -1,9 +1,15 @@
 import { accessControlKeyCategory } from './access-control-vocabulary.mjs';
 import { sourceLocation } from './frameworks/route-extractor-helpers.mjs';
 import { expressionName } from './js-ts-module-graph.mjs';
+import { mapCallFacts, summarizeCallable } from './js-ts-function-summary.mjs';
 
 const CATEGORIES = ['object', 'principal', 'tenant'];
 const CONVERSIONS = new Set(['String', 'Number', 'parseInt']);
+const COMPARISON_OPERATORS = new Set(['==', '===', '!=', '!==']);
+const FUNCTION_TYPES = new Set([
+  'ArrowFunctionExpression', 'FunctionDeclaration', 'FunctionExpression', 'ClassMethod',
+  'ClassPrivateMethod', 'ObjectMethod',
+]);
 
 function unwrap(node) {
   let current = node;
@@ -239,4 +245,321 @@ export function observedAuthorizationEvidence(evaluation) {
   return CATEGORIES.filter((category) => category !== 'object')
     .map((category) => evaluation.states[category].evidence)
     .filter(Boolean);
+}
+
+function localWalk(root, visit) {
+  const stack = [{ node: root, root: true }];
+  while (stack.length) {
+    const { node, root } = stack.pop();
+    if (!node || typeof node !== 'object') continue;
+    if (!root && FUNCTION_TYPES.has(node.type)) continue;
+    if (typeof node.type === 'string') visit(node);
+    for (const [key, value] of Object.entries(node)) {
+      if (['loc', 'start', 'end', 'extra', 'errors', 'comments', 'tokens'].includes(key)) continue;
+      if (Array.isArray(value)) {
+        for (let index = value.length - 1; index >= 0; index -= 1) {
+          stack.push({ node: value[index], root: false });
+        }
+      } else if (value && typeof value === 'object') stack.push({ node: value, root: false });
+    }
+  }
+}
+
+function parameterNode(raw) {
+  const parameter = raw?.type === 'TSParameterProperty' ? raw.parameter : raw;
+  return parameter?.type === 'AssignmentPattern' ? parameter.left : parameter;
+}
+
+function nullishReturn(node) {
+  const current = unwrap(node);
+  return !current || current.type === 'NullLiteral'
+    || (current.type === 'Identifier' && current.name === 'undefined')
+    || (current.type === 'UnaryExpression' && current.operator === 'void');
+}
+
+function aliasesReturned(summary, aliases) {
+  let observed = false;
+  let ambiguous = false;
+  for (const item of summary.returns) {
+    if (nullishReturn(item.argument)) continue;
+    const name = safeName(item.argument);
+    if (name && aliases.has(name)) observed = true;
+    else ambiguous = true;
+  }
+  return { returned: observed && !ambiguous,
+    limitations: ambiguous && observed ? ['return_mapping_unresolved'] : [] };
+}
+
+function aliasesForMapping(mapping) {
+  if (['identifier', 'single_element_array'].includes(mapping?.kind) && mapping.name) {
+    return new Set([mapping.name]);
+  }
+  return new Set();
+}
+
+export function operationResourceFlow(summary, operation) {
+  const call = summary.calls.find((item) => item.node === operation.node);
+  if (!call) return { aliases: new Set(), returned: false,
+    limitations: ['return_mapping_unresolved'] };
+  if (call.resultMapping.kind === 'direct_return') {
+    return { aliases: new Set(), returned: true, limitations: [] };
+  }
+  const aliases = aliasesForMapping(call.resultMapping);
+  const returned = aliasesReturned(summary, aliases);
+  return { aliases, returned: returned.returned,
+    limitations: [...new Set([call.resultMapping.reason, ...returned.limitations].filter(Boolean))] };
+}
+
+export function callResourceFlow(summary, call) {
+  if (call.resultMapping.kind === 'direct_return') {
+    return { aliases: new Set(), returned: true, limitations: [] };
+  }
+  const aliases = aliasesForMapping(call.resultMapping);
+  const returned = aliasesReturned(summary, aliases);
+  return { aliases, returned: returned.returned,
+    limitations: [...new Set([call.resultMapping.reason, ...returned.limitations].filter(Boolean))] };
+}
+
+function expandResourceAliases(summary, seed) {
+  const aliases = new Set(seed);
+  const fieldAliases = new Map();
+  const unresolvedAliases = new Set();
+  const limitations = new Set();
+  for (let pass = 0; pass < 4; pass += 1) {
+    let changed = false;
+    for (const declaration of summary.declarations) {
+      const source = safeName(declaration.init);
+      const directField = resourceField(declaration.init, aliases);
+      if (declaration.id?.type === 'Identifier' && directField) {
+        if (summary.writes.get(declaration.id.name) === 1) {
+          fieldAliases.set(declaration.id.name, directField);
+        } else limitations.add('return_mapping_unresolved');
+        continue;
+      }
+      if (!source || !aliases.has(source)) {
+        if (declaration.id?.type === 'Identifier' && containsResource(declaration.init, aliases)) {
+          unresolvedAliases.add(declaration.id.name);
+        }
+        continue;
+      }
+      if (declaration.id?.type === 'Identifier') {
+        if (summary.writes.get(declaration.id.name) !== 1) {
+          limitations.add('return_mapping_unresolved');
+          continue;
+        }
+        if (!aliases.has(declaration.id.name)) {
+          aliases.add(declaration.id.name);
+          changed = true;
+        }
+        continue;
+      }
+      if (declaration.id?.type === 'ArrayPattern' && declaration.id.elements.length === 1
+          && declaration.id.elements[0]?.type === 'Identifier') {
+        const name = declaration.id.elements[0].name;
+        if (!aliases.has(name)) {
+          aliases.add(name);
+          changed = true;
+        }
+      } else if (declaration.id?.type === 'ArrayPattern') {
+        limitations.add('destructuring_mapping_ambiguous');
+      }
+    }
+    if (!changed) break;
+  }
+  return { aliases, fieldAliases, unresolvedAliases,
+    limitations: [...limitations].sort() };
+}
+
+function resourceField(raw, resourceAliases) {
+  const node = unwrap(raw);
+  if (!['MemberExpression', 'OptionalMemberExpression'].includes(node?.type) || node.computed) {
+    return null;
+  }
+  const resource = safeName(node.object);
+  const field = safeName(node.property);
+  const category = accessControlKeyCategory(field);
+  return resource && resourceAliases.has(resource) && ['principal', 'tenant'].includes(category)
+    ? { category, field } : null;
+}
+
+function participatesInDecision(summary, raw) {
+  let node = raw;
+  let parent = summary.parents.get(node);
+  while (parent && [
+    'AwaitExpression', 'TSAsExpression', 'TSTypeAssertion', 'TSNonNullExpression',
+    'TypeCastExpression', 'ParenthesizedExpression', 'SatisfiesExpression', 'UnaryExpression',
+    'LogicalExpression', 'ChainExpression',
+  ].includes(parent.type)) {
+    node = parent;
+    parent = summary.parents.get(node);
+  }
+  if (parent?.type === 'ReturnStatement' && parent.argument === node) return true;
+  if (parent?.type === 'ThrowStatement' && parent.argument === node) return true;
+  if (parent?.type === 'ConditionalExpression' && parent.test === node) return true;
+  return ['IfStatement', 'WhileStatement', 'DoWhileStatement', 'ForStatement'].includes(parent?.type)
+    && parent.test === node;
+}
+
+function containsResource(raw, resourceAliases) {
+  const stack = [unwrap(raw)];
+  let visited = 0;
+  while (stack.length && visited < 2_000) {
+    const node = stack.pop();
+    if (!node || typeof node !== 'object') continue;
+    visited += 1;
+    const name = safeName(node);
+    if (name && resourceAliases.has(name)) return true;
+    if (FUNCTION_TYPES.has(node.type)) continue;
+    for (const [key, value] of Object.entries(node)) {
+      if (['loc', 'start', 'end', 'extra', 'comments', 'tokens'].includes(key)) continue;
+      if (Array.isArray(value)) stack.push(...value);
+      else if (value && typeof value === 'object') stack.push(value);
+    }
+  }
+  return false;
+}
+
+function comparisonFor(module, summary, node, facts, resourceState) {
+  if (node.type !== 'BinaryExpression' || !COMPARISON_OPERATORS.has(node.operator)) return null;
+  if (!participatesInDecision(summary, node)) return null;
+  for (const [resourceNode, identityNode] of [[node.left, node.right], [node.right, node.left]]) {
+    const field = resourceField(resourceNode, resourceState.aliases)
+      || resourceState.fieldAliases.get(safeName(resourceNode));
+    if (!field || !expressionMatches(identityNode, facts, field.category)) continue;
+    return {
+      kind: 'post_load_comparison', category: field.category, state: 'observed',
+      field: field.field, location: sourceLocation(module.path, node),
+    };
+  }
+  for (const [resourceNode, identityNode] of [[node.left, node.right], [node.right, node.left]]) {
+    const current = unwrap(resourceNode);
+    const unresolvedName = ['MemberExpression', 'OptionalMemberExpression'].includes(current?.type)
+      ? safeName(current.object) : safeName(current);
+    if (!resourceState.unresolvedAliases.has(unresolvedName)) continue;
+    for (const category of ['principal', 'tenant']) {
+      if (!expressionMatches(identityNode, facts, category)) continue;
+      return {
+        kind: 'post_load_comparison', category, state: 'incomplete', field: null,
+        location: sourceLocation(module.path, node), limitation: 'return_mapping_unresolved',
+      };
+    }
+  }
+  return null;
+}
+
+function argumentMatchesResource(node, resourceAliases) {
+  const name = safeName(node);
+  return Boolean(name && resourceAliases.has(name));
+}
+
+function mapResourceArguments(call, resourceAliases) {
+  const aliases = new Set();
+  const parameters = call.resolution?.target?.node?.params || [];
+  for (let index = 0; index < call.node.arguments.length; index += 1) {
+    const argument = call.node.arguments[index];
+    const parameter = parameterNode(parameters[index]);
+    if (argument.type === 'SpreadElement' || parameter?.type !== 'Identifier') continue;
+    if (argumentMatchesResource(argument, resourceAliases)) aliases.add(parameter.name);
+  }
+  return aliases;
+}
+
+function ignoredHelper(node) {
+  const name = safeName(node.callee) || '';
+  return /^(?:console|Response|res|response)\./.test(name);
+}
+
+function callIdentityCategories(call, facts) {
+  const categories = new Set();
+  for (const argument of call.node.arguments) {
+    if (argument.type === 'SpreadElement') continue;
+    for (const category of ['principal', 'tenant']) {
+      if (expressionMatches(argument, facts, category)) categories.add(category);
+    }
+  }
+  return categories;
+}
+
+function uniqueEvidence(items) {
+  return items.filter((item, index, all) => all.findIndex((candidate) =>
+    candidate.kind === item.kind && candidate.category === item.category
+      && candidate.state === item.state && candidate.field === item.field
+      && candidate.location?.path === item.location?.path
+      && candidate.location?.line === item.location?.line) === index);
+}
+
+export function analyzePostLoadComparisons(index, summary, input, context = {}) {
+  const expanded = expandResourceAliases(summary, input.resourceAliases || []);
+  const facts = {
+    objectAliases: new Set(), objectNodes: new Set(), omittedAliases: new Set(),
+    principalAliases: new Set(input.principalAliases || []),
+    tenantAliases: new Set(input.tenantAliases || []),
+    objectValues: summary.objectValues,
+  };
+  const evidence = [];
+  const limitations = new Set(expanded.limitations);
+  localWalk(summary.target.node, (node) => {
+    const found = comparisonFor(summary.target.module, summary, node, facts, expanded);
+    if (found) {
+      const { limitation, ...record } = found;
+      evidence.push(record);
+      if (limitation) limitations.add(limitation);
+    }
+  });
+
+  const depth = context.depth || 0;
+  const maxEdges = context.maxEdges ?? 4;
+  const visited = context.visited || new Set([summary.target.id]);
+  if (depth < maxEdges) {
+    for (const call of summary.calls) {
+      const resourceArguments = call.node.arguments.some((argument) =>
+        argument.type !== 'SpreadElement' && argumentMatchesResource(argument, expanded.aliases));
+      if (!resourceArguments || ignoredHelper(call.node)) continue;
+      const categories = callIdentityCategories(call, facts);
+      if (call.resolution?.state === 'exact' && !visited.has(call.resolution.target.id)) {
+        const resourceAliases = mapResourceArguments(call, expanded.aliases);
+        const mapped = mapCallFacts(summary, call, facts);
+        if (!resourceAliases.size) {
+          if (categories.size) limitations.add('argument_mapping_ambiguous');
+          continue;
+        }
+        const nested = analyzePostLoadComparisons(index,
+          summarizeCallable(index, call.resolution.target), {
+            resourceAliases,
+            principalAliases: mapped.principalAliases,
+            tenantAliases: mapped.tenantAliases,
+          }, { depth: depth + 1, maxEdges,
+            visited: new Set([...visited, call.resolution.target.id]) });
+        evidence.push(...nested.evidence);
+        for (const limitation of [...mapped.limitations, ...nested.limitations]) {
+          limitations.add(limitation);
+        }
+      } else if (categories.size && participatesInDecision(summary, call.node)) {
+        for (const category of categories) {
+          evidence.push({
+            kind: 'post_load_comparison', category, state: 'incomplete', field: null,
+            location: sourceLocation(summary.target.module.path, call.node),
+          });
+        }
+        limitations.add(call.resolution?.limitation || 'call_target_unresolved');
+      }
+    }
+  } else {
+    for (const call of summary.calls) {
+      const resourceArguments = call.node.arguments.some((argument) =>
+        argument.type !== 'SpreadElement' && argumentMatchesResource(argument, expanded.aliases));
+      const categories = callIdentityCategories(call, facts);
+      if (!resourceArguments || !categories.size || ignoredHelper(call.node)
+          || !participatesInDecision(summary, call.node)) continue;
+      for (const category of categories) {
+        evidence.push({
+          kind: 'post_load_comparison', category, state: 'incomplete', field: null,
+          location: sourceLocation(summary.target.module.path, call.node),
+        });
+      }
+      limitations.add('call_depth_limit_reached');
+    }
+  }
+  return { evidence: uniqueEvidence(evidence), limitations: [...limitations].sort(),
+    resourceAliases: expanded.aliases };
 }
