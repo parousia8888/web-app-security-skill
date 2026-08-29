@@ -136,6 +136,16 @@ const TRUST = Object.freeze({
         'web-app-security-skill-0.7.3.tar.gz': 'cde58aecfbd937b6c536461b02a6f00131654d509ac19d340fe83c91be73b40a',
       },
     },
+    '0.8.0': {
+      tag: 'v0.8.0',
+      sourceCommit: '119cbcc7f8d327482df8abfa50a4af0b69fcceee',
+      assets: {
+        SHA256SUMS: 'e606db959a83171a6d19a76ff29979e9c5155594fa993be376fb36a10c75899e',
+        'web-app-security-skill-0.8.0.release.json': '3bee5679b353c3071eac1452cf52b2439979b30ded03686afbb734eec63b846a',
+        'web-app-security-skill-0.8.0.spdx.json': 'cce92a9bfdd96617c59d0c49c2f59f0ce07e9ea2b529de2f0dad16f57296a137',
+        'web-app-security-skill-0.8.0.tar.gz': 'd6136bdc82975274cc0059ad0bf36e602b447dbfb9cbcca8a7a058b60bb8d888',
+      },
+    },
   },
 });
 
@@ -148,7 +158,7 @@ function usage(code, message) {
 Downloads and verifies one explicit Web App Security Skill release before invoking its installer.
 
 Options:
-  --version <semver>             Trusted release to install (default: 0.7.3)
+  --version <semver>             Trusted release to install (default: 0.8.0)
   --target <surface>             claude, codex, cli, both, or all (default: all)
   --mode <install|upgrade>       Lifecycle operation (default: install)
   --force                        Back up and replace recognized installs (install only)
@@ -384,7 +394,7 @@ async function main() {
     return;
   }
   if (flag('-h') || flag('--help')) usage(0);
-  const version = take('--version', '0.7.3');
+  const version = take('--version', '0.8.0');
   const target = take('--target', 'all');
   const mode = take('--mode', 'install');
   const fromDir = take('--from-dir');
