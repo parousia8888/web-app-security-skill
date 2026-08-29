@@ -184,6 +184,16 @@ function moduleSymbols(graph, module, cache = new Map(), visiting = new Set(), d
   return symbols;
 }
 
+function cachedModuleSymbols(graph, module, cache) {
+  if (!cache) return moduleSymbols(graph, module);
+  if (cache.has(module.path)) return cache.get(module.path);
+  // Recursive moduleSymbols entries can be depth-limited or cycle-incomplete. Only cache a
+  // module after resolving it from a fresh top-level traversal.
+  const symbols = moduleSymbols(graph, module);
+  cache.set(module.path, symbols);
+  return symbols;
+}
+
 function objectBindings(pattern, prefix = []) {
   const output = [];
   if (pattern?.type === 'Identifier') return [{ local: pattern.name, path: prefix }];
@@ -338,12 +348,13 @@ function localSymbolsForHandler(handler, baseSymbols) {
   return { symbols, declarations };
 }
 
-export function identityProviderSymbolsForHandler(graph, module, handler) {
-  return localSymbolsForHandler(handler, moduleSymbols(graph, module)).symbols;
+export function identityProviderSymbolsForHandler(graph, module, handler, options = {}) {
+  return localSymbolsForHandler(handler,
+    cachedModuleSymbols(graph, module, options.moduleCache)).symbols;
 }
 
-export function analyzeIdentityEvidence(graph, module, handler) {
-  const baseSymbols = moduleSymbols(graph, module);
+export function analyzeIdentityEvidence(graph, module, handler, options = {}) {
+  const baseSymbols = cachedModuleSymbols(graph, module, options.moduleCache);
   const { symbols, declarations } = localSymbolsForHandler(handler, baseSymbols);
   const calls = [];
   const principalAliases = new Set();

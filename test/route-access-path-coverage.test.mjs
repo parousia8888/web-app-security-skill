@@ -28,6 +28,26 @@ assert.ok(unresolved.accessPathCoverage.reasons.some((reason) =>
 assert.ok(unresolved.routes[0].limitations.includes(
   'route-object-authorization-analysis-incomplete'));
 
+const wrappedNext = analyze([{
+  path: 'app/api/projects/[projectId]/route.ts', text: `
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+function withRoute(options) { return options.handler; }
+export const GET = withRoute({
+  handler: async ({ props }) => {
+    const params = await props.params;
+    return prisma.project.findUnique({ where: { id: params.projectId } });
+  },
+});
+`,
+}], [{ dependencies: { next: '15.0.0', '@prisma/client': '6.0.0' } }]);
+const wrappedRoute = wrappedNext.routes.find((route) => route.method === 'GET');
+assert.equal(wrappedNext.accessPathCoverage.status, 'completed');
+assert.equal(wrappedRoute.accessChains.length, 1);
+assert.equal(wrappedRoute.accessChains[0].status, 'completed');
+assert.equal(wrappedRoute.accessChains[0].objectSelectors[0].name, 'projectId');
+assert.equal(wrappedRoute.accessChains[0].dataOperation.provider, 'prisma');
+
 const inventoryPartial = analyze([{ path: 'src/app.ts', text: `
 import express from 'express';
 import { PrismaClient } from '@prisma/client';

@@ -190,6 +190,7 @@ function validateV3Chain(chain, label, errors) {
 
 export function validateRouteSecurityDocument(document) {
   const errors = [];
+  const chainIds = new Set();
   if (document === null || typeof document !== 'object' || Array.isArray(document)) {
     return ['route document must be an object'];
   }
@@ -382,6 +383,8 @@ export function validateRouteSecurityDocument(document) {
         const chainLabel = `${label}.accessChains[${chainIndex}]`;
         if (version === 3) {
           validateV3Chain(chain, chainLabel, errors);
+          if (chainIds.has(chain?.id)) errors.push(`${chainLabel}.id is duplicated`);
+          else chainIds.add(chain?.id);
           continue;
         }
         if (!chain?.id?.startsWith('access-chain.') || !digest(chain?.fingerprint)) {
@@ -437,6 +440,8 @@ export function validateRouteSecurityDocument(document) {
       const chainLabel = `${label}.accessChains[${chainIndex}]`;
       if (version === 3) {
         validateV3Chain(chain, chainLabel, errors);
+        if (chainIds.has(chain?.id)) errors.push(`${chainLabel}.id is duplicated`);
+        else chainIds.add(chain?.id);
         continue;
       }
       if (!chain?.id?.startsWith('access-chain.') || !digest(chain?.fingerprint)) {

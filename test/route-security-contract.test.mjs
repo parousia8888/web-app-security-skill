@@ -162,6 +162,12 @@ assert.equal(limitsCompared.baseline.reasonCode, 'route_analysis_limits_changed'
 const golden = JSON.parse(readFileSync(new URL(
   './fixtures/route-security-v3-golden.json', import.meta.url), 'utf8'));
 assert.deepEqual(validateRouteSecurityDocument(golden), []);
+const duplicateChainDocument = structuredClone(golden);
+duplicateChainDocument.routes[0].accessChains.push(
+  structuredClone(duplicateChainDocument.routes[0].accessChains[0]));
+assert.ok(validateRouteSecurityDocument(duplicateChainDocument)
+  .some((error) => error.endsWith('.id is duplicated')),
+'v3 validation must reject duplicate access-chain record IDs');
 assert.deepEqual(golden.routes[0].accessChains.map((chain) => chain.status),
   ['completed', 'partial', 'not_applicable']);
 assert.deepEqual(createRouteSecurityDocument({
@@ -204,6 +210,25 @@ const lineMovedFingerprint = accessChainRecord({
 });
 assert.equal(lineMovedFingerprint.fingerprint, stableFingerprint.fingerprint,
   'line movement must not become the access-path identity');
+assert.notEqual(lineMovedFingerprint.id, stableFingerprint.id,
+  'record IDs must distinguish exact evidence locations while semantic fingerprints stay stable');
+const secondOperationRecord = accessChainRecord({
+  ...fingerprintInput,
+  dataOperation: { ...fingerprintInput.dataOperation,
+    location: { ...fingerprintInput.dataOperation.location, line: 21 } },
+});
+assert.equal(secondOperationRecord.fingerprint, stableFingerprint.fingerprint,
+  'equivalent operations retain one semantic fingerprint');
+assert.notEqual(secondOperationRecord.id, stableFingerprint.id,
+  'distinct operation records must retain unique IDs');
+const distinctPartialReasons = ['callable_method_unresolved', 'callable_target_unresolved'].map(
+  (limitation) => accessChainRecord({
+    ...fingerprintInput, status: 'partial', outcome: 'incomplete',
+    dataOperation: null, authorizationEvidence: null,
+    reason: 'call_target_unresolved', limitations: [limitation],
+  }));
+assert.notEqual(distinctPartialReasons[0].id, distinctPartialReasons[1].id,
+  'distinct fail-closed records must retain unique IDs even after public reason normalization');
 assert.notEqual(accessChainRecord({
   ...fingerprintInput,
   callEdges: [{ ...fingerprintInput.callEdges[0], to: 'alternateRepository' }],

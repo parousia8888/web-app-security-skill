@@ -56,13 +56,13 @@ function addReturnedIdentityAlias(facts, category, name) {
   facts[`${category}Aliases`].add(name);
 }
 
-function applyReturnedIdentityFacts(graph, summary, facts) {
+function applyReturnedIdentityFacts(graph, summary, facts, identityModuleCache) {
   const identities = [];
   const limitations = new Set();
   for (const call of summary.calls) {
     if (call.resolution?.state !== 'exact' || call.resultMapping.kind === 'unused') continue;
     const returned = analyzeIdentityEvidence(graph, call.resolution.target.module,
-      call.resolution.target.node);
+      call.resolution.target.node, { moduleCache: identityModuleCache });
     if (returned.returnFacts?.state === 'incomplete') {
       limitations.add('identity_return_mapping_unresolved');
       continue;
@@ -316,7 +316,8 @@ export function analyzeAccessPaths(input) {
     const summary = summarizeCallable(index, state.target,
       { maxCallSites: limits.maxExaminedCallSitesPerSummary });
     counts.callSites += summary.calls.length;
-    const localIdentity = analyzeIdentityEvidence(input.graph, state.target.module, state.target.node);
+    const localIdentity = analyzeIdentityEvidence(input.graph, state.target.module, state.target.node,
+      { moduleCache: input.identityModuleCache });
     const identitySeed = {
       ...state.facts,
       principalAliases: new Set([
@@ -327,7 +328,8 @@ export function analyzeAccessPaths(input) {
       ]),
     };
     let facts = expandSummaryFacts(summary, identitySeed);
-    const returnedIdentity = applyReturnedIdentityFacts(input.graph, summary, facts);
+    const returnedIdentity = applyReturnedIdentityFacts(input.graph, summary, facts,
+      input.identityModuleCache);
     facts = expandSummaryFacts(summary, returnedIdentity.facts);
     const identity = returnedIdentity.identities.reduce(mergeIdentity,
       mergeIdentity(state.identity, localIdentity.identity));
@@ -342,6 +344,8 @@ export function analyzeAccessPaths(input) {
       tenantAliases: facts.tenantAliases,
       omittedAliases: facts.omittedAliases,
       callableIndex: index,
+      clientCache: input.clientCache,
+      identityModuleCache: input.identityModuleCache,
     });
     for (const operation of analyzed.operations) {
       operations.push(operation);

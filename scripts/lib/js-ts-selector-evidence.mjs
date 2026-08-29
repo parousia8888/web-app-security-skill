@@ -206,6 +206,20 @@ export function extractSelectorEvidence(input) {
         else limit('selector_destructuring_ambiguous', property);
         continue;
       }
+      if (container.surface === 'next-wrapper-handler' && field === 'props') {
+        const nested = {
+          surface: 'next-context', kind: 'next-route-param', origin: container.origin,
+          allowedNames: new Set(pathNames), location: sourceLocation(module.path, property),
+        };
+        if (value?.type === 'ObjectPattern') changed = bindPattern(value, nested, property) || changed;
+        else if (value?.type === 'Identifier') {
+          const before = contextRoots.size;
+          contextRoots.add(value.name);
+          changed = contextRoots.size !== before || changed;
+        }
+        else limit('selector_destructuring_ambiguous', property);
+        continue;
+      }
       if (container.surface === 'url' && field === 'searchParams') {
         const nested = { surface: 'search-params', kind: 'next-search-param',
           origin: container.origin, allowedNames: null,
@@ -400,6 +414,14 @@ export function extractSelectorEvidence(input) {
       return;
     }
     if (framework === 'next-app') {
+      if (input.routeHandlerKind === 'wrapper_handler') {
+        const wrapped = parameterNode(handler.params?.[0]);
+        if (wrapped?.type === 'ObjectPattern') bindPattern(wrapped, {
+          surface: 'next-wrapper-handler', kind: 'next-route-param',
+          origin: 'request_selected', allowedNames: new Set(pathNames),
+        });
+        return;
+      }
       const request = parameterNode(handler.params?.[0]);
       if (request?.type === 'Identifier') requestRoots.set(request.name, { kind: 'next-request' });
       const context = parameterNode(handler.params?.[1]);

@@ -15,6 +15,9 @@ export function importedBindings(module) {
         imported: binding.imported,
         resolvedPath: item.resolution?.path || null,
         resolutionReason: item.resolution?.reason || null,
+        generatedProvider: item.resolution?.generatedProvider || null,
+        providerEvidencePath: item.resolution?.providerEvidencePath || null,
+        typeOnly: Boolean(binding.typeOnly),
       });
     }
   }
@@ -103,7 +106,7 @@ export function structuralGraphReasons(graph) {
 export function localModuleExport(graph, modulePath, imported) {
   const module = graph.modules.get(modulePath);
   if (!module) return null;
-  const match = module.exports.find((item) => item.exported === imported);
+  const match = module.exports.find((item) => item.exported === imported && !item.typeOnly);
   return match?.local || null;
 }
 

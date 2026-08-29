@@ -113,6 +113,7 @@ function collectExports(module) {
   const exports = new Map();
   const stars = [];
   for (const raw of module.ast?.body || []) {
+    if (raw.type === 'ExportNamedDeclaration' && raw.exportKind === 'type') continue;
     if (raw.type === 'ExportAllDeclaration') {
       const source = literalString(raw.source);
       const resolution = sourceResolution(module, source,
@@ -168,7 +169,7 @@ function collectExports(module) {
     }
   }
   for (const item of module.exports || []) {
-    if (!item.exported || exports.has(item.exported)) continue;
+    if (!item.exported || item.typeOnly || exports.has(item.exported)) continue;
     if (item.local) add(exports, item.exported, { kind: 'local', local: item.local });
     else if (item.node) add(exports, item.exported,
       { kind: 'expression', node: item.node, name: item.exported });

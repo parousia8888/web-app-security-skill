@@ -54,6 +54,14 @@ function objectPath(objectId, principalId) { return objectBridge(objectId, princ
 function cyclic(objectId) { return cycleA(objectId); }
 function arrayPath(objectId) { return arrayBridge(objectId); }
 function swappedFacts(objectId, principalId) { return constrained(principalId, objectId); }
+function unrelatedRest(objectId) {
+  const { ignored, ...rest } = { ignored: true, note: 'not access-control input' };
+  return localPrisma.project.findUnique({ where: { id: objectId } });
+}
+function relevantRest(input) {
+  const { objectId, ...rest } = input;
+  return localPrisma.project.findUnique({ where: { id: objectId } });
+}
 ` },
 ];
 // The direct fixture needs its own exact Prisma singleton in the entry module.
@@ -117,6 +125,17 @@ assert.ok(array.chains.some((chain) => chain.reason === 'argument_mapping_ambigu
 assert.equal(array.chains.some((chain) => chain.status === 'completed'), false);
 const swapped = analyze('swappedFacts');
 assert.equal(swapped.chains.some((chain) => chain.status === 'completed'), false);
+const unrelatedRest = analyze('unrelatedRest');
+assert.deepEqual(unrelatedRest.chains.find((chain) => chain.status === 'completed').limitations, [],
+  'unrelated object rest must not contaminate an exact tracked path');
+const relevantRest = analyze('relevantRest', { selectorGroups: [{
+  selector: { kind: 'route-parameter', name: 'id', origin: 'request_selected',
+    location: { path: module.path, line: 1 } },
+  aliases: new Set(['input.objectId']), nodes: new Set(),
+}] });
+assert.ok(relevantRest.chains.find((chain) => chain.status === 'completed').limitations
+  .includes('destructuring_mapping_ambiguous'),
+'rest on a tracked object must retain an explicit evidence limitation');
 
 const stateLimited = analyze('two', { limits: { maxActiveStatesPerEntry: 1 } });
 assert.ok(stateLimited.chains.some((chain) => chain.reason === 'call_state_budget_reached'));

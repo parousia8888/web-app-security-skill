@@ -216,8 +216,18 @@ export function accessChainRecord(input) {
     ...authorizationEvidence.flatMap((evidence) => [evidence.category, evidence.kind, evidence.state]),
     reason || ''].join('\u0000');
   const fingerprint = sha256(structural);
+  const recordIdentity = [fingerprint,
+    ...objectSelectors.flatMap((selector) => [selector.location.path, selector.location.line ?? 0]),
+    ...callEdges.flatMap((edge) => [edge.location.path, edge.location.line ?? 0]),
+    normalizedOperation?.location.path || '', normalizedOperation?.location.line ?? 0,
+    ...authorizationEvidence.flatMap((evidence) => [
+      evidence.location?.path || '', evidence.location?.line ?? 0,
+    ]),
+    ...limitations,
+  ].join('\u0000');
+  const recordDigest = sha256(recordIdentity);
   return {
-    id: `access-chain.${fingerprint.slice(0, 24)}`,
+    id: `access-chain.${recordDigest.slice(0, 24)}`,
     fingerprint,
     status,
     outcome,

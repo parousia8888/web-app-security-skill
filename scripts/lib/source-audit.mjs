@@ -431,10 +431,17 @@ export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMIT
     .filter(([, result]) => result.outcome === 'scanned').map(([path, result]) => [path, result.parsed]));
   const routeInputIssues = [];
   const moduleConfigFiles = [];
-  for (const file of files.filter((item) => item.name === 'tsconfig.json' || item.name === 'jsconfig.json')) {
+  const providerConfigFiles = [];
+  for (const file of files.filter((item) => item.name === 'tsconfig.json'
+      || item.name === 'jsconfig.json' || /^vite\.config\.[cm]?[jt]s$/i.test(item.name))) {
     const loaded = load(file);
     if (loaded.outcome === 'scanned') moduleConfigFiles.push({ path: file.path, text: loaded.text });
     else routeInputIssues?.push?.({ code: loaded.code, path: file.path });
+  }
+  for (const file of files.filter((item) => item.name.endsWith('.prisma'))) {
+    const loaded = load(file);
+    if (loaded.outcome === 'scanned') providerConfigFiles.push({ path: file.path, text: loaded.text });
+    else routeInputIssues.push({ code: loaded.code, path: file.path });
   }
   const pnpmWorkspaces = new Map();
   for (const file of files.filter((item) => item.name === 'pnpm-workspace.yaml')) {
@@ -519,6 +526,7 @@ export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMIT
     packageManifests: [...parsedPackages.values()],
     packageManifestRecords: [...parsedPackages.entries()].map(([path, manifest]) => ({ path, manifest })),
     configFiles: moduleConfigFiles,
+    providerFiles: providerConfigFiles,
     graphLimits: { maxModules: effectiveLimits.maxFiles },
   });
   if (['partial', 'unavailable'].includes(routeAnalysis.reportCoverage.status)) {

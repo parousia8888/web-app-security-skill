@@ -215,6 +215,7 @@ export function analyzeRouteSecurity(sourceFiles, options = {}) {
     ...(options.graphLimits || {}),
     configFiles: options.configFiles || [],
     packageManifests: options.packageManifestRecords || [],
+    providerFiles: options.providerFiles || [],
   });
   for (const issue of inputIssues) graph.reasons.push({ code: issue.code, path: issue.path });
   graph.completed = graph.reasons.length === 0;
@@ -230,9 +231,11 @@ export function analyzeRouteSecurity(sourceFiles, options = {}) {
       role: ['authentication', 'authorization'].includes(control.role)
         ? control.role : 'unclassified',
     })));
-  const accessPathContext = options.accessPathContext || {
-    budget: createAccessPathBudget(),
-    callableIndex: callableIndexForGraph(graph),
+  const accessPathContext = {
+    budget: options.accessPathContext?.budget || createAccessPathBudget(),
+    callableIndex: options.accessPathContext?.callableIndex || callableIndexForGraph(graph),
+    clientCache: options.accessPathContext?.clientCache || new Map(),
+    identityModuleCache: options.accessPathContext?.identityModuleCache || new Map(),
   };
   const authorization = auditJsTsRouteAuthorization(graph, routes, { accessPathContext });
   const actionAnalysis = extractNextServerActions(graph, { accessPathContext });

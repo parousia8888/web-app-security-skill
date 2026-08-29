@@ -233,19 +233,23 @@ function objectForArgument(summary, raw) {
 }
 
 function bindObjectPattern(pattern, source, sourceName, facts, output, limitations) {
+  const sourceCarriesFact = source ? containsFact(source, facts)
+    : sourceName ? ['object', 'principal', 'tenant'].some((kind) =>
+      [...facts[`${kind}Aliases`]].some((name) =>
+        name === sourceName || name.startsWith(`${sourceName}.`))) : false;
   for (const property of pattern.properties || []) {
     if (property.type === 'RestElement') {
-      limitations.add('destructuring_mapping_ambiguous');
+      if (sourceCarriesFact) limitations.add('destructuring_mapping_ambiguous');
       continue;
     }
     if (property.type !== 'ObjectProperty' || property.computed) {
-      limitations.add('destructuring_mapping_ambiguous');
+      if (sourceCarriesFact) limitations.add('destructuring_mapping_ambiguous');
       continue;
     }
     const key = propertyName(property);
     const target = parameterNode(property.value);
     if (!key || target?.type !== 'Identifier') {
-      limitations.add('destructuring_mapping_ambiguous');
+      if (sourceCarriesFact) limitations.add('destructuring_mapping_ambiguous');
       continue;
     }
     const candidates = [];
@@ -270,6 +274,7 @@ function bindObjectPattern(pattern, source, sourceName, facts, output, limitatio
 }
 
 function bindObjectToIdentifier(parameter, source, facts, output, limitations) {
+  if (!containsFact(source, facts)) return;
   for (const property of source.properties || []) {
     if (property.type === 'SpreadElement' || property.computed) {
       limitations.add('argument_mapping_ambiguous');

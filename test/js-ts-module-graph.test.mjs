@@ -31,6 +31,53 @@ assert.equal(aliases.modules.get('apps/web/app/route.ts').imports[0].resolution.
 assert.equal(aliases.modules.get('apps/web/app/route.ts').imports[1].resolution.path,
   'packages/security/src/helper.ts');
 
+const builtWorkspace = buildJsTsModuleGraph([
+  { path: 'apps/web/route.ts', text: "import { prisma } from '@workspace/database';" },
+  { path: 'packages/database/src/index.ts', text: 'export const prisma = {};' },
+], {
+  packageManifests: [{ path: 'packages/database/package.json', manifest: {
+    name: '@workspace/database', exports: { '.': {
+      import: './dist/index.js', require: './dist/index.cjs', types: './dist/index.d.ts',
+    } },
+  } }],
+  configFiles: [{ path: 'packages/database/vite.config.ts', text: `
+import { resolve } from 'node:path';
+import { defineConfig } from 'vite';
+const generated = ['migration/a.ts'].reduce((acc, file) => {
+  const entryName = \`\${file}/migration\`;
+  acc[entryName] = resolve(__dirname, file);
+  return acc;
+}, {});
+export default defineConfig(async () => ({
+  build: { rollupOptions: {
+    input: { index: resolve(__dirname, 'src/index.ts'), ...generated },
+    output: [{ entryFileNames: '[name].js' }, { entryFileNames: '[name].cjs' }],
+  } },
+}));
+` }],
+});
+assert.equal(builtWorkspace.modules.get('apps/web/route.ts').imports[0].resolution.path,
+  'packages/database/src/index.ts');
+
+const ambiguousBuiltWorkspace = buildJsTsModuleGraph([
+  { path: 'apps/web/route.ts', text: "import { prisma } from '@workspace/database';" },
+  { path: 'packages/database/src/index.ts', text: 'export const prisma = {};' },
+], {
+  packageManifests: [{ path: 'packages/database/package.json', manifest: {
+    name: '@workspace/database', exports: './dist/index.js',
+  } }],
+  configFiles: [{ path: 'packages/database/vite.config.ts', text: `
+import { resolve } from 'node:path';
+import { defineConfig } from 'vite';
+export default defineConfig({ build: { rollupOptions: {
+  input: { index: resolve(__dirname, 'src/index.ts'), ...unknownEntries },
+  output: { entryFileNames: '[name].js' },
+} } });
+` }],
+});
+assert.equal(ambiguousBuiltWorkspace.modules.get('apps/web/route.ts').imports[0].resolution.reason,
+  'workspace_export_resolution_missing');
+
 const boundedAliases = buildJsTsModuleGraph([
   { path: 'src/app.ts', text: "import value from '@/same'; import external from 'external';" },
   { path: 'src/same.ts', text: 'export default 1;' },
@@ -67,6 +114,13 @@ const exportAll = buildJsTsModuleGraph([
   { path: 'src/target.ts', text: 'export function target() {}' },
 ]);
 assert.equal(exportAll.modules.get('src/barrel.ts').imports[0].resolution.path, 'src/target.ts');
+
+const typeOnly = buildJsTsModuleGraph([
+  { path: 'src/consumer.ts', text: "import type { Client } from './types';" },
+  { path: 'src/types.ts', text: 'export type Client = unknown;' },
+]);
+assert.equal(typeOnly.modules.get('src/consumer.ts').imports[0].bindings[0].typeOnly, true);
+assert.equal(typeOnly.modules.get('src/types.ts').exports[0].typeOnly, true);
 
 const escaped = buildJsTsModuleGraph([
   { path: '../outside.ts', text: 'export default 1;' },

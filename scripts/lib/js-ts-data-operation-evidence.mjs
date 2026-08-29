@@ -203,6 +203,32 @@ function constraintsIn(node, facts, objectValues = new Map()) {
   return result;
 }
 
+function clientExportDescriptor(graph, module, exported, cache, visiting,
+  exportVisiting = new Set()) {
+  const key = `${module.path}\u0000${exported}`;
+  if (exportVisiting.has(key)) return null;
+  const next = new Set(exportVisiting);
+  next.add(key);
+  const symbols = moduleClientSymbols(graph, module, cache, visiting);
+  const direct = module.exports.filter((item) => item.exported === exported && item.local
+      && !item.typeOnly)
+    .map((item) => symbols.get(item.local)).filter(Boolean);
+  if (direct.length === 1) return direct[0];
+  if (direct.length > 1 || exported === 'default') return null;
+  const starSources = new Set((module.ast?.body || []).filter((node) =>
+    node.type === 'ExportAllDeclaration' && node.exportKind !== 'type')
+    .map((node) => literalString(node.source)).filter(Boolean));
+  const candidates = [];
+  for (const imported of module.imports.filter((item) => starSources.has(item.source)
+      && item.bindings.length === 0 && item.resolution?.path && !item.resolution.reason)) {
+    const target = graph.modules.get(imported.resolution.path);
+    if (!target?.ast) continue;
+    const descriptor = clientExportDescriptor(graph, target, exported, cache, visiting, next);
+    if (descriptor) candidates.push(descriptor);
+  }
+  return candidates.length === 1 ? candidates[0] : null;
+}
+
 function moduleClientSymbols(graph, module, cache = new Map(), visiting = new Set()) {
   if (cache.has(module.path)) return cache.get(module.path);
   const symbols = new Map();
@@ -213,18 +239,24 @@ function moduleClientSymbols(graph, module, cache = new Map(), visiting = new Se
   const prismaConstructors = new Set();
   const drizzleFactories = new Set();
   for (const [local, binding] of imports) {
+    if (binding.typeOnly) continue;
     if (binding.source === '@prisma/client' && binding.imported === 'PrismaClient') prismaConstructors.add(local);
+    if (binding.generatedProvider === 'prisma' && binding.imported === 'PrismaClient') {
+      prismaConstructors.add(local);
+      symbols.set(local, { provider: 'prisma-constructor' });
+    }
     if (/^drizzle-orm(?:\/|$)/.test(binding.source)
         && ['drizzle', 'default'].includes(binding.imported)) drizzleFactories.add(local);
   }
   for (const [local, binding] of imports) {
+    if (binding.typeOnly) continue;
     if (!binding.resolvedPath || binding.resolutionReason) continue;
     const target = graph.modules.get(binding.resolvedPath);
     if (!target?.ast) continue;
-    const exported = localModuleExport(graph, binding.resolvedPath, binding.imported);
-    if (!exported) continue;
-    const targetSymbols = moduleClientSymbols(graph, target, cache, visiting);
-    if (targetSymbols.has(exported)) symbols.set(local, targetSymbols.get(exported));
+    const descriptor = clientExportDescriptor(graph, target, binding.imported, cache, visiting);
+    if (!descriptor) continue;
+    symbols.set(local, descriptor);
+    if (descriptor.provider === 'prisma-constructor') prismaConstructors.add(local);
   }
   const candidates = [];
   walkJsTsAst(module.ast, (node) => {
@@ -243,11 +275,54 @@ function moduleClientSymbols(graph, module, cache = new Map(), visiting = new Se
     if (!name || !value) return;
     candidates.push({ name, value });
   });
-  const globalCache = (name) => /^(?:globalThis|global)\.[A-Za-z_$][\w$]*$/.test(name || '');
+  const topLevelNames = new Set(imports.keys());
+  const topLevelConstDeclarations = [];
+  for (const statement of module.ast?.body || []) {
+    const declaration = statement.type === 'VariableDeclaration' ? statement
+      : (statement.type === 'ExportNamedDeclaration'
+        && statement.declaration?.type === 'VariableDeclaration' ? statement.declaration : null);
+    if (declaration) {
+      for (const item of declaration.declarations || []) {
+        if (item.id?.type !== 'Identifier') continue;
+        topLevelNames.add(item.id.name);
+        if (declaration.kind === 'const' && item.init) topLevelConstDeclarations.push(item);
+      }
+      continue;
+    }
+    if (['FunctionDeclaration', 'ClassDeclaration'].includes(statement.type) && statement.id?.name) {
+      topLevelNames.add(statement.id.name);
+    }
+  }
+  const globalRoots = new Set(['globalThis', 'global'].filter((name) => !topLevelNames.has(name)));
+  for (const declaration of topLevelConstDeclarations) {
+    const initializer = unwrap(declaration.init);
+    if (initializer?.type === 'Identifier' && globalRoots.has(initializer.name)) {
+      globalRoots.add(declaration.id.name);
+    }
+  }
+  const globalCache = (name) => {
+    const match = /^([A-Za-z_$][\w$]*)\.[A-Za-z_$][\w$]*$/.exec(name || '');
+    return Boolean(match && globalRoots.has(match[1]));
+  };
+  const factories = new Map(candidates.filter(({ value }) => FUNCTION_TYPES.has(value.type))
+    .map(({ name, value }) => [name, value]));
+  function factoryReturns(node) {
+    if (node.type === 'ArrowFunctionExpression' && node.body?.type !== 'BlockStatement') return [node.body];
+    const returned = [];
+    functionWalk(node, (current) => {
+      if (current.type === 'ReturnStatement' && current.argument) returned.push(current.argument);
+    });
+    return returned;
+  }
   function prismaInitializer(node, target, depth = 0) {
     const value = unwrap(node);
     if (!value || depth > 8) return false;
     if (value.type === 'NewExpression') return prismaConstructors.has(safeName(value.callee));
+    if (value.type === 'CallExpression' && value.arguments.length === 0) {
+      const factory = factories.get(safeName(value.callee));
+      const returned = factory ? factoryReturns(factory) : [];
+      return returned.length === 1 && prismaInitializer(returned[0], target, depth + 1);
+    }
     const name = safeName(value);
     if (name && symbols.get(name)?.provider === 'prisma') return true;
     if (value.type === 'AssignmentExpression') return prismaInitializer(value.right, target, depth + 1);
@@ -273,6 +348,11 @@ function moduleClientSymbols(graph, module, cache = new Map(), visiting = new Se
     for (const { name, value } of candidates) {
       if (!symbols.has(name) && prismaInitializer(value, name)) {
         symbols.set(name, { provider: 'prisma' });
+        changed = true;
+      }
+      if (!symbols.has(name) && safeName(value) && prismaConstructors.has(safeName(value))) {
+        symbols.set(name, { provider: 'prisma-constructor' });
+        prismaConstructors.add(name);
         changed = true;
       }
       if (!symbols.has(name) && value.type === 'CallExpression'
@@ -521,9 +601,10 @@ function operation(module, call, provider, resource, operationName, constraints,
 export function analyzeDataOperations(graph, module, handler, options = {}) {
   const facts = collectLocalAliases(handler, options.objectAliases || [], options.principalAliases || [],
     options.objectNodes || [], options.tenantAliases || [], options.omittedAliases || []);
-  const clientCache = new Map();
+  const clientCache = options.clientCache || new Map();
   const clients = moduleClientSymbols(graph, module, clientCache);
-  for (const [name, descriptor] of identityProviderSymbolsForHandler(graph, module, handler)) {
+  for (const [name, descriptor] of identityProviderSymbolsForHandler(graph, module, handler,
+    { moduleCache: options.identityModuleCache })) {
     if (descriptor.instance === 'supabase') {
       clients.set(name, { provider: 'supabase', handlerLocal: true });
     }

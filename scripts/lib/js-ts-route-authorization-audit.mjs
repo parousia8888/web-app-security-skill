@@ -1,4 +1,5 @@
 import { walkJsTsAst } from './js-ts-ast-parser.mjs';
+import { callableIndexForGraph, resolveCallableExport } from './js-ts-callable-index.mjs';
 import { expressionName } from './js-ts-module-graph.mjs';
 import { analyzeAccessPaths, createAccessPathBudget } from './js-ts-access-path.mjs';
 import { analyzeIdentityEvidence } from './js-ts-identity-evidence.mjs';
@@ -60,7 +61,7 @@ function resolveFunction(node, values) {
   return null;
 }
 
-function handlerForRoute(module, route) {
+function handlerForRoute(module, route, context) {
   const values = declarations(module);
   if (route.framework === 'nestjs') {
     let exact = null;
@@ -68,19 +69,26 @@ function handlerForRoute(module, route) {
       if (!['ClassMethod', 'ClassPrivateMethod'].includes(node.type)) return;
       if (node.loc?.start?.line === route.location.line && safeName(node.key) === route.handler) exact = node;
     });
-    return exact;
+    return exact ? { module, node: exact, specialKind: null } : null;
   }
   if (route.framework === 'next-app') {
+    const resolved = resolveCallableExport(context.callableIndex, module.path, route.handler);
+    if (resolved.state === 'exact') return {
+      module: resolved.target.module,
+      node: resolved.target.node,
+      specialKind: resolved.specialKind,
+    };
     let exact = null;
     walkJsTsAst(module.ast, (node) => {
       if (FUNCTION_TYPES.has(node.type) && node.loc?.start?.line === route.location.line) exact = node;
     });
-    return exact || resolveFunction(values.get(route.handler), values);
+    const node = exact || resolveFunction(values.get(route.handler), values);
+    return node ? { module, node, specialKind: null } : null;
   }
   if (route.framework === 'express') {
     if (route.handler && route.handler !== '<inline>') {
       const named = resolveFunction(values.get(route.handler), values);
-      if (named) return named;
+      if (named) return { module, node: named, specialKind: null };
     }
     let exact = null;
     walkJsTsAst(module.ast, (node) => {
@@ -88,15 +96,18 @@ function handlerForRoute(module, route) {
       const candidate = resolveFunction(node.arguments.at(-1), values);
       if (candidate) exact = candidate;
     });
-    return exact;
+    return exact ? { module, node: exact, specialKind: null } : null;
   }
   return null;
 }
 
-function directAccessChains(graph, module, route, handler, context) {
-  const identity = analyzeIdentityEvidence(graph, module, handler);
+function directAccessChains(graph, route, target, context) {
+  const { module, node: handler, specialKind } = target;
+  const identity = analyzeIdentityEvidence(graph, module, handler,
+    { moduleCache: context.identityModuleCache });
   const selected = extractSelectorEvidence({
     module, handler, framework: route.framework, routePath: route.path, entryKind: 'route',
+    routeHandlerKind: specialKind,
     imports: importedBindings(module), principalAliases: identity.principalAliases,
   });
   const objectSelectors = selected.selectors.filter((selector) => selector.origin === 'request_selected');
@@ -106,6 +117,8 @@ function directAccessChains(graph, module, route, handler, context) {
     identity: identity.identity, selectorGroups: selected.selectorGroups,
     principalAliases: identity.principalAliases, tenantAliases: identity.tenantAliases,
     budget: context.budget, callableIndex: context.callableIndex,
+    clientCache: context.clientCache,
+    identityModuleCache: context.identityModuleCache,
   });
   const pathChains = paths.chains.map(accessChainRecord);
   const selectorIncomplete = selected.limitations.length > 0;
@@ -148,9 +161,12 @@ function aggregateReasons(items) {
 
 export function auditJsTsRouteAuthorization(graph, routes, options = {}) {
   const reasons = [];
-  const context = options.accessPathContext || {
-    budget: createAccessPathBudget(),
-    callableIndex: options.callableIndex,
+  const context = {
+    budget: options.accessPathContext?.budget || createAccessPathBudget(),
+    callableIndex: options.accessPathContext?.callableIndex || options.callableIndex
+      || callableIndexForGraph(graph),
+    clientCache: options.accessPathContext?.clientCache || new Map(),
+    identityModuleCache: options.accessPathContext?.identityModuleCache || new Map(),
   };
   const reviewedRoutes = [];
   let scanned = 0;
@@ -179,8 +195,8 @@ export function auditJsTsRouteAuthorization(graph, routes, options = {}) {
       } else reviewedRoutes.push(route);
       continue;
     }
-    const handler = handlerForRoute(module, route);
-    if (!handler) {
+    const target = handlerForRoute(module, route, context);
+    if (!target) {
       if (route.objectAddressed) {
         eligible += 1;
         errors += 1;
@@ -191,7 +207,7 @@ export function auditJsTsRouteAuthorization(graph, routes, options = {}) {
       } else reviewedRoutes.push(route);
       continue;
     }
-    const access = directAccessChains(graph, module, route, handler, context);
+    const access = directAccessChains(graph, route, target, context);
     if (!route.objectAddressed && !access.selectors.length) {
       reviewedRoutes.push(route);
       continue;

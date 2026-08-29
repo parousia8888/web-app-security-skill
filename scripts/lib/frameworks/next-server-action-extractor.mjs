@@ -95,6 +95,8 @@ export function extractNextServerActions(graph, options = {}) {
   const context = options.accessPathContext || {
     budget: createAccessPathBudget(),
     callableIndex: options.callableIndex,
+    clientCache: new Map(),
+    identityModuleCache: new Map(),
   };
   let eligible = 0;
   let pathDiscovered = 0;
@@ -110,7 +112,8 @@ export function extractNextServerActions(graph, options = {}) {
     reasons.push(...exported.reasons);
     for (const candidate of exported.actions) {
       pathDiscovered += 1;
-      const identity = analyzeIdentityEvidence(graph, module, candidate.handler);
+      const identity = analyzeIdentityEvidence(graph, module, candidate.handler,
+        { moduleCache: context.identityModuleCache });
       const selected = extractSelectorEvidence({
         module, handler: candidate.handler, entryKind: 'server-action',
         imports: importedBindings(module), principalAliases: identity.principalAliases,
@@ -133,6 +136,8 @@ export function extractNextServerActions(graph, options = {}) {
         identity: identity.identity, selectorGroups: selected.selectorGroups,
         principalAliases: identity.principalAliases, tenantAliases: identity.tenantAliases,
         budget: context.budget, callableIndex: context.callableIndex,
+        clientCache: context.clientCache,
+        identityModuleCache: context.identityModuleCache,
       }) : {
         chains: [], operations: [], limitations: [],
         coverage: { counts: { truncated: 0 }, reasons: [] },
