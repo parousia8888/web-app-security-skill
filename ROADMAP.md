@@ -169,20 +169,22 @@ publication, npm trusted publishing, installer verification, immutable Action co
 `v1` promotion and durable live verification are recorded in the
 [release evidence](docs/releases/v0.7.3.md).
 
-## Proposed v0.8.0
+## v0.8.0 candidate
 
-v0.8.0 is proposed as a bounded interprocedural access-control release for the existing
-JavaScript/TypeScript framework boundary. It should add exact query/body/action selector evidence,
-follow object/principal/tenant facts through up to four exact project-local call edges, distinguish
-Prisma/Drizzle query constraints from post-load comparison evidence and keep every ambiguous path
-partial. It must not claim whole-program SAST, confirmed BOLA/IDOR or deployed enforcement.
+The v0.8.0 candidate implements bounded interprocedural access-control review inside the existing
+JavaScript/TypeScript framework boundary. It adds exact route/query/body/action selector evidence,
+follows object/principal/tenant facts through up to four exact project-local call edges,
+distinguishes Prisma/Drizzle query constraints from post-load comparison evidence and keeps
+ambiguous paths partial. It does not claim whole-program SAST, confirmed BOLA/IDOR or deployed
+enforcement.
 
-The plan freezes an ordinary-project evaluation denominator before implementation, requires zero
-unexpected completed ambiguous paths and separates path completion from production vulnerability
-accuracy. MCP, Strix, Python framework expansion, authenticated DAST, new ORM families and
-unattended source edits are outside the proposed release. Scope, architecture, phase gates, test
-budget, stop conditions and public release gates are in the
-[v0.8.0 engineering plan](docs/V0.8.0_ENGINEERING_PLAN.md).
+The unchanged frozen denominator completed 13 of 14 eligible paths (Drizzle 6/6, Prisma 7/8). The
+single miss and four completed paths with supporting limitations remain public. This is bounded
+fixed-corpus effectiveness evidence, not production precision/recall. MCP, Strix, Python framework
+expansion, authenticated DAST, new ORM families and unattended source edits remain outside this
+release. Scope, exact evidence and remaining release gates are in the
+[engineering plan](docs/V0.8.0_ENGINEERING_PLAN.md) and
+[fixed-commit review](docs/reviews/v0.8.0-access-control-review.md).
 
 ## Correctness backlog
 

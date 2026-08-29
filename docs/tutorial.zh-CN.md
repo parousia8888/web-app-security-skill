@@ -9,6 +9,12 @@ Next.js App Router 项目还会得到带有边界访问控制链的路由安全�
 Action。它仍然是范围明确的首次检查，不是通用 SAST、自动 BOLA 证明，也不证明项目已经安全。
 实际生效的词法 token 与 operation 预算会写入报告；预算触顶属于证据不完整并退出 `3`，不是通过。
 
+当前 v0.8.0 source candidate 会写出 route-security v3。对精确且受支持的 selector，它可把 object、
+principal 和 tenant 事实经最多四条项目内调用边带到限定的 Prisma/Drizzle 操作，再区分可见 query
+predicate 与受支持的加载后比较。框架清单覆盖率和 `accessPathCoverage` 必须分开阅读；`completed`
+只表示限定分析走完，不表示授权正确或存在 BOLA/IDOR。route-security v1/v2 与 v3 对比时只会得到
+`not_comparable / route_schema_changed`；启用路由 regression gate 前要先建立新的 v3 baseline。
+
 ## 环境要求
 
 - macOS 或 Linux；
@@ -89,6 +95,11 @@ webapp-security audit .webapp-security/runs/first-review \
 输出包括 `report.json`、`report.sha256`、`report.md`、`report.html`、`report.sarif`、
 `report.junit.xml` 和 `proposed.patch`。JSON 用于自动化，sidecar 用于本地完整性检查，
 Markdown/HTML 用于审查，SARIF/JUnit 用于 CI；patch 只是提案。
+
+如果项目属于受支持的 Express、NestJS 或 Next.js App Router，在修改授权逻辑前还要阅读
+`route-security.md`。顺序是：框架与访问路径覆盖率、应用级 control、没有路由级 control 的状态变更/
+对象路由、未观察到受支持约束的 completed 路径、partial 路径，最后是单独的 Server Action 清单。
+配套 JSON 与 Markdown 在 `route-security.sha256` 中各有独立 digest。
 
 默认 policy 会 gate HIGH 级的 confirmed 与 suspected security/supply-chain finding。
 suspected 证据不会被升级；退出码 `1` 表示这条线索必须先审查，并不表示已经证明可利用。

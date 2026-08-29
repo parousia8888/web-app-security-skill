@@ -48,14 +48,19 @@ npx --yes web-app-security-skill audit . --fail-on never
 | Application control（应用级控制） | 整个应用注册了什么控制？ | 全局 guard 或 middleware 只列一次；不能据此证明每条路由都受保护。 |
 | Authentication（authn，身份认证） | 发请求的人是谁？ | 看到了受支持的登录/session 来源、没看到，或当前无法解析。 |
 | Route-level authorization（路由级授权） | 这个身份能不能调用这个操作？ | 看到了受支持的 policy/guard，或只看到仍需人工确认的路由控制。 |
-| Object-level authorization（BOLA/IDOR，对象级授权） | 这个身份能不能访问这一条具体记录？ | 可把用户传入的 ID 跟到 handler 内或一跳本地调用里的 Prisma/Drizzle/Supabase 操作；没看到约束只是复查线索，不是漏洞证明。 |
+| Object-level authorization（BOLA/IDOR，对象级授权） | 这个身份能不能访问这一条具体记录？ | 可把用户传入的 ID 经最多四条精确项目内调用边跟到 Prisma/Drizzle 操作，并把 query 约束、加载后比较、未看到受支持约束和不完整路径分开。 |
 
 `review_first`、`review_next`、`review_later` 是工作排序，不是漏洞严重性。源码里没看到控制，
 也不会被自动写成 confirmed 漏洞。
 
-白话说，访问控制链现在能表达：“这条接口接收项目 ID，通过 Auth.js 取得当前用户，再把两个值经
-一层可解析的本地函数送进 Prisma 查询。”它不能证明运行时一定走到这里、数据库策略一定正确，也
-不会继续猜第二层本地调用。Supabase 结果始终保留“还需检查外部 RLS 策略”。
+白话说，访问控制链现在能表达：“这条接口接收项目 ID，通过 Auth.js 取得当前用户，把两个值经过
+两个能精确定位的本地函数送进 Prisma 查询，但可见过滤条件里没有当前用户。”它也能把查询里的
+owner/tenant 条件和加载记录后的明确比较分开。它不能证明运行时一定走到这里、比较一定控制了拒绝
+分支、部署策略一定正确。Supabase 结果始终保留“还需检查外部 RLS 策略”。
+
+路由清单覆盖率和访问路径覆盖率是两套独立计数。`completed` 只表示这套静态模型走完一条受支持
+路径，不代表路由安全，也不代表已确认漏洞。route-security v1/v2 baseline 与 v3 不可比较；要先
+生成新的 v3 baseline，才能解释后续路由 regression。
 
 Express 的 stable 清单支持直接 ESM/CommonJS `express()` 与 `Router()` receiver、
 `require('express').Router()`、inline route、精确静态 mount 和精确本地 CommonJS router mount。
@@ -133,6 +138,22 @@ stable 清单仍是 25 条 built-in risk、3 条 evidence-integrity 和 16 条 o
 不代表生产 precision/recall。精确 issue 处置与剩余边界见
 [v0.7.3 修复计划](docs/V0.7.3_EXTERNAL_AUDIT_REMEDIATION_PLAN.md)和
 [release 证据](docs/releases/v0.7.3.md)。
+
+### v0.8.0 candidate 能力证据
+
+当前 candidate 把同一份 route-security 访问路径从一次本地调用扩展到最多四条精确项目内调用边。
+它支持精确 route/query/body/Server Action selector，分开传播 object、principal 与 tenant，并区分
+Prisma/Drizzle 查询约束和受支持的加载后比较。调用歧义、参数/返回值变换、无法证明的 provider
+构造和预算耗尽继续保持 partial，不会靠函数名猜测。
+
+在四个固定公开 commit 的 14 条冻结路径中，13 条完成：Drizzle 6/6、Prisma 7/8。唯一 miss 是
+Formbricks `ACTION getMembershipRole`，因 `argument_mapping_ambiguous` 与
+`call_target_unresolved` 保持 partial；另有四条 completed 路径仍公开保留 supporting limitation。
+这些数字只说明固定语料上的限定能力，不是生产 precision/recall、漏洞确认或部署授权证明。详见
+[复核](docs/reviews/v0.8.0-access-control-review.md)、
+[provenance](docs/reviews/v0.8.0-access-control-review-provenance.md)、
+[真实回归](docs/regressions/v0.8.0-access-control-real-world-regression.md)与
+[工程计划](docs/V0.8.0_ENGINEERING_PLAN.md)。
 
 ## 安装
 

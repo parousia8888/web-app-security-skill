@@ -72,10 +72,12 @@ For supported Express, NestJS and Next.js App Router syntax, built-in audits als
 list application controls once, and keep authentication, route authorization and object
 authorization separate. Review `no_route_scoped_control_observed` routes rather than calling them
 vulnerable; expected-public endpoints still need owner classification. For supported identity and
-data providers, inspect same-handler or one-exact-local-call access chains. Stop before a second
-local call, never invent an HTTP route for a Server Action, and always keep Supabase at
-`external_policy_required`. `review_first`/`review_next`/`review_later` order work and are not
-severity.
+data providers, inspect bounded access paths through at most four exact project-local call edges.
+Keep query constraints, post-load comparisons, absent supported constraints and incomplete paths
+distinct. A `completed` path only means the bounded static analysis finished; it is neither a
+security verdict nor proof of runtime reachability. Never invent an HTTP route for a Server Action,
+and always keep Supabase at `external_policy_required`.
+`review_first`/`review_next`/`review_later` order work and are not severity.
 
 Do not run all phases just because they exist. Pick from the task:
 

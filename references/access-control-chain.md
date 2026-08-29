@@ -6,15 +6,17 @@ review. It does not authorize live testing and does not prove a BOLA/IDOR vulner
 
 ## Read the artifact in this order
 
-1. Read framework and action coverage. Any partial or incomplete reason limits every downstream
-   conclusion for the affected file or relationship.
+1. Read framework/action inventory coverage and `accessPathCoverage` separately. A completed route
+   inventory does not erase a partial access path, and a completed access path does not repair an
+   incomplete route inventory. Any partial reason limits the affected downstream conclusion.
 2. Read application controls once. A Nest `APP_GUARD` or unresolved application middleware is an
    application fact; do not repeat it as proof that every route authenticates or authorizes.
 3. Review state-changing or object-addressed routes with
    `no_route_scoped_control_observed`. Classify expected-public login, registration, recovery and
    webhook routes before proposing a change.
-4. Review partial access chains, especially when a caller-selected identifier reaches a supported
-   data operation and no principal or tenant constraint was observed in the bounded path.
+4. Review completed chains with `authorization_constraint_not_observed`, then partial chains.
+   Prioritize caller-selected identifiers that reach a supported data operation without a visible
+   principal or tenant query constraint or post-load comparison.
 5. Check Server Actions in their separate inventory. They are callable application surfaces but do
    not have an invented HTTP method or URL.
 
@@ -33,21 +35,43 @@ authentication and authorization.
 
 ## Interpret access-chain outcomes
 
-- `principal_constraint_observed`: a supported operation visibly includes an identity-derived
-  principal or tenant constraint. Runtime reachability, policy correctness and complete coverage
-  are still not proven.
+- `authorization_constraint_observed`: a supported Prisma or Drizzle path contains a visible
+  identity-derived principal/tenant query predicate or an exact post-load comparison. The artifact
+  states which kind and category were observed. Runtime reachability, control-flow dominance,
+  denial behavior, policy correctness and complete coverage are still not proven.
 - `external_policy_required`: source evidence alone cannot settle the decision. Supabase always
   retains this state because Postgres RLS and deployed policy behavior are external.
-- `principal_constraint_not_observed`: the bounded path did not show a supported constraint. This
-  is a review lead, not proof that no check exists elsewhere.
+- `authorization_constraint_not_observed`: the completed bounded path did not show a supported
+  principal or tenant query predicate or post-load comparison. This is a review lead, not proof
+  that no check exists elsewhere or that the operation is exploitable.
 - `no_supported_object_operation`: no supported object operation completed the bounded chain.
-- `incomplete`: parsing, module resolution, argument mapping, dynamic behavior or the one-hop limit
-  stopped the analysis. Never turn this into a clean result.
+- `incomplete`: parsing, module resolution, argument or return mapping, dynamic behavior, a budget
+  or the four-edge limit stopped the analysis. Never turn this into a clean result.
 
-The analyzer follows at most one exact project-local call. It maps only direct arguments to direct
-identifier parameters and stops before a second local edge. It can resolve one unambiguous source
-target through relative imports, nearest static `tsconfig.json`/`jsconfig.json` path mappings or an
-exact workspace package export. Missing, ambiguous, escaping and unbuilt-only targets fail closed.
+The analyzer starts from exact route parameters, URL-query values, direct JSON-body fields or
+Server Action parameters and follows object, principal and tenant facts through at most four exact
+project-local call edges. It can resolve one unambiguous source target through relative imports,
+nearest static `tsconfig.json`/`jsconfig.json` path mappings, exact workspace source exports and the
+narrowly proved Vite/Prisma source relationships documented by the v0.8.0 review. Ambiguous calls,
+destructuring or transforms outside the supported mapper, dynamic dispatch, cycles, escaping,
+unbuilt-only targets and exhausted budgets fail closed as partial evidence.
+
+`status: completed` means one supported selector-to-operation path finished inside this model. It
+does not mean the route is authenticated, authorization is correct, the operation is reachable in
+production, or a vulnerability exists. Supporting `limitations` remain material even on a
+completed chain.
+
+Route-security v3 is an explicit compatibility boundary. A v1 or v2 route baseline compared with
+v3 is `not_comparable / route_schema_changed`; it cannot produce `unchanged`, `fixed` or `removed`.
+Create a new v3 baseline before relying on route-regression comparison.
+
+## Standards mapping boundary
+
+The review is relevant to OWASP API Security Top 10 API1:2023 (Broken Object Level Authorization)
+and API5:2023 (Broken Function Level Authorization), plus CWE-639 (Authorization Bypass Through
+User-Controlled Key), CWE-862 (Missing Authorization) and CWE-863 (Incorrect Authorization). These
+labels help route a review; they do not declare OWASP compliance, CWE-complete detection, a confirmed
+weakness or coverage of every route, policy engine, ORM or runtime authorization path.
 
 ## Verify before changing access control
 
@@ -62,9 +86,10 @@ cross ownership boundaries. Then use only owner-controlled test data:
 5. normal sharing, admin, support and background-job flows that the proposed change could break.
 
 State the evidence precisely: for example, "the route-selected project ID reaches
-`prisma.project.update` through one resolved local call, and no identity-derived constraint was
-observed in that operation." Do not shorten this to "confirmed IDOR" without an authorized runtime
-reproduction and the product policy needed to interpret it.
+`prisma.project.update` through two exact local call edges, and no supported principal/tenant query
+constraint or post-load comparison was observed in that bounded path." Do not shorten this to
+"confirmed IDOR" without an authorized runtime reproduction and the product policy needed to
+interpret it.
 
 ## Proposal boundary
 

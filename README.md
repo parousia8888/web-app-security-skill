@@ -49,15 +49,22 @@ next:
 | Application control | What was registered for the whole app? | A global guard or middleware is listed once; this does not prove it protects every route. |
 | Authentication (authn) | Who is making the request? | A supported login/session source was observed, was not observed, or could not be resolved. |
 | Route-level authorization (authz) | May this identity call this operation? | A supported policy/guard was observed, or a custom route control still needs review. |
-| Object-level authorization (BOLA/IDOR) | May this identity access this specific record? | A caller-selected ID can be followed into supported Prisma/Drizzle/Supabase operations in the handler or through one exact local call. A missing visible constraint is a review lead, not proof of a vulnerability. |
+| Object-level authorization (BOLA/IDOR) | May this identity access this specific record? | A caller-selected ID can be followed through at most four exact project-local call edges into supported Prisma/Drizzle operations. Query constraints, post-load comparisons, missing supported constraints and incomplete paths stay distinct. |
 
 `review_first`, `review_next` and `review_later` are work-order labels, not severity scores. A missing
 visible control is never converted into a confirmed vulnerability.
 
 In plain language, the access-chain view can say: "this route takes a project ID, obtains the
-current user through Auth.js, and sends both values into a Prisma query through one resolved local
-function." It cannot prove runtime reachability, a database policy, or what happens beyond a second
-local call. Supabase results always say that external RLS policy evidence is still required.
+current user through Auth.js, carries both values through two exact local functions, and reaches a
+Prisma query whose visible filter does not include that user." It can also distinguish an exact
+owner/tenant query predicate from a supported post-load comparison. It cannot prove runtime
+reachability, control-flow dominance, deployed denial behavior or database policy. Supabase results
+always say that external RLS policy evidence is still required.
+
+Route inventory coverage and bounded access-path coverage are separate counters. A `completed`
+path means only that this static model reached a supported operation; it does not mean the route is
+safe or vulnerable. Route-security v1/v2 baselines are not comparable with v3 and must be replaced
+with a new v3 baseline before route-regression results can be interpreted.
 
 For Express, stable inventory covers direct ESM/CommonJS `express()` and `Router()` receivers,
 direct `require('express').Router()`, inline route calls, exact static mounts and exact local
@@ -147,6 +154,24 @@ built-in contracts but is not a production precision/recall claim. Exact issue d
 remaining boundaries are in the
 [v0.7.3 remediation plan](docs/V0.7.3_EXTERNAL_AUDIT_REMEDIATION_PLAN.md) and
 [release evidence](docs/releases/v0.7.3.md).
+
+### v0.8.0 candidate capability evidence
+
+The current candidate extends the same route-security surface from one local call to at most four
+exact project-local call edges. It supports exact route/query/body/Server Action selectors, carries
+object, principal and tenant facts separately, and distinguishes Prisma/Drizzle query predicates
+from supported post-load comparisons. Ambiguous calls, argument/return transforms, unsupported
+provider construction and exhausted budgets remain partial instead of being guessed.
+
+At four fixed public commits, the frozen 14-path evaluation completed 13 paths: Drizzle 6/6 and
+Prisma 7/8. The sole miss is Formbricks `ACTION getMembershipRole`, retained as partial for
+`argument_mapping_ambiguous` and `call_target_unresolved`. Four completed paths retain visible
+supporting limitations. These are bounded fixed-corpus effectiveness facts, not production
+precision/recall, vulnerability confirmation or proof of deployed enforcement. Read the
+[review](docs/reviews/v0.8.0-access-control-review.md),
+[provenance](docs/reviews/v0.8.0-access-control-review-provenance.md),
+[real-world regression](docs/regressions/v0.8.0-access-control-real-world-regression.md) and
+[engineering plan](docs/V0.8.0_ENGINEERING_PLAN.md).
 
 ## Install
 

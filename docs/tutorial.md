@@ -12,6 +12,14 @@ separate Next.js Server Actions. It remains a bounded first pass, not a general 
 automatic BOLA proof or proof that a project is secure. Effective lexical token and operation
 budgets are recorded in the report; exhaustion is incomplete evidence with exit `3`, not a pass.
 
+The current v0.8.0 source candidate writes route-security v3. For exact supported selectors it can
+carry object, principal and tenant facts through at most four project-local call edges into bounded
+Prisma/Drizzle operations, then distinguish a visible query predicate from a supported post-load
+comparison. Read framework inventory coverage and `accessPathCoverage` separately. `completed`
+means the bounded analysis finished, not that authorization is correct or a BOLA/IDOR vulnerability
+exists. A route-security v1/v2 artifact is `not_comparable / route_schema_changed` against v3; make
+a new v3 baseline before enabling the route-regression gate.
+
 ## Prerequisites
 
 - macOS or Linux;
@@ -95,6 +103,13 @@ webapp-security audit .webapp-security/runs/first-review \
 The output includes `report.json`, `report.sha256`, `report.md`, `report.html`, `report.sarif`,
 `report.junit.xml` and `proposed.patch`. Use JSON for automation, the sidecar for local integrity
 checking, Markdown/HTML for review, SARIF/JUnit for CI, and the patch file only as a proposal.
+
+On a supported Express, NestJS or Next.js App Router project, also open `route-security.md` before
+making an authorization change. Review it in this order: framework and access-path coverage,
+application controls, state-changing/object-addressed routes without route-scoped controls,
+completed paths without an observed supported constraint, partial paths, then the separate Server
+Action inventory. The companion JSON and Markdown have independent entries in
+`route-security.sha256`.
 
 The default policy gates HIGH confirmed and suspected security or supply-chain findings. Suspected
 evidence is not promoted: exit `1` means the lead needs review before CI passes, while the report

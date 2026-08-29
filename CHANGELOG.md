@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Route-security v3 follows exact route/query/body/Server Action object selectors plus principal
+  and tenant facts through at most four exact project-local call edges into bounded Prisma and
+  Drizzle operations. It records ordered call edges, separate access-path coverage and typed query-
+  predicate or post-load-comparison authorization evidence.
+- A fixed-commit four-project review, independent provenance record and minimized real-world
+  regression publish the frozen 14-path result: 13 completed, one retained partial miss, four
+  completed paths with supporting limitations and bounded performance below the 2x stop threshold.
+
+### Changed
+- Route inventory, Server Actions and access paths share one bounded project graph while retaining
+  independent coverage counters. Whole-project context is analyzed before `--since`/`--staged`
+  record filtering.
+- Prisma and Drizzle remain stable bounded providers. Clerk, Better Auth and Supabase remain
+  experimental; Supabase still requires deployed RLS-policy evidence.
+- Route-security v1/v2 baselines are explicitly not comparable with v3. Compatible v3 baselines
+  can fail closed when current access-path evidence becomes incomplete or observed authorization
+  evidence disappears.
+
+### Security boundary
+- `completed` means a supported static path finished inside the four-edge model. It does not prove
+  runtime reachability, correct authorization, exploitability or absence of unsupported paths.
+- The 13/14 fixed-corpus result is not production precision/recall. Ambiguous calls, unsupported
+  transforms, unresolved argument/return mappings and exhausted budgets remain partial/unknown.
+
 ## [0.7.3] — 2026-08-26
 
 ### Fixed
