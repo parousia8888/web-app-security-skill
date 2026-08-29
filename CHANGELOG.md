@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - A fixed-commit four-project review, independent provenance record and minimized real-world
   regression publish the frozen 14-path result: 13 completed, one retained partial miss, four
   completed paths with supporting limitations and bounded performance below the 2x stop threshold.
+- The active five-project source journey catalog is versioned from `VERSION`; v0.8.0 observations
+  bind the current tool source while the v0.7.3 catalog remains immutable historical evidence.
 
 ### Changed
 - Route inventory, Server Actions and access paths share one bounded project graph while retaining
