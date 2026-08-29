@@ -44,8 +44,10 @@ function loadRoute(directory) {
   const document = JSON.parse(raw);
   assert.deepEqual(validateRouteSecurityDocument(document), []);
   const expectedDigest = createHash('sha256').update(raw).digest('hex');
+  const markdown = readFileSync(join(directory, 'route-security.md'));
+  const expectedMarkdownDigest = createHash('sha256').update(markdown).digest('hex');
   assert.equal(readFileSync(join(directory, 'route-security.sha256'), 'utf8'),
-    `${expectedDigest}  route-security.json\n`);
+    `${expectedDigest}  route-security.json\n${expectedMarkdownDigest}  route-security.md\n`);
   return document;
 }
 

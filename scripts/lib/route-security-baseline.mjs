@@ -78,6 +78,21 @@ function actionSnapshot(action) {
 
 const CONTROL_ABSENT = new Set(['not_observed', 'incomplete', 'not_applicable']);
 
+function observedAuthorization(chain) {
+  return (chain.authorizationEvidence || []).some((evidence) =>
+    ['principal', 'tenant'].includes(evidence.category) && evidence.state === 'observed'
+      && ['query_predicate', 'post_load_comparison'].includes(evidence.kind));
+}
+
+function entryPathIncomplete(entry) {
+  return entry.accessChains.some((chain) => chain.status === 'partial')
+    || entry.limitations.some((item) => [
+      'route-object-authorization-analysis-incomplete',
+      'route-access-path-analysis-incomplete',
+      'server-action-access-path-analysis-incomplete',
+    ].includes(item));
+}
+
 function chainKey(chain) {
   const operation = chain.dataOperation;
   if (operation) return [operation.provider, operation.resource, operation.operation,
@@ -108,10 +123,12 @@ function degradationReason(current, previous, scopedField) {
   const currentChains = uniqueChains(current.accessChains);
   for (const [key, prior] of priorChains) {
     const next = currentChains.get(key);
-    if (!next) continue;
-    const observedAuthorization = (chain) => (chain.authorizationEvidence || []).some((evidence) =>
-      ['principal', 'tenant'].includes(evidence.category) && evidence.state === 'observed'
-        && ['query_predicate', 'post_load_comparison'].includes(evidence.kind));
+    if (!next) {
+      if (observedAuthorization(prior) && !entryPathIncomplete(current)) {
+        return 'authorization_evidence_disappeared';
+      }
+      continue;
+    }
     if (observedAuthorization(prior) && !observedAuthorization(next)) {
       return 'authorization_evidence_disappeared';
     }
@@ -141,6 +158,7 @@ function recreate(document, routes, serverActions, baseline, limitations = docum
     subject: document.subject,
     routes,
     coverage: document.coverage,
+    accessPathCoverage: document.accessPathCoverage,
     applicationControls: document.applicationControls,
     serverActions,
     limitations,
@@ -211,9 +229,16 @@ export function compareRouteSecurityDocuments(current, previous, sourceDigest) {
       continue;
     }
     const unchanged = controlSnapshot(route) === controlSnapshot(prior);
-    routes.push(withBaseline(route, unchanged ? 'unchanged' : 'changed', prior,
-      unchanged ? 'same_route_control_evidence'
-        : degradationReason(route, prior, 'routeScopedControl') || 'route_control_evidence_changed'));
+    const degradation = unchanged ? null : degradationReason(route, prior, 'routeScopedControl');
+    if (!unchanged && !degradation && entryPathIncomplete(route)
+        && prior.accessChains.some((chain) => chain.status === 'completed')) {
+      routes.push(withBaseline(route, 'unretested', prior,
+        'current_access_path_coverage_incomplete'));
+    } else {
+      routes.push(withBaseline(route, unchanged ? 'unchanged' : 'changed', prior,
+        unchanged ? 'same_route_control_evidence'
+          : degradation || 'route_control_evidence_changed'));
+    }
   }
 
   for (const prior of previous.routes.filter((route) =>
@@ -254,10 +279,16 @@ export function compareRouteSecurityDocuments(current, previous, sourceDigest) {
     } else {
       const prior = previousGroup[0];
       const unchanged = actionSnapshot(action) === actionSnapshot(prior);
-      actions.push(withBaseline(action, unchanged ? 'unchanged' : 'changed', prior,
-        unchanged ? 'same_server_action_control_evidence'
-          : degradationReason(action, prior, 'actionScopedControl')
-            || 'server_action_control_evidence_changed'));
+      const degradation = unchanged ? null : degradationReason(action, prior, 'actionScopedControl');
+      if (!unchanged && !degradation && entryPathIncomplete(action)
+          && prior.accessChains.some((chain) => chain.status === 'completed')) {
+        actions.push(withBaseline(action, 'unretested', prior,
+          'current_access_path_coverage_incomplete'));
+      } else {
+        actions.push(withBaseline(action, unchanged ? 'unchanged' : 'changed', prior,
+          unchanged ? 'same_server_action_control_evidence'
+            : degradation || 'server_action_control_evidence_changed'));
+      }
     }
   }
   for (const prior of previous.serverActions.filter((action) =>
@@ -292,20 +323,35 @@ export function routeSecurityRegressions(document) {
 export function readRouteSecurityBaseline(reportPath) {
   const directory = dirname(reportPath);
   const jsonPath = join(directory, 'route-security.json');
+  const markdownPath = join(directory, 'route-security.md');
   const digestPath = join(directory, 'route-security.sha256');
   if (!existsSync(jsonPath) && !existsSync(digestPath)) return null;
   if (!existsSync(jsonPath) || !existsSync(digestPath)) {
     throw new Error('route baseline artifact or digest sidecar is missing');
   }
   const rawBytes = readFileSync(jsonPath);
-  const match = /^([a-f0-9]{64})  route-security\.json$/.exec(readFileSync(digestPath, 'utf8').trim());
-  if (!match || sha256(rawBytes) !== match[1]) throw new Error('route baseline bytes do not match the recorded digest');
+  const digestLines = readFileSync(digestPath, 'utf8').trim().split('\n');
+  const entries = new Map();
+  for (const line of digestLines) {
+    const match = /^([a-f0-9]{64})  (route-security\.(?:json|md))$/.exec(line);
+    if (!match || entries.has(match[2])) throw new Error('route baseline digest sidecar is invalid');
+    entries.set(match[2], match[1]);
+  }
+  if (!entries.has('route-security.json') || sha256(rawBytes) !== entries.get('route-security.json')) {
+    throw new Error('route baseline bytes do not match the recorded digest');
+  }
+  if (entries.has('route-security.md')) {
+    if (!existsSync(markdownPath)
+        || sha256(readFileSync(markdownPath)) !== entries.get('route-security.md')) {
+      throw new Error('route baseline Markdown does not match the recorded digest');
+    }
+  }
   let document;
   try { document = JSON.parse(rawBytes.toString('utf8')); } catch {
     throw new Error(`invalid route baseline JSON: ${basename(jsonPath)}`);
   }
   assertRouteSecurityDocument(document);
-  return { document, sourceDigest: match[1], rawBytes };
+  return { document, sourceDigest: entries.get('route-security.json'), rawBytes };
 }
 
 export function routeSecurityJson(document) {
@@ -315,4 +361,8 @@ export function routeSecurityJson(document) {
 
 export function routeSecurityDigest(jsonBytes) {
   return sha256(jsonBytes);
+}
+
+export function routeSecurityDigestManifest(jsonBytes, markdownBytes) {
+  return `${sha256(jsonBytes)}  route-security.json\n${sha256(markdownBytes)}  route-security.md\n`;
 }

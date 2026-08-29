@@ -63,7 +63,7 @@ assert.match(markdown, /Review priority orders manual work; it is not vulnerabil
 assert.match(markdown, /PATCH `\/projects\/:id`/);
 assert.match(markdown, /Authentication: `inherited_observed`/);
 assert.equal((markdown.match(/RateLimitGuard/g) || []).length, 1);
-assert.match(markdown, /Access-control chain review/);
+assert.match(markdown, /Access-path review leads/);
 assert.match(markdown, /authorization_constraint_observed/);
 assert.doesNotMatch(markdown, /\[object Object\]/);
 

@@ -22,8 +22,8 @@ import { sourceRuleExplanation } from './lib/source-rule-registry.mjs';
 import { createGitDiffScope, selectDiffFindings, selectDiffRoutes } from './lib/git-diff-scope.mjs';
 import { assertRouteSecurityDocument } from './lib/route-security-contract.mjs';
 import {
-  compareRouteSecurityDocuments, readRouteSecurityBaseline, routeSecurityDigest, routeSecurityJson,
-  routeSecurityRegressions,
+  compareRouteSecurityDocuments, readRouteSecurityBaseline, routeSecurityDigestManifest,
+  routeSecurityJson, routeSecurityRegressions,
 } from './lib/route-security-baseline.mjs';
 import { createRouteSecurityDocument } from './lib/route-security-model.mjs';
 import { renderRouteSecurityMarkdown } from './lib/route-security-renderer.mjs';
@@ -353,6 +353,7 @@ try {
   }
 
   const routeJson = routeDocument ? routeSecurityJson(routeDocument) : null;
+  const routeMarkdown = routeDocument ? renderRouteSecurityMarkdown(routeDocument) : null;
   const files = writeReportBundleV3(report, output, name, { additionalFiles: [
     ...(persistScope ? [{ name: 'security-scope.yml', json: localScope, sanitize: false }] : []),
     { name: 'proposed.patch', content: renderPatch(rawFindings) },
@@ -360,9 +361,9 @@ try {
       { key: 'routeJson', name: 'route-security.json', content: routeJson, sanitize: false,
         validate: (bytes) => assertRouteSecurityDocument(JSON.parse(bytes.toString('utf8'))) },
       { key: 'routeMarkdown', name: 'route-security.md',
-        content: renderRouteSecurityMarkdown(routeDocument), sanitize: false },
+        content: routeMarkdown, sanitize: false },
       { key: 'routeDigest', name: 'route-security.sha256',
-        content: `${routeSecurityDigest(routeJson)}  route-security.json\n`, sanitize: false },
+        content: routeSecurityDigestManifest(routeJson, routeMarkdown), sanitize: false },
     ] : []),
   ] });
   console.log(`report:    ${files.json}`);
