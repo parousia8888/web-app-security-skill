@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "release": "0.8.0",
+  "id": "formbricks-vite-prisma-facade",
+  "source": {
+    "repository": "formbricks/formbricks",
+    "commit": "b66c1dd978af618a0e402bd3343b456bed68594c",
+    "paths": [
+      "packages/database/package.json",
+      "packages/database/vite.config.ts",
+      "packages/database/schema/main.prisma",
+      "packages/database/src/index.ts",
+      "packages/database/src/client.ts",
+      "packages/database/src/prisma.ts"
+    ]
+  },
+  "observedFailure": "A workspace export targeting unbuilt dist files and a Prisma 7 generated-client facade left every frozen ordinary Prisma path unresolved.",
+  "protectedContract": "One exact Vite Rollup input may map a built export to source, and one exact Prisma generator/output/facade/constructor chain may establish client identity.",
+  "boundary": "The minimized fixture preserves structural relationships, not full project source. Names alone, type-only imports, ambiguous build inputs and missing generator evidence remain insufficient.",
+  "result": {
+    "operations": [
+      {
+        "provider": "prisma",
+        "resource": "workspace",
+        "operation": "find-unique",
+        "objectConstraint": "observed"
+      }
+    ],
+    "limitations": [],
+    "passed": true
+  },
+  "regressionTest": "test/v080-access-control-real-world-regression.test.mjs"
+}

@@ -1,0 +1,3910 @@
+{
+  "schemaVersion": 1,
+  "release": "0.8.0",
+  "reviewedOn": "2026-08-30",
+  "evidenceType": "fixed_commit_bounded_access_control_review",
+  "methodology": {
+    "execution": "Repositories were read at fixed commits. Project dependencies and applications were not executed.",
+    "scoring": "Only the 14 labels frozen before implementation are scored. Additional completed chains are listed separately and do not change the denominator.",
+    "completionBoundary": "Completed means one exact bounded static path reached a supported operation. It does not mean secure, vulnerable, reachable, deployed or correctly enforced.",
+    "metricBoundary": "This is not a production precision, recall, exploitability or whole-repository coverage measurement.",
+    "reviewBoundary": "All 63 completed chain identities were manually classified. Unsupported or ambiguous paths remain partial or outside the score."
+  },
+  "evaluation": {
+    "path": "docs/reviews/v0.8.0-access-control-evaluation.json",
+    "sha256": "b57a3e7e281e3d08ed88205004be3d6dc5c2e39549aa7c8953a1e48d23014ee6",
+    "fileSha256": "3221ede8b967a68b616dcd8671a550c1c61c55f1f22955dc088a9d6ad8d71879",
+    "denominator": 14,
+    "minimumByRate": 10,
+    "groundedPathFloor": 6
+  },
+  "aggregate": {
+    "projects": 4,
+    "routes": 173,
+    "serverActions": 23,
+    "frozenEntries": 32,
+    "eligibleEntries": 14,
+    "completedEligibleEntries": 13,
+    "partialEligibleEntries": 1,
+    "completionRate": 0.9286,
+    "completedChains": 63,
+    "frozenMatchedCompletedChains": 13,
+    "additionalCompletedChains": 50,
+    "completedWithLimitations": 4
+  },
+  "distributions": {
+    "byProvider": {
+      "drizzle": 21,
+      "prisma": 42
+    },
+    "byProject": {
+      "formbricks": 42,
+      "vercel-chatbot": 21
+    },
+    "bySelectorKind": {
+      "action-parameter": 14,
+      "next-route-param": 32,
+      "next-search-param": 17
+    },
+    "byCallDepth": {
+      "0": 4,
+      "1": 38,
+      "2": 19,
+      "4": 2
+    },
+    "byOutcome": {
+      "authorization_constraint_not_observed": 54,
+      "authorization_constraint_observed": 7,
+      "incomplete": 2
+    },
+    "byIdentityProvider": {
+      "authjs": 20,
+      "none": 43
+    },
+    "byDisposition": {
+      "additional_constraint_not_observed_review_path": 47,
+      "additional_constraint_observed_review_path": 1,
+      "additional_incomplete_authorization_review_path": 2,
+      "frozen_expectation_completed": 13
+    },
+    "byLimitation": {
+      "constraint_expression_unresolved": 1,
+      "return_mapping_unresolved": 3
+    }
+  },
+  "projects": [
+    {
+      "id": "nestjs-boilerplate",
+      "repository": "brocoders/nestjs-boilerplate",
+      "sourceCommit": "9620f159eefe38f47747d02ab162852367c5472c",
+      "license": "MIT",
+      "target": ".",
+      "toolCommit": "fa21f3e6e53b48a08ad40e3529353f245f516260",
+      "command": "SOURCE_DATE_EPOCH=0 node {tool}/scripts/webapp-security.mjs audit . --out {output}/nestjs-boilerplate-p11-fa21f3e --fail-on never",
+      "expectedExit": 3,
+      "artifacts": {
+        "reportJsonSha256": "d2ff336f6eaa4195450dba5cc8891c0b67b51bad29693ac0748f65992b799b65",
+        "routeJsonSha256": "80412569cbf6142f1e806500857a56e1a681b165f0d2e7192e54fbd9fc99c987",
+        "routeMarkdownSha256": "e8f6d345deaecf2faa5bb8785b20c02798c2ec3c94ba49f2da4041c66e7c07fe",
+        "routeSemanticSha256": "548520986f86c7fa0f30efe87696c0dfa66565c182cfdd4ba9e23f90d37cc3b6"
+      },
+      "inventory": {
+        "routes": 24,
+        "serverActions": 0,
+        "accessChains": 5,
+        "byStatus": {
+          "partial": 5
+        },
+        "duplicateCompletedChainIds": 0
+      },
+      "performance": {
+        "baselineVersion": "0.7.3",
+        "baselineMedianSeconds": 0.28,
+        "candidateMedianSeconds": 0.35,
+        "ratio": 1.25,
+        "boundary": "Three local timed runs after one warm-up on the same machine; informational, not a cross-machine benchmark."
+      }
+    },
+    {
+      "id": "vercel-chatbot",
+      "repository": "vercel/chatbot",
+      "sourceCommit": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
+      "license": "Apache-2.0",
+      "target": ".",
+      "toolCommit": "fa21f3e6e53b48a08ad40e3529353f245f516260",
+      "command": "SOURCE_DATE_EPOCH=0 node {tool}/scripts/webapp-security.mjs audit . --out {output}/vercel-chatbot-p11-fa21f3e --fail-on never",
+      "expectedExit": 3,
+      "artifacts": {
+        "reportJsonSha256": "a1062d8bb4d21572efefffe1b5a08e3de10a7d27a2fbe373f692e074a1943cc7",
+        "routeJsonSha256": "b8c92dd24bd3eb1fefee2c9df3c9337466c3cb705ce2838152e2255238e9b936",
+        "routeMarkdownSha256": "e15089e2aa5a9f86f0fbb1f76a2fff03843f429feb772712fc02a804ce465bdb",
+        "routeSemanticSha256": "74385e3ed5385913006ef40a0083f5229f9d41e48f157109bf89f14dcd1541f8"
+      },
+      "inventory": {
+        "routes": 15,
+        "serverActions": 7,
+        "accessChains": 23,
+        "byStatus": {
+          "completed": 21,
+          "partial": 2
+        },
+        "duplicateCompletedChainIds": 0
+      },
+      "performance": {
+        "baselineVersion": "0.7.3",
+        "baselineMedianSeconds": 0.49,
+        "candidateMedianSeconds": 0.54,
+        "ratio": 1.1,
+        "boundary": "Three local timed runs after one warm-up on the same machine; informational, not a cross-machine benchmark."
+      }
+    },
+    {
+      "id": "formbricks",
+      "repository": "formbricks/formbricks",
+      "sourceCommit": "b66c1dd978af618a0e402bd3343b456bed68594c",
+      "license": "AGPL-3.0",
+      "target": ".",
+      "toolCommit": "fa21f3e6e53b48a08ad40e3529353f245f516260",
+      "command": "SOURCE_DATE_EPOCH=0 node {tool}/scripts/webapp-security.mjs audit . --out {output}/formbricks-p11-fa21f3e --fail-on never",
+      "expectedExit": 3,
+      "artifacts": {
+        "reportJsonSha256": "5415713d74a855e2cfefb7bbbf82d0a6b3c73995e085af7910049490965f9d06",
+        "routeJsonSha256": "f9ac3731d4d67dff28a421b8fa0c5cd1c0ae7ce757fc9ac01ad37de512c8a952",
+        "routeMarkdownSha256": "95227eaf7022d6e79bead5eb3458c9443597776e8a552fe361dc4b48de95dfdd",
+        "routeSemanticSha256": "7f5ea6fad817500a6333ab4eb78ee8d50c43c97739d6aa544928c2a474a18f18"
+      },
+      "inventory": {
+        "routes": 130,
+        "serverActions": 16,
+        "accessChains": 272,
+        "byStatus": {
+          "completed": 42,
+          "not_applicable": 42,
+          "partial": 188
+        },
+        "duplicateCompletedChainIds": 0
+      },
+      "performance": {
+        "baselineVersion": "0.7.3",
+        "baselineMedianSeconds": 4.32,
+        "candidateMedianSeconds": 6.07,
+        "ratio": 1.41,
+        "boundary": "Three local timed runs after one warm-up on the same machine; informational, not a cross-machine benchmark."
+      }
+    },
+    {
+      "id": "documenso",
+      "repository": "documenso/documenso",
+      "sourceCommit": "75330166cc00b29c14399bc2e391e4b4d8080c00",
+      "license": "AGPL-3.0",
+      "target": "apps/docs",
+      "toolCommit": "fa21f3e6e53b48a08ad40e3529353f245f516260",
+      "command": "SOURCE_DATE_EPOCH=0 node {tool}/scripts/webapp-security.mjs audit apps/docs --out {output}/documenso-p11-fa21f3e --fail-on never",
+      "expectedExit": 3,
+      "artifacts": {
+        "reportJsonSha256": "c6e7a1e7ca339ad69879f38997cd76f3d87188ccbc80ae587470211d60b68f2b",
+        "routeJsonSha256": "838a8154d407b5e8c9a68bc2a2865913294e595aa74630240fab846ec2c1ebdd",
+        "routeMarkdownSha256": "d71aacafed02e0b1086c59fb42e7c03956687c1fa5fbba5dbda395a8097fefa3",
+        "routeSemanticSha256": "5a32b50d0ff6504c3560eb78d69ba670341b73dff984a35e7d031f5f8dd0f90c"
+      },
+      "inventory": {
+        "routes": 4,
+        "serverActions": 0,
+        "accessChains": 0,
+        "byStatus": {},
+        "duplicateCompletedChainIds": 0
+      },
+      "performance": {
+        "baselineVersion": "0.7.3",
+        "baselineMedianSeconds": 0.16,
+        "candidateMedianSeconds": 0.19,
+        "ratio": 1.19,
+        "boundary": "Three local timed runs after one warm-up on the same machine; informational, not a cross-machine benchmark."
+      }
+    }
+  ],
+  "dispositions": [
+    {
+      "id": "v080-eval-01",
+      "project": "nestjs-boilerplate",
+      "entry": "POST /auth/email/login",
+      "source": {
+        "path": "src/auth/auth.controller.ts",
+        "line": 39,
+        "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L39"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "not_applicable",
+      "observedChainStatuses": {},
+      "result": "not_scored_by_design",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": null,
+      "incompleteReasons": [],
+      "boundary": "No supported client-selected object identifier enters this entry."
+    },
+    {
+      "id": "v080-eval-02",
+      "project": "nestjs-boilerplate",
+      "entry": "POST /auth/email/register",
+      "source": {
+        "path": "src/auth/auth.controller.ts",
+        "line": 51,
+        "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L51"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "not_applicable",
+      "observedChainStatuses": {},
+      "result": "not_scored_by_design",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": null,
+      "incompleteReasons": [],
+      "boundary": "No supported client-selected object identifier enters this entry."
+    },
+    {
+      "id": "v080-eval-03",
+      "project": "nestjs-boilerplate",
+      "entry": "POST /auth/logout",
+      "source": {
+        "path": "src/auth/auth.controller.ts",
+        "line": 125,
+        "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L125"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "not_applicable",
+      "observedChainStatuses": {},
+      "result": "not_scored_by_design",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": null,
+      "incompleteReasons": [],
+      "boundary": "Authentication evidence exists, but no client-selected object identifier is present."
+    },
+    {
+      "id": "v080-eval-04",
+      "project": "nestjs-boilerplate",
+      "entry": "GET /auth/me",
+      "source": {
+        "path": "src/auth/auth.controller.ts",
+        "line": 90,
+        "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L90"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "not_applicable",
+      "observedChainStatuses": {},
+      "result": "not_scored_by_design",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": null,
+      "incompleteReasons": [],
+      "boundary": "The route addresses the current principal rather than a client-selected object."
+    },
+    {
+      "id": "v080-eval-05",
+      "project": "nestjs-boilerplate",
+      "entry": "DELETE /auth/me",
+      "source": {
+        "path": "src/auth/auth.controller.ts",
+        "line": 154,
+        "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/auth/auth.controller.ts#L154"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "not_applicable",
+      "observedChainStatuses": {},
+      "result": "not_scored_by_design",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": null,
+      "incompleteReasons": [],
+      "boundary": "The route addresses the current principal rather than a client-selected object."
+    },
+    {
+      "id": "v080-eval-06",
+      "project": "nestjs-boilerplate",
+      "entry": "GET /files/:path",
+      "source": {
+        "path": "src/files/infrastructure/uploader/local/files.controller.ts",
+        "line": 58,
+        "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/files/infrastructure/uploader/local/files.controller.ts#L58"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "not_applicable",
+      "observedChainStatuses": {},
+      "result": "not_scored_by_design",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": null,
+      "incompleteReasons": [],
+      "boundary": "The dynamic field is named path; the v0.8.0 selector contract does not reclassify generic paths as protected object IDs."
+    },
+    {
+      "id": "v080-eval-07",
+      "project": "nestjs-boilerplate",
+      "entry": "DELETE /users/:id",
+      "source": {
+        "path": "src/users/users.controller.ts",
+        "line": 129,
+        "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/users/users.controller.ts#L129"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "partial",
+      "observedChainStatuses": {
+        "partial": 1
+      },
+      "result": "excluded_boundary_retained",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": 2,
+      "incompleteReasons": [
+        "call_target_unresolved"
+      ],
+      "boundary": "The repository dispatches to TypeORM or Mongoose; neither provider is included in v0.8.0."
+    },
+    {
+      "id": "v080-eval-08",
+      "project": "nestjs-boilerplate",
+      "entry": "GET /users/:id",
+      "source": {
+        "path": "src/users/users.controller.ts",
+        "line": 92,
+        "url": "https://github.com/brocoders/nestjs-boilerplate/blob/9620f159eefe38f47747d02ab162852367c5472c/src/users/users.controller.ts#L92"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "partial",
+      "observedChainStatuses": {
+        "partial": 1
+      },
+      "result": "excluded_boundary_retained",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": 2,
+      "incompleteReasons": [
+        "call_target_unresolved"
+      ],
+      "boundary": "The repository dispatches to TypeORM or Mongoose; neither provider is included in v0.8.0."
+    },
+    {
+      "id": "v080-eval-09",
+      "project": "vercel-chatbot",
+      "entry": "POST /api/chat",
+      "source": {
+        "path": "app/(chat)/api/chat/route.ts",
+        "line": 70,
+        "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/chat/route.ts#L70"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "partial",
+      "observedChainStatuses": {},
+      "result": "excluded_boundary_retained",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": 0,
+      "incompleteReasons": [],
+      "boundary": "The ID is recovered through a Zod parse result; v0.8.0 supports direct JSON property access and destructuring, not arbitrary validator return semantics."
+    },
+    {
+      "id": "v080-eval-10",
+      "project": "vercel-chatbot",
+      "entry": "DELETE /api/chat",
+      "source": {
+        "path": "app/(chat)/api/chat/route.ts",
+        "line": 447,
+        "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/chat/route.ts#L447"
+      },
+      "eligibleForV080": true,
+      "expectedStatus": "completed",
+      "observedChainStatuses": {
+        "completed": 5
+      },
+      "result": "completed_as_expected",
+      "matchedChainId": "access-chain.787eeaec2d29a9355f2506b5",
+      "matchedOutcome": "authorization_constraint_observed",
+      "matchedCallEdges": 1,
+      "expectedCallEdges": 1,
+      "incompleteReasons": [],
+      "boundary": "The expected selector reached the expected supported provider/resource/operation. Completion does not prove authorization correctness."
+    },
+    {
+      "id": "v080-eval-11",
+      "project": "vercel-chatbot",
+      "entry": "GET /api/document",
+      "source": {
+        "path": "app/(chat)/api/document/route.ts",
+        "line": 19,
+        "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/document/route.ts#L19"
+      },
+      "eligibleForV080": true,
+      "expectedStatus": "completed",
+      "observedChainStatuses": {
+        "completed": 1
+      },
+      "result": "completed_as_expected",
+      "matchedChainId": "access-chain.8112a24bbefe2c0a5a0706bc",
+      "matchedOutcome": "authorization_constraint_observed",
+      "matchedCallEdges": 1,
+      "expectedCallEdges": 1,
+      "incompleteReasons": [],
+      "boundary": "The expected selector reached the expected supported provider/resource/operation. Completion does not prove authorization correctness."
+    },
+    {
+      "id": "v080-eval-12",
+      "project": "vercel-chatbot",
+      "entry": "POST /api/document",
+      "source": {
+        "path": "app/(chat)/api/document/route.ts",
+        "line": 51,
+        "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/document/route.ts#L51"
+      },
+      "eligibleForV080": true,
+      "expectedStatus": "completed",
+      "observedChainStatuses": {
+        "completed": 3,
+        "partial": 1
+      },
+      "result": "completed_as_expected",
+      "matchedChainId": "access-chain.aa179da2144f661cf24bba16",
+      "matchedOutcome": "authorization_constraint_observed",
+      "matchedCallEdges": 1,
+      "expectedCallEdges": 1,
+      "incompleteReasons": [
+        "dynamic_dispatch_unresolved"
+      ],
+      "boundary": "The expected selector reached the expected supported provider/resource/operation. Completion does not prove authorization correctness."
+    },
+    {
+      "id": "v080-eval-13",
+      "project": "vercel-chatbot",
+      "entry": "DELETE /api/document",
+      "source": {
+        "path": "app/(chat)/api/document/route.ts",
+        "line": 110,
+        "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/document/route.ts#L110"
+      },
+      "eligibleForV080": true,
+      "expectedStatus": "completed",
+      "observedChainStatuses": {
+        "completed": 3
+      },
+      "result": "completed_as_expected",
+      "matchedChainId": "access-chain.8cdff56c2be92bc3887bd40d",
+      "matchedOutcome": "authorization_constraint_observed",
+      "matchedCallEdges": 1,
+      "expectedCallEdges": 1,
+      "incompleteReasons": [],
+      "boundary": "The expected selector reached the expected supported provider/resource/operation. Completion does not prove authorization correctness."
+    },
+    {
+      "id": "v080-eval-14",
+      "project": "vercel-chatbot",
+      "entry": "GET /api/vote",
+      "source": {
+        "path": "app/(chat)/api/vote/route.ts",
+        "line": 12,
+        "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/vote/route.ts#L12"
+      },
+      "eligibleForV080": true,
+      "expectedStatus": "completed",
+      "observedChainStatuses": {
+        "completed": 2
+      },
+      "result": "completed_as_expected",
+      "matchedChainId": "access-chain.aac48098cfa0284c04eaffd0",
+      "matchedOutcome": "authorization_constraint_observed",
+      "matchedCallEdges": 1,
+      "expectedCallEdges": 1,
+      "incompleteReasons": [],
+      "boundary": "The expected selector reached the expected supported provider/resource/operation. Completion does not prove authorization correctness."
+    },
+    {
+      "id": "v080-eval-15",
+      "project": "vercel-chatbot",
+      "entry": "PATCH /api/vote",
+      "source": {
+        "path": "app/(chat)/api/vote/route.ts",
+        "line": 44,
+        "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/api/vote/route.ts#L44"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "partial",
+      "observedChainStatuses": {},
+      "result": "excluded_boundary_retained",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": 0,
+      "incompleteReasons": [],
+      "boundary": "The IDs are recovered through a Zod parse result rather than a direct request.json property/destructuring relationship."
+    },
+    {
+      "id": "v080-eval-16",
+      "project": "vercel-chatbot",
+      "entry": "ACTION updateChatVisibility",
+      "source": {
+        "path": "app/(chat)/actions.ts",
+        "line": 64,
+        "url": "https://github.com/vercel/chatbot/blob/c2f8235e1f3ea903ad8b7f61447c4f74164b5c58/app/(chat)/actions.ts#L64"
+      },
+      "eligibleForV080": true,
+      "expectedStatus": "completed",
+      "observedChainStatuses": {
+        "completed": 2
+      },
+      "result": "completed_as_expected",
+      "matchedChainId": "access-chain.bc8d77b63361bd1be89dfda7",
+      "matchedOutcome": "authorization_constraint_observed",
+      "matchedCallEdges": 1,
+      "expectedCallEdges": 1,
+      "incompleteReasons": [],
+      "boundary": "The expected selector reached the expected supported provider/resource/operation. Completion does not prove authorization correctness."
+    },
+    {
+      "id": "v080-eval-17",
+      "project": "formbricks",
+      "entry": "GET /legacy-organization-settings/[workspaceId]/[[...path]]",
+      "source": {
+        "path": "apps/web/app/(redirects)/legacy-organization-settings/[workspaceId]/[[...path]]/route.ts",
+        "line": 8,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/app/(redirects)/legacy-organization-settings/[workspaceId]/[[...path]]/route.ts#L8"
+      },
+      "eligibleForV080": true,
+      "expectedStatus": "completed",
+      "observedChainStatuses": {
+        "completed": 1
+      },
+      "result": "completed_as_expected",
+      "matchedChainId": "access-chain.019aebca02e575c6d1961f7d",
+      "matchedOutcome": "authorization_constraint_not_observed",
+      "matchedCallEdges": 1,
+      "expectedCallEdges": 1,
+      "incompleteReasons": [],
+      "boundary": "The expected selector reached the expected supported provider/resource/operation. Completion does not prove authorization correctness."
+    },
+    {
+      "id": "v080-eval-18",
+      "project": "formbricks",
+      "entry": "POST /api/internal/feedback-datasets/[datasetId]/purge",
+      "source": {
+        "path": "apps/web/app/api/internal/feedback-datasets/[datasetId]/purge/route.ts",
+        "line": 15,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/app/api/internal/feedback-datasets/[datasetId]/purge/route.ts#L15"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "partial",
+      "observedChainStatuses": {
+        "not_applicable": 1
+      },
+      "result": "excluded_boundary_retained",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": 3,
+      "incompleteReasons": [],
+      "boundary": "The handler receives parsedInput.params from a wrapper/Zod pipeline; the current selector contract does not equate that value with Next context.params."
+    },
+    {
+      "id": "v080-eval-19",
+      "project": "formbricks",
+      "entry": "DELETE /api/v1/management/action-classes/[actionClassId]",
+      "source": {
+        "path": "apps/web/app/api/v1/management/action-classes/[actionClassId]/route.ts",
+        "line": 146,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/app/api/v1/management/action-classes/[actionClassId]/route.ts#L146"
+      },
+      "eligibleForV080": true,
+      "expectedStatus": "completed",
+      "observedChainStatuses": {
+        "completed": 2,
+        "partial": 3
+      },
+      "result": "completed_as_expected",
+      "matchedChainId": "access-chain.211c8aa49551d2229d032a2c",
+      "matchedOutcome": "authorization_constraint_not_observed",
+      "matchedCallEdges": 2,
+      "expectedCallEdges": 2,
+      "incompleteReasons": [
+        "argument_mapping_ambiguous",
+        "call_target_unresolved"
+      ],
+      "boundary": "The expected selector reached the expected supported provider/resource/operation. Completion does not prove authorization correctness."
+    },
+    {
+      "id": "v080-eval-20",
+      "project": "formbricks",
+      "entry": "GET /api/v1/management/responses/[responseId]",
+      "source": {
+        "path": "apps/web/app/api/v1/management/responses/[responseId]/route.ts",
+        "line": 48,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/app/api/v1/management/responses/[responseId]/route.ts#L48"
+      },
+      "eligibleForV080": true,
+      "expectedStatus": "completed",
+      "observedChainStatuses": {
+        "completed": 1,
+        "partial": 2
+      },
+      "result": "completed_as_expected",
+      "matchedChainId": "access-chain.18a9db0b97aedeb474c06796",
+      "matchedOutcome": "authorization_constraint_not_observed",
+      "matchedCallEdges": 2,
+      "expectedCallEdges": 2,
+      "incompleteReasons": [
+        "argument_mapping_ambiguous",
+        "call_target_unresolved"
+      ],
+      "boundary": "The expected selector reached the expected supported provider/resource/operation. Completion does not prove authorization correctness."
+    },
+    {
+      "id": "v080-eval-21",
+      "project": "formbricks",
+      "entry": "GET /api/v1/management/surveys/[surveyId]",
+      "source": {
+        "path": "apps/web/app/api/v1/management/surveys/[surveyId]/route.ts",
+        "line": 52,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/app/api/v1/management/surveys/[surveyId]/route.ts#L52"
+      },
+      "eligibleForV080": true,
+      "expectedStatus": "completed",
+      "observedChainStatuses": {
+        "completed": 1,
+        "partial": 3
+      },
+      "result": "completed_as_expected",
+      "matchedChainId": "access-chain.52cc45084d34e8f9651ebfa1",
+      "matchedOutcome": "authorization_constraint_not_observed",
+      "matchedCallEdges": 2,
+      "expectedCallEdges": 2,
+      "incompleteReasons": [
+        "argument_mapping_ambiguous",
+        "call_target_unresolved"
+      ],
+      "boundary": "The expected selector reached the expected supported provider/resource/operation. Completion does not prove authorization correctness."
+    },
+    {
+      "id": "v080-eval-22",
+      "project": "formbricks",
+      "entry": "DELETE /api/v1/webhooks/[webhookId]",
+      "source": {
+        "path": "apps/web/app/api/v1/webhooks/[webhookId]/route.ts",
+        "line": 36,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/app/api/v1/webhooks/[webhookId]/route.ts#L36"
+      },
+      "eligibleForV080": true,
+      "expectedStatus": "completed",
+      "observedChainStatuses": {
+        "completed": 2,
+        "partial": 3
+      },
+      "result": "completed_as_expected",
+      "matchedChainId": "access-chain.70a0ded3b917a8ae28cb95fa",
+      "matchedOutcome": "authorization_constraint_not_observed",
+      "matchedCallEdges": 1,
+      "expectedCallEdges": 1,
+      "incompleteReasons": [
+        "argument_mapping_ambiguous",
+        "call_target_unresolved"
+      ],
+      "boundary": "The expected selector reached the expected supported provider/resource/operation. Completion does not prove authorization correctness."
+    },
+    {
+      "id": "v080-eval-23",
+      "project": "formbricks",
+      "entry": "POST /api/v2/client/[workspaceId]/responses",
+      "source": {
+        "path": "apps/web/app/api/v2/client/[workspaceId]/responses/route.ts",
+        "line": 201,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/app/api/v2/client/[workspaceId]/responses/route.ts#L201"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "not_applicable",
+      "observedChainStatuses": {
+        "completed": 1,
+        "partial": 1
+      },
+      "result": "not_scored_by_design",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": 1,
+      "incompleteReasons": [
+        "call_target_unresolved"
+      ],
+      "boundary": "The exact cache callback may be inspected, but this intentionally public ingestion path remains a labeled negative outside the ordinary completion denominator."
+    },
+    {
+      "id": "v080-eval-24",
+      "project": "formbricks",
+      "entry": "POST /api/v3/surveys/[surveyId]/archive",
+      "source": {
+        "path": "apps/web/app/api/v3/surveys/[surveyId]/archive/route.ts",
+        "line": 10,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/app/api/v3/surveys/[surveyId]/archive/route.ts#L10"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "partial",
+      "observedChainStatuses": {
+        "not_applicable": 1
+      },
+      "result": "excluded_boundary_retained",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": 3,
+      "incompleteReasons": [],
+      "boundary": "The route combines wrapper-produced parsedInput, a callback-based lifecycle helper and a React cache-wrapped query."
+    },
+    {
+      "id": "v080-eval-25",
+      "project": "formbricks",
+      "entry": "ACTION getMembershipByUserIdOrganizationIdAction",
+      "source": {
+        "path": "apps/web/lib/membership/hooks/actions.ts",
+        "line": 8,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/lib/membership/hooks/actions.ts#L8"
+      },
+      "eligibleForV080": true,
+      "expectedStatus": "completed",
+      "observedChainStatuses": {
+        "completed": 1,
+        "partial": 5
+      },
+      "result": "completed_as_expected",
+      "matchedChainId": "access-chain.e74b108c9e9d0ed948c9bdf1",
+      "matchedOutcome": "authorization_constraint_not_observed",
+      "matchedCallEdges": 1,
+      "expectedCallEdges": 2,
+      "incompleteReasons": [
+        "argument_mapping_ambiguous",
+        "call_target_unresolved"
+      ],
+      "boundary": "The expected selector reached the expected supported provider/resource/operation. Completion does not prove authorization correctness."
+    },
+    {
+      "id": "v080-eval-26",
+      "project": "formbricks",
+      "entry": "ACTION getMembershipRole",
+      "source": {
+        "path": "apps/web/lib/membership/hooks/actions.ts",
+        "line": 20,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/lib/membership/hooks/actions.ts#L20"
+      },
+      "eligibleForV080": true,
+      "expectedStatus": "completed",
+      "observedChainStatuses": {
+        "partial": 8
+      },
+      "result": "partial_retained",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": 3,
+      "incompleteReasons": [
+        "argument_mapping_ambiguous",
+        "call_target_unresolved"
+      ],
+      "boundary": "The frozen expectation remains partial; its label and denominator were not changed."
+    },
+    {
+      "id": "v080-eval-27",
+      "project": "formbricks",
+      "entry": "ACTION logSignOutAction",
+      "source": {
+        "path": "apps/web/modules/auth/actions/sign-out.ts",
+        "line": 12,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/modules/auth/actions/sign-out.ts#L12"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "not_applicable",
+      "observedChainStatuses": {
+        "partial": 1
+      },
+      "result": "not_scored_by_design",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": 1,
+      "incompleteReasons": [
+        "call_target_unresolved"
+      ],
+      "boundary": "The action emits an audit/auth event and does not reach a supported object data operation."
+    },
+    {
+      "id": "v080-eval-28",
+      "project": "formbricks",
+      "entry": "ACTION checkRoleManagementPermission",
+      "source": {
+        "path": "apps/web/modules/ee/role-management/actions.ts",
+        "line": 26,
+        "url": "https://github.com/formbricks/formbricks/blob/b66c1dd978af618a0e402bd3343b456bed68594c/apps/web/modules/ee/role-management/actions.ts#L26"
+      },
+      "eligibleForV080": true,
+      "expectedStatus": "completed",
+      "observedChainStatuses": {
+        "completed": 1,
+        "partial": 2
+      },
+      "result": "completed_as_expected",
+      "matchedChainId": "access-chain.ce91bde2cb8ec80630110475",
+      "matchedOutcome": "authorization_constraint_not_observed",
+      "matchedCallEdges": 1,
+      "expectedCallEdges": 2,
+      "incompleteReasons": [
+        "argument_mapping_ambiguous",
+        "call_depth_limit_reached"
+      ],
+      "boundary": "The expected selector reached the expected supported provider/resource/operation. Completion does not prove authorization correctness."
+    },
+    {
+      "id": "v080-eval-29",
+      "project": "documenso",
+      "entry": "GET /llms-full.txt",
+      "source": {
+        "path": "apps/docs/src/app/llms-full.txt/route.ts",
+        "line": 5,
+        "url": "https://github.com/documenso/documenso/blob/75330166cc00b29c14399bc2e391e4b4d8080c00/apps/docs/src/app/llms-full.txt/route.ts#L5"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "not_applicable",
+      "observedChainStatuses": {},
+      "result": "not_scored_by_design",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": null,
+      "incompleteReasons": [],
+      "boundary": "No supported client-selected object identifier enters this entry."
+    },
+    {
+      "id": "v080-eval-30",
+      "project": "documenso",
+      "entry": "GET /llms.txt",
+      "source": {
+        "path": "apps/docs/src/app/llms.txt/route.ts",
+        "line": 5,
+        "url": "https://github.com/documenso/documenso/blob/75330166cc00b29c14399bc2e391e4b4d8080c00/apps/docs/src/app/llms.txt/route.ts#L5"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "not_applicable",
+      "observedChainStatuses": {},
+      "result": "not_scored_by_design",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": null,
+      "incompleteReasons": [],
+      "boundary": "No supported client-selected object identifier enters this entry."
+    },
+    {
+      "id": "v080-eval-31",
+      "project": "documenso",
+      "entry": "GET /llms.mdx/docs/[[...slug]]",
+      "source": {
+        "path": "apps/docs/src/app/llms.mdx/docs/[[...slug]]/route.ts",
+        "line": 7,
+        "url": "https://github.com/documenso/documenso/blob/75330166cc00b29c14399bc2e391e4b4d8080c00/apps/docs/src/app/llms.mdx/docs/[[...slug]]/route.ts#L7"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "not_applicable",
+      "observedChainStatuses": {},
+      "result": "not_scored_by_design",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": null,
+      "incompleteReasons": [],
+      "boundary": "The dynamic documentation slug is intentionally outside the ID selector naming contract."
+    },
+    {
+      "id": "v080-eval-32",
+      "project": "documenso",
+      "entry": "GET /og/docs/[...slug]",
+      "source": {
+        "path": "apps/docs/src/app/og/docs/[...slug]/route.tsx",
+        "line": 27,
+        "url": "https://github.com/documenso/documenso/blob/75330166cc00b29c14399bc2e391e4b4d8080c00/apps/docs/src/app/og/docs/[...slug]/route.tsx#L27"
+      },
+      "eligibleForV080": false,
+      "expectedStatus": "not_applicable",
+      "observedChainStatuses": {},
+      "result": "not_scored_by_design",
+      "matchedChainId": null,
+      "matchedOutcome": null,
+      "matchedCallEdges": null,
+      "expectedCallEdges": null,
+      "incompleteReasons": [],
+      "boundary": "The dynamic image slug is intentionally outside the ID selector naming contract."
+    }
+  ],
+  "completedChainReview": [
+    {
+      "id": "access-chain.00ec8fd0fa61214176dbe4f6",
+      "fingerprint": "382dd7796a7d7ce567aa9d877a5237350d8fd720a9b1dbab946c612fb55f977b",
+      "project": "formbricks",
+      "entry": "POST /api/v1/client/[workspaceId]/responses",
+      "location": {
+        "path": "apps/web/app/api/v1/client/[workspaceId]/responses/route.ts",
+        "line": 56
+      },
+      "provider": "prisma",
+      "resource": "workspace",
+      "operation": "find-first",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/resolve-client-id.ts",
+        "line": 17
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "workspaceId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "POST",
+          "to": "<cache-callback>"
+        },
+        {
+          "kind": "local_function",
+          "from": "<cache-callback>",
+          "to": "findWorkspaceByIdOrLegacyEnvId"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.011b2403cf773d3c669758be",
+      "fingerprint": "b07c532abbadf78bbc62d12557ebd23a6b3db8f80c008737b2dad6d1e59ded3e",
+      "project": "vercel-chatbot",
+      "entry": "GET /api/messages",
+      "location": {
+        "path": "app/(chat)/api/messages/route.ts",
+        "line": 5
+      },
+      "provider": "drizzle",
+      "resource": "message",
+      "operation": "select",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 259
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "next-search-param",
+          "name": "chatId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "GET",
+          "to": "getMessagesByChatId"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.0197d53b028462e7660ea807",
+      "fingerprint": "36465e3934fdf9379058145a1e4e4f708ccce13ae1bdfec4565e98886383af0f",
+      "project": "formbricks",
+      "entry": "PUT /api/v1/client/[workspaceId]/responses/[responseId]",
+      "location": {
+        "path": "apps/web/app/api/v1/client/[workspaceId]/responses/[responseId]/route.ts",
+        "line": 9
+      },
+      "provider": "prisma",
+      "resource": "workspace",
+      "operation": "find-first",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/resolve-client-id.ts",
+        "line": 17
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "workspaceId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "PUT",
+          "to": "<cache-callback>"
+        },
+        {
+          "kind": "local_function",
+          "from": "<cache-callback>",
+          "to": "findWorkspaceByIdOrLegacyEnvId"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.019aebca02e575c6d1961f7d",
+      "fingerprint": "5471aec20c7b6a9b4aac28abe5552261b6b72a727ffb9c70e56be74b8bce8178",
+      "project": "formbricks",
+      "entry": "GET /legacy-organization-settings/[workspaceId]/[[...path]]",
+      "location": {
+        "path": "apps/web/app/(redirects)/legacy-organization-settings/[workspaceId]/[[...path]]/route.ts",
+        "line": 11
+      },
+      "provider": "prisma",
+      "resource": "workspace",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/workspace/service.ts",
+        "line": 118
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "workspaceId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "GET",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": "v080-eval-17",
+      "disposition": "frozen_expectation_completed",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.06a24c75a479d67cfd0702e2",
+      "fingerprint": "36355b442f31adff3f895dddd770b9b6d77f103124d07d020576d41dcfd6c74b",
+      "project": "formbricks",
+      "entry": "POST /api/v1/client/[workspaceId]/storage",
+      "location": {
+        "path": "apps/web/app/api/v1/client/[workspaceId]/storage/route.ts",
+        "line": 32
+      },
+      "provider": "prisma",
+      "resource": "workspace",
+      "operation": "find-first",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/resolve-client-id.ts",
+        "line": 17
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "workspaceId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "POST",
+          "to": "<cache-callback>"
+        },
+        {
+          "kind": "local_function",
+          "from": "<cache-callback>",
+          "to": "findWorkspaceByIdOrLegacyEnvId"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.086b529b1369128fb156f92c",
+      "fingerprint": "01ac47d1e7d8ee224c8b3008e6c8d88c6e0a59cb24d01da49cb2d895eddfa612",
+      "project": "formbricks",
+      "entry": "POST /api/v2/client/[workspaceId]/responses",
+      "location": {
+        "path": "apps/web/app/api/v2/client/[workspaceId]/responses/route.ts",
+        "line": 201
+      },
+      "provider": "prisma",
+      "resource": "workspace",
+      "operation": "find-first",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/resolve-client-id.ts",
+        "line": 17
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "workspaceId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "POST",
+          "to": "<cache-callback>"
+        },
+        {
+          "kind": "local_function",
+          "from": "<cache-callback>",
+          "to": "findWorkspaceByIdOrLegacyEnvId"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.0f62a492e4988aab515ef2d5",
+      "fingerprint": "7f140046bb2e7b9735c8422da76dffa661aec22805dfee705f66fc8aeeda9f0f",
+      "project": "formbricks",
+      "entry": "GET /environments/[environmentId]/[...path]",
+      "location": {
+        "path": "apps/web/app/(redirects)/environments/[environmentId]/[...path]/route.ts",
+        "line": 7
+      },
+      "provider": "prisma",
+      "resource": "workspace",
+      "operation": "find-first",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/resolve-client-id.ts",
+        "line": 17
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "environmentId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "GET",
+          "to": "findWorkspaceByIdOrLegacyEnvId"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.14913a8fb2817afc80af0fc1",
+      "fingerprint": "9117f0246ec0e04fbb1423cd7a44b61f3dcc7e0656270c78d0144d4f1be198a0",
+      "project": "vercel-chatbot",
+      "entry": "GET /api/messages",
+      "location": {
+        "path": "app/(chat)/api/messages/route.ts",
+        "line": 5
+      },
+      "provider": "drizzle",
+      "resource": "chat",
+      "operation": "select",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 218
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "next-search-param",
+          "name": "chatId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "GET",
+          "to": "getChatById"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.18a9db0b97aedeb474c06796",
+      "fingerprint": "25afae3375b9048d76f07eabcafde5766256e96be20d5612238aeb7ae8799174",
+      "project": "formbricks",
+      "entry": "GET /api/v1/management/responses/[responseId]",
+      "location": {
+        "path": "apps/web/app/api/v1/management/responses/[responseId]/route.ts",
+        "line": 48
+      },
+      "provider": "prisma",
+      "resource": "response",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/response/service.ts",
+        "line": 204
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "responseId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_function",
+          "from": "GET",
+          "to": "fetchAndAuthorizeResponse"
+        },
+        {
+          "kind": "react_cache_callback",
+          "from": "fetchAndAuthorizeResponse",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": "v080-eval-20",
+      "disposition": "frozen_expectation_completed",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.1bac50890a41ae86f189a0dc",
+      "fingerprint": "981c4f4da5ea2ab7600f29ed27f62043a03401d18fcfb843e02d643492d2813c",
+      "project": "formbricks",
+      "entry": "POST /api/v2/client/[workspaceId]/displays",
+      "location": {
+        "path": "apps/web/app/api/v2/client/[workspaceId]/displays/route.ts",
+        "line": 53
+      },
+      "provider": "prisma",
+      "resource": "workspace",
+      "operation": "find-first",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/resolve-client-id.ts",
+        "line": 17
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "workspaceId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "POST",
+          "to": "<cache-callback>"
+        },
+        {
+          "kind": "local_function",
+          "from": "<cache-callback>",
+          "to": "findWorkspaceByIdOrLegacyEnvId"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.1bd9199f6af681b25577bc73",
+      "fingerprint": "8f75a628a8a912c13ba3cb036e5ac80e0203670aa85c1d3b8dc7c1180298f4d3",
+      "project": "formbricks",
+      "entry": "PUT /api/v1/management/surveys/[surveyId]",
+      "location": {
+        "path": "apps/web/app/api/v1/management/surveys/[surveyId]/route.ts",
+        "line": 131
+      },
+      "provider": "prisma",
+      "resource": "survey",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/survey/service.ts",
+        "line": 174
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "surveyId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_function",
+          "from": "PUT",
+          "to": "fetchAndAuthorizeSurvey"
+        },
+        {
+          "kind": "react_cache_callback",
+          "from": "fetchAndAuthorizeSurvey",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.1deaa9c1fa9bbe80350dc723",
+      "fingerprint": "0b4439c1fc774e32d7f74a7a34b3524eed265b32b79e9aecf0078e98666fe491",
+      "project": "formbricks",
+      "entry": "POST /api/v1/client/[workspaceId]/displays",
+      "location": {
+        "path": "apps/web/app/api/v1/client/[workspaceId]/displays/route.ts",
+        "line": 23
+      },
+      "provider": "prisma",
+      "resource": "workspace",
+      "operation": "find-first",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/resolve-client-id.ts",
+        "line": 17
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "workspaceId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "POST",
+          "to": "<cache-callback>"
+        },
+        {
+          "kind": "local_function",
+          "from": "<cache-callback>",
+          "to": "findWorkspaceByIdOrLegacyEnvId"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.211c8aa49551d2229d032a2c",
+      "fingerprint": "20bf867528f25149168b1868525b7042f2622e63cb1e58f66f4be70c4a95e3d6",
+      "project": "formbricks",
+      "entry": "DELETE /api/v1/management/action-classes/[actionClassId]",
+      "location": {
+        "path": "apps/web/app/api/v1/management/action-classes/[actionClassId]/route.ts",
+        "line": 146
+      },
+      "provider": "prisma",
+      "resource": "actionClass",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/actionClass/service.ts",
+        "line": 73
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "actionClassId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_function",
+          "from": "DELETE",
+          "to": "fetchAndAuthorizeActionClass"
+        },
+        {
+          "kind": "react_cache_callback",
+          "from": "fetchAndAuthorizeActionClass",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": "v080-eval-19",
+      "disposition": "frozen_expectation_completed",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.21c50ccfb61017e994c185ab",
+      "fingerprint": "3684a657c4d0c70884d75be7b527d21c9dfff6a15fe467369af4d0a4b41c4d07",
+      "project": "formbricks",
+      "entry": "DELETE /api/v1/webhooks/[webhookId]",
+      "location": {
+        "path": "apps/web/app/api/v1/webhooks/[webhookId]/route.ts",
+        "line": 36
+      },
+      "provider": "prisma",
+      "resource": "webhook",
+      "operation": "delete",
+      "operationLocation": {
+        "path": "apps/web/app/api/v1/webhooks/[webhookId]/lib/webhook.ts",
+        "line": 12
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "webhookId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "DELETE",
+          "to": "deleteWebhook"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.22235dfe03cfd161db5a420e",
+      "fingerprint": "3ae83f727852f19025a5890754231e87621d3351545017d5d0f0da6c11a13bfa",
+      "project": "formbricks",
+      "entry": "ACTION deleteActionClass",
+      "location": {
+        "path": "apps/web/lib/actionClass/service.ts",
+        "line": 86
+      },
+      "provider": "prisma",
+      "resource": "actionClass",
+      "operation": "delete",
+      "operationLocation": {
+        "path": "apps/web/lib/actionClass/service.ts",
+        "line": 90
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "action-parameter",
+          "name": "actionClassId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.225a2db823098935b6cc7a90",
+      "fingerprint": "c7e76533efcb5d41defb8d9f3b413614a0b11e2df9dd78127909158b8166453c",
+      "project": "formbricks",
+      "entry": "DELETE /storage/[workspaceId]/[accessType]/[...filePath]",
+      "location": {
+        "path": "apps/web/app/storage/[workspaceId]/[accessType]/[...filePath]/route.ts",
+        "line": 76
+      },
+      "provider": "prisma",
+      "resource": "workspace",
+      "operation": "find-first",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/resolve-client-id.ts",
+        "line": 17
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "workspaceId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "DELETE",
+          "to": "<cache-callback>"
+        },
+        {
+          "kind": "local_function",
+          "from": "<cache-callback>",
+          "to": "findWorkspaceByIdOrLegacyEnvId"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.23da716977b7898e9cb8ea70",
+      "fingerprint": "7a05badcbfb1786c0d7ae052b2c532bbc68ba37218f44068e761a92f97acc843",
+      "project": "formbricks",
+      "entry": "GET /api/v1/client/[workspaceId]/displays/[displayId]/response",
+      "location": {
+        "path": "apps/web/app/api/v1/client/[workspaceId]/displays/[displayId]/response/route.ts",
+        "line": 12
+      },
+      "provider": "prisma",
+      "resource": "workspace",
+      "operation": "find-first",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/resolve-client-id.ts",
+        "line": 17
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "workspaceId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "GET",
+          "to": "<cache-callback>"
+        },
+        {
+          "kind": "local_function",
+          "from": "<cache-callback>",
+          "to": "findWorkspaceByIdOrLegacyEnvId"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.32176f488f417542200c8548",
+      "fingerprint": "60a5e51b2451f90c9de69fe83fb70e174a768f363ef0a65c52d862a37fc6a271",
+      "project": "vercel-chatbot",
+      "entry": "GET /api/vote",
+      "location": {
+        "path": "app/(chat)/api/vote/route.ts",
+        "line": 12
+      },
+      "provider": "drizzle",
+      "resource": "vote",
+      "operation": "select",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 304
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "next-search-param",
+          "name": "chatId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "GET",
+          "to": "getVotesByChatId"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.3288e88f6e473bd0ccf32b98",
+      "fingerprint": "75fb7471ad9eadc9a317defd1df6014aab21b57c6e8b86f31d8330c0500e9664",
+      "project": "formbricks",
+      "entry": "GET /api/v1/management/action-classes/[actionClassId]",
+      "location": {
+        "path": "apps/web/app/api/v1/management/action-classes/[actionClassId]/route.ts",
+        "line": 32
+      },
+      "provider": "prisma",
+      "resource": "actionClass",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/actionClass/service.ts",
+        "line": 73
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "actionClassId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_function",
+          "from": "GET",
+          "to": "fetchAndAuthorizeActionClass"
+        },
+        {
+          "kind": "react_cache_callback",
+          "from": "fetchAndAuthorizeActionClass",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.35c45d28e89463ee96ab6099",
+      "fingerprint": "fe451f3365c6ea80932c25d0087111260f3ea257f8db9f4d6f91ce121c2c3e26",
+      "project": "formbricks",
+      "entry": "DELETE /api/v1/management/action-classes/[actionClassId]",
+      "location": {
+        "path": "apps/web/app/api/v1/management/action-classes/[actionClassId]/route.ts",
+        "line": 146
+      },
+      "provider": "prisma",
+      "resource": "actionClass",
+      "operation": "delete",
+      "operationLocation": {
+        "path": "apps/web/lib/actionClass/service.ts",
+        "line": 90
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "actionClassId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "DELETE",
+          "to": "deleteActionClass"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.457629b876f88d4965c4db84",
+      "fingerprint": "4ec3382d0da50d9fc0db7a7b8f2e8a4e958eb0694f4d116e0d1cfbeea617f87c",
+      "project": "formbricks",
+      "entry": "GET /storage/[workspaceId]/[accessType]/[...filePath]",
+      "location": {
+        "path": "apps/web/app/storage/[workspaceId]/[accessType]/[...filePath]/route.ts",
+        "line": 15
+      },
+      "provider": "prisma",
+      "resource": "workspace",
+      "operation": "find-first",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/resolve-client-id.ts",
+        "line": 17
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "workspaceId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "GET",
+          "to": "<cache-callback>"
+        },
+        {
+          "kind": "local_function",
+          "from": "<cache-callback>",
+          "to": "findWorkspaceByIdOrLegacyEnvId"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.4bfde2d33d9581e38429a68f",
+      "fingerprint": "e1b1fbe0b9905098ab67bf2d42af346304a8e7c5990287eefa08414d1a99f52f",
+      "project": "formbricks",
+      "entry": "ACTION isWorkspacePartOfOrganization",
+      "location": {
+        "path": "apps/web/lib/utils/services.ts",
+        "line": 259
+      },
+      "provider": "prisma",
+      "resource": "workspace",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/services.ts",
+        "line": 128
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "action-parameter",
+          "name": "workspaceId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "isWorkspacePartOfOrganization",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [
+        "return_mapping_unresolved"
+      ],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.52ae8b6f9aaf48a893e10a1c",
+      "fingerprint": "e1b1fbe0b9905098ab67bf2d42af346304a8e7c5990287eefa08414d1a99f52f",
+      "project": "formbricks",
+      "entry": "ACTION isWorkspacePartOfOrganization",
+      "location": {
+        "path": "apps/web/lib/utils/services.ts",
+        "line": 259
+      },
+      "provider": "prisma",
+      "resource": "workspace",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/services.ts",
+        "line": 138
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "action-parameter",
+          "name": "workspaceId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "isWorkspacePartOfOrganization",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.52cc45084d34e8f9651ebfa1",
+      "fingerprint": "87f282dcb5538eca41839ec04261bc05d5461bd952c7b52db3e7466fe57d6ab5",
+      "project": "formbricks",
+      "entry": "GET /api/v1/management/surveys/[surveyId]",
+      "location": {
+        "path": "apps/web/app/api/v1/management/surveys/[surveyId]/route.ts",
+        "line": 52
+      },
+      "provider": "prisma",
+      "resource": "survey",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/survey/service.ts",
+        "line": 174
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "surveyId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_function",
+          "from": "GET",
+          "to": "fetchAndAuthorizeSurvey"
+        },
+        {
+          "kind": "react_cache_callback",
+          "from": "fetchAndAuthorizeSurvey",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": "v080-eval-21",
+      "disposition": "frozen_expectation_completed",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.52cc99d500ea93937eff6372",
+      "fingerprint": "c8ef0773ea70b6e1697d7e0220128f0c7e0faf2f0b3a4efe35031dc6e47266f2",
+      "project": "formbricks",
+      "entry": "GET /api/v1/management/surveys/[surveyId]/singleUseIds",
+      "location": {
+        "path": "apps/web/app/api/v1/management/surveys/[surveyId]/singleUseIds/route.ts",
+        "line": 9
+      },
+      "provider": "prisma",
+      "resource": "survey",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/survey/service.ts",
+        "line": 174
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "surveyId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "GET",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.5988926ffa4e94221c04231d",
+      "fingerprint": "bdf67b54682f5a31aa79317883957a0600c403e540efb92f52b71bf042dd339c",
+      "project": "vercel-chatbot",
+      "entry": "ACTION getSuggestions",
+      "location": {
+        "path": "artifacts/actions.ts",
+        "line": 5
+      },
+      "provider": "drizzle",
+      "resource": "suggestion",
+      "operation": "select",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 449
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "action-parameter",
+          "name": "documentId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "getSuggestions",
+          "to": "getSuggestionsByDocumentId"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.5afde3a776f87319b7875656",
+      "fingerprint": "989ca3f676809912de27ebcdbc803edd387fea3565954baf0ec65ab6ded50f55",
+      "project": "vercel-chatbot",
+      "entry": "POST /api/document",
+      "location": {
+        "path": "app/(chat)/api/document/route.ts",
+        "line": 51
+      },
+      "provider": "drizzle",
+      "resource": "document",
+      "operation": "select",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 350
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "next-search-param",
+          "name": "id",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "POST",
+          "to": "updateDocumentContent"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.5ee240547868a98599a0c7c4",
+      "fingerprint": "02f96dba18966b74fff267cc691e9c7f650f0fc9283186039499f4e281622add",
+      "project": "formbricks",
+      "entry": "DELETE /storage/[workspaceId]/[accessType]/[...filePath]",
+      "location": {
+        "path": "apps/web/app/storage/[workspaceId]/[accessType]/[...filePath]/route.ts",
+        "line": 76
+      },
+      "provider": "prisma",
+      "resource": "workspace",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/services.ts",
+        "line": 138
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "workspaceId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "DELETE",
+          "to": "logFileDeletion"
+        },
+        {
+          "kind": "local_function",
+          "from": "logFileDeletion",
+          "to": "getOrgId"
+        },
+        {
+          "kind": "local_import",
+          "from": "getOrgId",
+          "to": "getOrganizationIdFromWorkspaceId"
+        },
+        {
+          "kind": "react_cache_callback",
+          "from": "getOrganizationIdFromWorkspaceId",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.70a0ded3b917a8ae28cb95fa",
+      "fingerprint": "9492b74d1e53d79059410b07304476e677986028faa2f24161894d627ee616fa",
+      "project": "formbricks",
+      "entry": "DELETE /api/v1/webhooks/[webhookId]",
+      "location": {
+        "path": "apps/web/app/api/v1/webhooks/[webhookId]/route.ts",
+        "line": 36
+      },
+      "provider": "prisma",
+      "resource": "webhook",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/app/api/v1/webhooks/[webhookId]/lib/webhook.ts",
+        "line": 37
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "webhookId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "DELETE",
+          "to": "getWebhook"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": "v080-eval-22",
+      "disposition": "frozen_expectation_completed",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.73af73433c0ec757945b852c",
+      "fingerprint": "af55302e0d4e046730123e634eaa67116fc8235dba762528f8ffd75005c33885",
+      "project": "vercel-chatbot",
+      "entry": "POST /api/document",
+      "location": {
+        "path": "app/(chat)/api/document/route.ts",
+        "line": 51
+      },
+      "provider": "drizzle",
+      "resource": "document",
+      "operation": "update",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 362
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "next-search-param",
+          "name": "id",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "POST",
+          "to": "updateDocumentContent"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.7594e9deb5091ff76bacd25f",
+      "fingerprint": "593859f5cc641c469a056df78b1c2441c91798528e86d3b5fac5f0e0569bbf4e",
+      "project": "vercel-chatbot",
+      "entry": "DELETE /api/document",
+      "location": {
+        "path": "app/(chat)/api/document/route.ts",
+        "line": 110
+      },
+      "provider": "drizzle",
+      "resource": "suggestion",
+      "operation": "delete",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 413
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "next-search-param",
+          "name": "id",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "DELETE",
+          "to": "deleteDocumentsByIdAfterTimestamp"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.787eeaec2d29a9355f2506b5",
+      "fingerprint": "020f59629c8d3cd86a371db24619d509844fb3c657f23a8333fa9e3e666c7e04",
+      "project": "vercel-chatbot",
+      "entry": "DELETE /api/chat",
+      "location": {
+        "path": "app/(chat)/api/chat/route.ts",
+        "line": 447
+      },
+      "provider": "drizzle",
+      "resource": "chat",
+      "operation": "select",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 218
+      },
+      "outcome": "authorization_constraint_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "next-search-param",
+          "name": "id",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "DELETE",
+          "to": "getChatById"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "post_load_comparison",
+          "category": "principal",
+          "state": "observed",
+          "field": "userId"
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": "v080-eval-10",
+      "disposition": "frozen_expectation_completed",
+      "reviewBoundary": "Supported static authorization evidence was observed; runtime enforcement, denial and exploitability remain unproved."
+    },
+    {
+      "id": "access-chain.7929f4b79b7fee738fb4ba8a",
+      "fingerprint": "418bdeeff26c615e1a4953217375680ad9d111cb74c5f24de8410c13541dd31e",
+      "project": "formbricks",
+      "entry": "ACTION isTeamPartOfOrganization",
+      "location": {
+        "path": "apps/web/lib/utils/services.ts",
+        "line": 270
+      },
+      "provider": "prisma",
+      "resource": "team",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/services.ts",
+        "line": 240
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "action-parameter",
+          "name": "teamId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "isTeamPartOfOrganization",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.801b77c9ba7678ffe4a842cb",
+      "fingerprint": "02f96dba18966b74fff267cc691e9c7f650f0fc9283186039499f4e281622add",
+      "project": "formbricks",
+      "entry": "DELETE /storage/[workspaceId]/[accessType]/[...filePath]",
+      "location": {
+        "path": "apps/web/app/storage/[workspaceId]/[accessType]/[...filePath]/route.ts",
+        "line": 76
+      },
+      "provider": "prisma",
+      "resource": "workspace",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/services.ts",
+        "line": 128
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "workspaceId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "DELETE",
+          "to": "logFileDeletion"
+        },
+        {
+          "kind": "local_function",
+          "from": "logFileDeletion",
+          "to": "getOrgId"
+        },
+        {
+          "kind": "local_import",
+          "from": "getOrgId",
+          "to": "getOrganizationIdFromWorkspaceId"
+        },
+        {
+          "kind": "react_cache_callback",
+          "from": "getOrganizationIdFromWorkspaceId",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [
+        "return_mapping_unresolved"
+      ],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.8112a24bbefe2c0a5a0706bc",
+      "fingerprint": "91c07ddfa6ad021d0dead2aed78e337f76e9fcdf1e70c2add8ee57670d8d2e88",
+      "project": "vercel-chatbot",
+      "entry": "GET /api/document",
+      "location": {
+        "path": "app/(chat)/api/document/route.ts",
+        "line": 19
+      },
+      "provider": "drizzle",
+      "resource": "document",
+      "operation": "select",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 379
+      },
+      "outcome": "authorization_constraint_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "next-search-param",
+          "name": "id",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "GET",
+          "to": "getDocumentsById"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "post_load_comparison",
+          "category": "principal",
+          "state": "observed",
+          "field": "userId"
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": "v080-eval-11",
+      "disposition": "frozen_expectation_completed",
+      "reviewBoundary": "Supported static authorization evidence was observed; runtime enforcement, denial and exploitability remain unproved."
+    },
+    {
+      "id": "access-chain.815cba04d3891160289be55c",
+      "fingerprint": "06901cf027a08122845d2fd1a8e23c4f2a63d62c80b3d5525295133d64d0064f",
+      "project": "vercel-chatbot",
+      "entry": "DELETE /api/chat",
+      "location": {
+        "path": "app/(chat)/api/chat/route.ts",
+        "line": 447
+      },
+      "provider": "drizzle",
+      "resource": "message",
+      "operation": "delete",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 102
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "next-search-param",
+          "name": "id",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "DELETE",
+          "to": "deleteChatById"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.8228fa18c87cea883da87db9",
+      "fingerprint": "5965b7db2aeda8dd434a0f23367efb5ace12b286e0f7f0fe74bb9d9b42c9660a",
+      "project": "vercel-chatbot",
+      "entry": "GET /api/suggestions",
+      "location": {
+        "path": "app/(chat)/api/suggestions/route.ts",
+        "line": 5
+      },
+      "provider": "drizzle",
+      "resource": "suggestion",
+      "operation": "select",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 449
+      },
+      "outcome": "authorization_constraint_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "next-search-param",
+          "name": "documentId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "GET",
+          "to": "getSuggestionsByDocumentId"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "post_load_comparison",
+          "category": "principal",
+          "state": "observed",
+          "field": "userId"
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_observed_review_path",
+      "reviewBoundary": "Supported static authorization evidence was observed; runtime enforcement, denial and exploitability remain unproved."
+    },
+    {
+      "id": "access-chain.835c79b0f745c709c3f9319f",
+      "fingerprint": "b989464c858dc63bc356713fd41d5ed45aa72c5055c38b4227ce020c2ece1d0b",
+      "project": "vercel-chatbot",
+      "entry": "DELETE /api/chat",
+      "location": {
+        "path": "app/(chat)/api/chat/route.ts",
+        "line": 447
+      },
+      "provider": "drizzle",
+      "resource": "stream",
+      "operation": "delete",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 103
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "next-search-param",
+          "name": "id",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "DELETE",
+          "to": "deleteChatById"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.84b066ff8112c6aa0b0ebe35",
+      "fingerprint": "04124183fdde14cf63a67868286d940ff8698698aa5aa0725dd21a97216a7716",
+      "project": "vercel-chatbot",
+      "entry": "ACTION updateChatVisibility",
+      "location": {
+        "path": "app/(chat)/actions.ts",
+        "line": 64
+      },
+      "provider": "drizzle",
+      "resource": "chat",
+      "operation": "update",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 511
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "action-parameter",
+          "name": "chatId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "updateChatVisibility",
+          "to": "updateChatVisibilityById"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.84e9877ca9504649abc920a8",
+      "fingerprint": "b09985449402ec830dacac717b20747ebd497556bb819e4b651c1c298a46a5e5",
+      "project": "vercel-chatbot",
+      "entry": "DELETE /api/document",
+      "location": {
+        "path": "app/(chat)/api/document/route.ts",
+        "line": 110
+      },
+      "provider": "drizzle",
+      "resource": "document",
+      "operation": "delete",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 422
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "next-search-param",
+          "name": "id",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "DELETE",
+          "to": "deleteDocumentsByIdAfterTimestamp"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.8cdff56c2be92bc3887bd40d",
+      "fingerprint": "471fa7f2d21e8696b389ad68564f14ef7e22cafa0cd3db030a82c3c72b8792e9",
+      "project": "vercel-chatbot",
+      "entry": "DELETE /api/document",
+      "location": {
+        "path": "app/(chat)/api/document/route.ts",
+        "line": 110
+      },
+      "provider": "drizzle",
+      "resource": "document",
+      "operation": "select",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 379
+      },
+      "outcome": "authorization_constraint_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "next-search-param",
+          "name": "id",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "DELETE",
+          "to": "getDocumentsById"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "post_load_comparison",
+          "category": "principal",
+          "state": "observed",
+          "field": "userId"
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": "v080-eval-13",
+      "disposition": "frozen_expectation_completed",
+      "reviewBoundary": "Supported static authorization evidence was observed; runtime enforcement, denial and exploitability remain unproved."
+    },
+    {
+      "id": "access-chain.92bd866cc6113493add7364a",
+      "fingerprint": "4e6dba7586053cf68ad7cc59bdd6ac91f4e6194bd029423185bfc081ace0cacb",
+      "project": "vercel-chatbot",
+      "entry": "DELETE /api/chat",
+      "location": {
+        "path": "app/(chat)/api/chat/route.ts",
+        "line": 447
+      },
+      "provider": "drizzle",
+      "resource": "chat",
+      "operation": "delete",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 105
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "next-search-param",
+          "name": "id",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "DELETE",
+          "to": "deleteChatById"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.983093257fba950536e43eed",
+      "fingerprint": "0cd9806188a89f12ca2ef2fe3d06435756fe09082be6f48078d31dac9200f091",
+      "project": "formbricks",
+      "entry": "GET /organizations/[organizationId]",
+      "location": {
+        "path": "apps/web/app/(redirects)/organizations/[organizationId]/route.ts",
+        "line": 12
+      },
+      "provider": "prisma",
+      "resource": "workspace",
+      "operation": "find-many",
+      "operationLocation": {
+        "path": "apps/web/lib/workspace/service.ts",
+        "line": 71
+      },
+      "outcome": "incomplete",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "organizationId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "GET",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "query_predicate",
+          "category": "principal",
+          "state": "incomplete",
+          "field": null
+        },
+        {
+          "kind": "query_predicate",
+          "category": "tenant",
+          "state": "incomplete",
+          "field": null
+        }
+      ],
+      "limitations": [
+        "constraint_expression_unresolved"
+      ],
+      "frozenLabelId": null,
+      "disposition": "additional_incomplete_authorization_review_path",
+      "reviewBoundary": "The operation path completed, while authorization evidence remained incomplete; manual review is required."
+    },
+    {
+      "id": "access-chain.985e9973855dd0dd2c65e730",
+      "fingerprint": "40d8de35efffa22d6bc5bf40c25e835ee43ed44de3b8fd8637ac354d15fccae8",
+      "project": "formbricks",
+      "entry": "GET /api/v1/client/[workspaceId]/displays/[displayId]/response",
+      "location": {
+        "path": "apps/web/app/api/v1/client/[workspaceId]/displays/[displayId]/response/route.ts",
+        "line": 12
+      },
+      "provider": "prisma",
+      "resource": "display",
+      "operation": "find-first",
+      "operationLocation": {
+        "path": "apps/web/app/api/v1/client/[workspaceId]/displays/[displayId]/response/lib/response.ts",
+        "line": 14
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "displayId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "GET",
+          "to": "getResponseIdByDisplayId"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.98d9d78bf52d0e72a1a11094",
+      "fingerprint": "aef2c106f312993a13a3bd6547a16c2fde2575b998aed959af60de97d2347279",
+      "project": "vercel-chatbot",
+      "entry": "ACTION deleteTrailingMessages",
+      "location": {
+        "path": "app/(chat)/actions.ts",
+        "line": 42
+      },
+      "provider": "drizzle",
+      "resource": "message",
+      "operation": "select",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 460
+      },
+      "outcome": "incomplete",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "action-parameter",
+          "name": "id",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "deleteTrailingMessages",
+          "to": "getMessageById"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "post_load_comparison",
+          "category": "principal",
+          "state": "incomplete",
+          "field": null
+        }
+      ],
+      "limitations": [
+        "return_mapping_unresolved"
+      ],
+      "frozenLabelId": null,
+      "disposition": "additional_incomplete_authorization_review_path",
+      "reviewBoundary": "The operation path completed, while authorization evidence remained incomplete; manual review is required."
+    },
+    {
+      "id": "access-chain.9ca0b025b6b012170fdb2fee",
+      "fingerprint": "6fa1656389db0d8ddf23df2017196f77a0a2abf6f1e12552b2d77e6d60ea506a",
+      "project": "formbricks",
+      "entry": "DELETE /api/v1/management/surveys/[surveyId]",
+      "location": {
+        "path": "apps/web/app/api/v1/management/surveys/[surveyId]/route.ts",
+        "line": 89
+      },
+      "provider": "prisma",
+      "resource": "survey",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/survey/service.ts",
+        "line": 174
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "surveyId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_function",
+          "from": "DELETE",
+          "to": "fetchAndAuthorizeSurvey"
+        },
+        {
+          "kind": "react_cache_callback",
+          "from": "fetchAndAuthorizeSurvey",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.a3a6812cb9ab92c61563e6b7",
+      "fingerprint": "bd1c36bb9353dc6b7b907440be9f67107ec3baef40b34d84f90db921780dd90b",
+      "project": "formbricks",
+      "entry": "GET /environments/[environmentId]",
+      "location": {
+        "path": "apps/web/app/(redirects)/environments/[environmentId]/route.ts",
+        "line": 7
+      },
+      "provider": "prisma",
+      "resource": "workspace",
+      "operation": "find-first",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/resolve-client-id.ts",
+        "line": 17
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "environmentId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "GET",
+          "to": "findWorkspaceByIdOrLegacyEnvId"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.a49a4786cd1b3f028172ecac",
+      "fingerprint": "49b480a0276b9735822181eff51132bb246e2747b23ae2bf5ec88f90006d419a",
+      "project": "formbricks",
+      "entry": "PUT /api/v1/client/[workspaceId]/responses/[responseId]",
+      "location": {
+        "path": "apps/web/app/api/v1/client/[workspaceId]/responses/[responseId]/route.ts",
+        "line": 9
+      },
+      "provider": "prisma",
+      "resource": "response",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/response/service.ts",
+        "line": 204
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "responseId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_function",
+          "from": "PUT",
+          "to": "getExistingResponse"
+        },
+        {
+          "kind": "react_cache_callback",
+          "from": "getExistingResponse",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.aa179da2144f661cf24bba16",
+      "fingerprint": "d422f09cb0edf6fd8972a1aa24a2043695028652ec724856524c68292075f804",
+      "project": "vercel-chatbot",
+      "entry": "POST /api/document",
+      "location": {
+        "path": "app/(chat)/api/document/route.ts",
+        "line": 51
+      },
+      "provider": "drizzle",
+      "resource": "document",
+      "operation": "select",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 379
+      },
+      "outcome": "authorization_constraint_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "next-search-param",
+          "name": "id",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "POST",
+          "to": "getDocumentsById"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "post_load_comparison",
+          "category": "principal",
+          "state": "observed",
+          "field": "userId"
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": "v080-eval-12",
+      "disposition": "frozen_expectation_completed",
+      "reviewBoundary": "Supported static authorization evidence was observed; runtime enforcement, denial and exploitability remain unproved."
+    },
+    {
+      "id": "access-chain.aac48098cfa0284c04eaffd0",
+      "fingerprint": "7e44cd445f513f39a35498c9b4db3f7c705ccead8abc59f9b01a840432e07dc7",
+      "project": "vercel-chatbot",
+      "entry": "GET /api/vote",
+      "location": {
+        "path": "app/(chat)/api/vote/route.ts",
+        "line": 12
+      },
+      "provider": "drizzle",
+      "resource": "chat",
+      "operation": "select",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 218
+      },
+      "outcome": "authorization_constraint_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "next-search-param",
+          "name": "chatId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "GET",
+          "to": "getChatById"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "post_load_comparison",
+          "category": "principal",
+          "state": "observed",
+          "field": "userId"
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": "v080-eval-14",
+      "disposition": "frozen_expectation_completed",
+      "reviewBoundary": "Supported static authorization evidence was observed; runtime enforcement, denial and exploitability remain unproved."
+    },
+    {
+      "id": "access-chain.ad8a66e93f19137ca3736f5b",
+      "fingerprint": "5702be0a585897b3946e77e0c04ca298177127a0c421adf6a7c1e6ec12d369c3",
+      "project": "formbricks",
+      "entry": "PUT /api/v1/management/action-classes/[actionClassId]",
+      "location": {
+        "path": "apps/web/app/api/v1/management/action-classes/[actionClassId]/route.ts",
+        "line": 59
+      },
+      "provider": "prisma",
+      "resource": "actionClass",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/actionClass/service.ts",
+        "line": 73
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "actionClassId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_function",
+          "from": "PUT",
+          "to": "fetchAndAuthorizeActionClass"
+        },
+        {
+          "kind": "react_cache_callback",
+          "from": "fetchAndAuthorizeActionClass",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.bc8d77b63361bd1be89dfda7",
+      "fingerprint": "07b8d08f32b3e12b4efa0d9f735e3dbc84bba18f1c89a15022cd8932154267c3",
+      "project": "vercel-chatbot",
+      "entry": "ACTION updateChatVisibility",
+      "location": {
+        "path": "app/(chat)/actions.ts",
+        "line": 64
+      },
+      "provider": "drizzle",
+      "resource": "chat",
+      "operation": "select",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 218
+      },
+      "outcome": "authorization_constraint_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "action-parameter",
+          "name": "chatId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "updateChatVisibility",
+          "to": "getChatById"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "post_load_comparison",
+          "category": "principal",
+          "state": "observed",
+          "field": "userId"
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": "v080-eval-16",
+      "disposition": "frozen_expectation_completed",
+      "reviewBoundary": "Supported static authorization evidence was observed; runtime enforcement, denial and exploitability remain unproved."
+    },
+    {
+      "id": "access-chain.c3af826b23ef46f22dd718da",
+      "fingerprint": "674dc9502e9d7888d17c0244b35d606f8782a24601a45446ff67be5f1bf20f88",
+      "project": "formbricks",
+      "entry": "ACTION getLanguage",
+      "location": {
+        "path": "apps/web/lib/utils/services.ts",
+        "line": 103
+      },
+      "provider": "prisma",
+      "resource": "language",
+      "operation": "find-first",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/services.ts",
+        "line": 107
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "action-parameter",
+          "name": "languageId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.ce91bde2cb8ec80630110475",
+      "fingerprint": "1efe24398d6f5fa1e6ef2f4e54d9d0466a9b0d6cc33dd096283bb0e4a711b2c1",
+      "project": "formbricks",
+      "entry": "ACTION checkRoleManagementPermission",
+      "location": {
+        "path": "apps/web/modules/ee/role-management/actions.ts",
+        "line": 26
+      },
+      "provider": "prisma",
+      "resource": "organization",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/organization/service.ts",
+        "line": 150
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "action-parameter",
+          "name": "organizationId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "checkRoleManagementPermission",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": "v080-eval-28",
+      "disposition": "frozen_expectation_completed",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.d021c20bb34537ba5f603014",
+      "fingerprint": "b443171df3dabd78915afd292ba078343178f0a02414b767717961730fe4e525",
+      "project": "formbricks",
+      "entry": "PUT /api/v1/management/responses/[responseId]",
+      "location": {
+        "path": "apps/web/app/api/v1/management/responses/[responseId]/route.ts",
+        "line": 104
+      },
+      "provider": "prisma",
+      "resource": "response",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/response/service.ts",
+        "line": 204
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "responseId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_function",
+          "from": "PUT",
+          "to": "fetchAndAuthorizeResponse"
+        },
+        {
+          "kind": "react_cache_callback",
+          "from": "fetchAndAuthorizeResponse",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.d3f497ae9ee89169474fd13d",
+      "fingerprint": "d59d04b57d571e5d847f5bfcd9b1cff41897cdd1b03f6ec26c9f2aa757c6ce9a",
+      "project": "formbricks",
+      "entry": "ACTION checkWhiteLabelPermission",
+      "location": {
+        "path": "apps/web/modules/ee/whitelabel/email-customization/actions.ts",
+        "line": 17
+      },
+      "provider": "prisma",
+      "resource": "organization",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/organization/service.ts",
+        "line": 150
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "action-parameter",
+          "name": "organizationId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "checkWhiteLabelPermission",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.da2fd5b8186ad7c5334896a8",
+      "fingerprint": "dddc9b048b637e5fd68f373001bb961ab6349601e69fb6c88b9da8437792a304",
+      "project": "formbricks",
+      "entry": "ACTION updateActionClass",
+      "location": {
+        "path": "apps/web/lib/actionClass/service.ts",
+        "line": 141
+      },
+      "provider": "prisma",
+      "resource": "actionClass",
+      "operation": "update",
+      "operationLocation": {
+        "path": "apps/web/lib/actionClass/service.ts",
+        "line": 150
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "action-parameter",
+          "name": "actionClassId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.e146885407e57f2c1a87656c",
+      "fingerprint": "0db4f8992c214b2d52da2966ed9b1f47ec689ca639e5b5dc54e7b4ffb9e115c0",
+      "project": "formbricks",
+      "entry": "GET /api/v1/webhooks/[webhookId]",
+      "location": {
+        "path": "apps/web/app/api/v1/webhooks/[webhookId]/route.ts",
+        "line": 11
+      },
+      "provider": "prisma",
+      "resource": "webhook",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/app/api/v1/webhooks/[webhookId]/lib/webhook.ts",
+        "line": 37
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "webhookId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "GET",
+          "to": "getWebhook"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.e74b108c9e9d0ed948c9bdf1",
+      "fingerprint": "30e82e909aed0caeb3a6e8cb5ba17408538b2fbf2c02bfce116237302a2c319f",
+      "project": "formbricks",
+      "entry": "ACTION getMembershipByUserIdOrganizationIdAction",
+      "location": {
+        "path": "apps/web/lib/membership/hooks/actions.ts",
+        "line": 8
+      },
+      "provider": "prisma",
+      "resource": "organization",
+      "operation": "find-first",
+      "operationLocation": {
+        "path": "apps/web/lib/organization/service.ts",
+        "line": 123
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "action-parameter",
+          "name": "workspaceId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "react_cache_callback",
+          "from": "getMembershipByUserIdOrganizationIdAction",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": "v080-eval-25",
+      "disposition": "frozen_expectation_completed",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.f2b90b2ab497d84a15ff5c93",
+      "fingerprint": "15ada6bea565d055098fb6664607b4cccf072627c610e1cb66269253b52614e5",
+      "project": "formbricks",
+      "entry": "DELETE /api/v1/management/responses/[responseId]",
+      "location": {
+        "path": "apps/web/app/api/v1/management/responses/[responseId]/route.ts",
+        "line": 71
+      },
+      "provider": "prisma",
+      "resource": "response",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/response/service.ts",
+        "line": 204
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "responseId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_function",
+          "from": "DELETE",
+          "to": "fetchAndAuthorizeResponse"
+        },
+        {
+          "kind": "react_cache_callback",
+          "from": "fetchAndAuthorizeResponse",
+          "to": "<cache-callback>"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.f43cf151024969065f7b0c4f",
+      "fingerprint": "077e4e52c5a12bdfd3c4d60196d43daf6019acd10d3d6df1ee37d59022b91d6d",
+      "project": "formbricks",
+      "entry": "ACTION getWebhook",
+      "location": {
+        "path": "apps/web/lib/utils/services.ts",
+        "line": 206
+      },
+      "provider": "prisma",
+      "resource": "webhook",
+      "operation": "find-unique",
+      "operationLocation": {
+        "path": "apps/web/lib/utils/services.ts",
+        "line": 210
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "action-parameter",
+          "name": "id",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.f6fdc6e2cb6702bb24a1569c",
+      "fingerprint": "5338d134ef506ba7c44edf0854fe4ea0b433f4ef9c67e9e876dfa71a4e2cc31d",
+      "project": "vercel-chatbot",
+      "entry": "DELETE /api/chat",
+      "location": {
+        "path": "app/(chat)/api/chat/route.ts",
+        "line": 447
+      },
+      "provider": "drizzle",
+      "resource": "vote",
+      "operation": "delete",
+      "operationLocation": {
+        "path": "lib/db/queries.ts",
+        "line": 101
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": "authjs",
+      "selectors": [
+        {
+          "kind": "next-search-param",
+          "name": "id",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "DELETE",
+          "to": "deleteChatById"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    },
+    {
+      "id": "access-chain.fedf4a98adb9ee92d8a1191a",
+      "fingerprint": "ef44035801ba34d0d2975f61207d957906452cdc461c28eb12642452462c315a",
+      "project": "formbricks",
+      "entry": "PUT /api/v1/management/action-classes/[actionClassId]",
+      "location": {
+        "path": "apps/web/app/api/v1/management/action-classes/[actionClassId]/route.ts",
+        "line": 59
+      },
+      "provider": "prisma",
+      "resource": "actionClass",
+      "operation": "update",
+      "operationLocation": {
+        "path": "apps/web/lib/actionClass/service.ts",
+        "line": 150
+      },
+      "outcome": "authorization_constraint_not_observed",
+      "identityProvider": null,
+      "selectors": [
+        {
+          "kind": "next-route-param",
+          "name": "actionClassId",
+          "origin": "request_selected"
+        }
+      ],
+      "callEdges": [
+        {
+          "kind": "local_import",
+          "from": "PUT",
+          "to": "updateActionClass"
+        }
+      ],
+      "authorizationEvidence": [
+        {
+          "kind": "none",
+          "category": "none",
+          "state": "not_observed",
+          "field": null
+        }
+      ],
+      "limitations": [],
+      "frozenLabelId": null,
+      "disposition": "additional_constraint_not_observed_review_path",
+      "reviewBoundary": "The operation path completed without a supported authorization constraint; this is a review lead, not a vulnerability verdict."
+    }
+  ],
+  "promotion": {
+    "gate": "passed",
+    "prisma": {
+      "status": "stable_bounded",
+      "eligible": 8,
+      "completed": 7,
+      "boundary": "Exact ordinary-project Prisma paths are supported only through proven client identity and bounded static relationships; one frozen membership path remains partial."
+    },
+    "drizzle": {
+      "status": "stable_bounded",
+      "eligible": 6,
+      "completed": 6,
+      "boundary": "Exact ordinary-project Drizzle paths retain query and post-load evidence boundaries; completion is not an authorization verdict."
+    },
+    "identityProviders": {
+      "status": "unchanged",
+      "boundary": "Auth.js and Nest Passport retain their prior stable-bounded status. Clerk, Better Auth and Supabase remain experimental."
+    },
+    "performance": {
+      "status": "passed",
+      "maxObservedRatio": 1.41,
+      "stopRatio": 2,
+      "boundary": "The failed Documenso apps/web experiment is excluded because the frozen target is apps/docs."
+    }
+  },
+  "residualLimits": [
+    "v080-eval-26 ACTION getMembershipRole remains partial with argument_mapping_ambiguous and call_target_unresolved.",
+    "Four completed operation paths retain supporting limitations; those limitations do not establish authorization identity, denial or safety.",
+    "Fifty completed chains were outside the frozen labels. They are review leads and are not added to the 13/14 score.",
+    "Dynamic dispatch, unsupported wrappers, deeper-than-four paths, raw SQL, unsupported ORMs and external policy remain outside stable completion."
+  ]
+}

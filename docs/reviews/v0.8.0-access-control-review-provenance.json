@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "release": "0.8.0",
+  "evidenceType": "bounded_access_control_review_provenance",
+  "source": {
+    "toolCommit": "fa21f3e6e53b48a08ad40e3529353f245f516260",
+    "evaluationLedgerSha256": "b57a3e7e281e3d08ed88205004be3d6dc5c2e39549aa7c8953a1e48d23014ee6",
+    "evaluationLedgerFileSha256": "3221ede8b967a68b616dcd8671a550c1c61c55f1f22955dc088a9d6ad8d71879",
+    "targets": {
+      "nestjs-boilerplate": "9620f159eefe38f47747d02ab162852367c5472c",
+      "vercel-chatbot": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
+      "formbricks": "b66c1dd978af618a0e402bd3343b456bed68594c",
+      "documenso": "75330166cc00b29c14399bc2e391e4b4d8080c00"
+    }
+  },
+  "artifacts": {
+    "docs/reviews/v0.8.0-access-control-review.json": {
+      "sha256": "714a10a8e36de43eaff5122236f675a7dea4b34a9c0824e34bfbcb4849d26d58"
+    },
+    "docs/reviews/v0.8.0-access-control-review.md": {
+      "sha256": "5f2e36c974bb49e2d4f9aebc52971f2587fac2030a10e428618b9f4e7e537f9f"
+    },
+    "routeReports": {
+      "nestjs-boilerplate": {
+        "reportJsonSha256": "d2ff336f6eaa4195450dba5cc8891c0b67b51bad29693ac0748f65992b799b65",
+        "routeJsonSha256": "80412569cbf6142f1e806500857a56e1a681b165f0d2e7192e54fbd9fc99c987",
+        "routeMarkdownSha256": "e8f6d345deaecf2faa5bb8785b20c02798c2ec3c94ba49f2da4041c66e7c07fe",
+        "routeSemanticSha256": "548520986f86c7fa0f30efe87696c0dfa66565c182cfdd4ba9e23f90d37cc3b6"
+      },
+      "vercel-chatbot": {
+        "reportJsonSha256": "a1062d8bb4d21572efefffe1b5a08e3de10a7d27a2fbe373f692e074a1943cc7",
+        "routeJsonSha256": "b8c92dd24bd3eb1fefee2c9df3c9337466c3cb705ce2838152e2255238e9b936",
+        "routeMarkdownSha256": "e15089e2aa5a9f86f0fbb1f76a2fff03843f429feb772712fc02a804ce465bdb",
+        "routeSemanticSha256": "74385e3ed5385913006ef40a0083f5229f9d41e48f157109bf89f14dcd1541f8"
+      },
+      "formbricks": {
+        "reportJsonSha256": "5415713d74a855e2cfefb7bbbf82d0a6b3c73995e085af7910049490965f9d06",
+        "routeJsonSha256": "f9ac3731d4d67dff28a421b8fa0c5cd1c0ae7ce757fc9ac01ad37de512c8a952",
+        "routeMarkdownSha256": "95227eaf7022d6e79bead5eb3458c9443597776e8a552fe361dc4b48de95dfdd",
+        "routeSemanticSha256": "7f5ea6fad817500a6333ab4eb78ee8d50c43c97739d6aa544928c2a474a18f18"
+      },
+      "documenso": {
+        "reportJsonSha256": "c6e7a1e7ca339ad69879f38997cd76f3d87188ccbc80ae587470211d60b68f2b",
+        "routeJsonSha256": "838a8154d407b5e8c9a68bc2a2865913294e595aa74630240fab846ec2c1ebdd",
+        "routeMarkdownSha256": "d71aacafed02e0b1086c59fb42e7c03956687c1fa5fbba5dbda395a8097fefa3",
+        "routeSemanticSha256": "5a32b50d0ff6504c3560eb78d69ba670341b73dff984a35e7d031f5f8dd0f90c"
+      }
+    },
+    "completedChainReviewSha256": "4d8d1915f6722d880e0bbcc137bcb8d86669ee6d5ac4462114dad1fe697f7d68",
+    "frozenDispositionSha256": "a9a974bed5fbcfeb67dcaa498008c77f078c72a30b1e6527ca9e086fc98f9d70"
+  },
+  "reproduction": {
+    "reportCommand": "SOURCE_DATE_EPOCH=0 node {tool}/scripts/webapp-security.mjs audit {target} --out {output} --fail-on never",
+    "generationCommand": "node scripts/generate-v080-access-review.mjs --reports {fixed-report-root}",
+    "checkCommand": "node scripts/generate-v080-access-review.mjs --check",
+    "rawRetention": "Raw report directories are private temporary evaluation inputs and are not distributed in the repository or npm package.",
+    "semanticBoundary": "Route semantic digests omit generatedAt, ephemeral subject identity, baseline and mode. Raw hashes bind the exact fa21f3e reproduction bytes."
+  }
+}
