@@ -167,6 +167,7 @@ const include = [
   'docs/reviews/v0.7.0-access-control-review.md',
   'docs/route-security-v1.schema.json',
   'docs/route-security-v2.schema.json',
+  'docs/route-security-v3.schema.json',
 ];
 
 function stagePayload(spec) {

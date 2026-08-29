@@ -315,6 +315,9 @@ function directAccessChains(graph, module, route, handler) {
   const incompleteChains = analyzed.incomplete.map((reason) => accessChainRecord({
     entryKind: 'route', entryId: route.id, status: 'partial', outcome: 'incomplete',
     identity: identity.identity, objectSelectors, callEdges: [], dataOperation: null,
+    reason: reason.code === 'prisma_client_identity_unresolved'
+      ? 'data_client_unresolved' : 'module_or_parser_evidence_incomplete',
+    limitations: [reason.code],
     evidenceBoundary: `A Prisma-shaped data operation was observed at ${reason.location.path}:${reason.location.line || '?'} but the client identity could not be resolved to an imported PrismaClient. No authorization conclusion is available.`,
   }));
   const oneHop = analyzeOneHopAccess({

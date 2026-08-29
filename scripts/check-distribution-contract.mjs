@@ -37,6 +37,7 @@ for (const entry of [
   'docs/reviews/v0.7.0-access-control-review.md',
   'docs/route-security-v1.schema.json',
   'docs/route-security-v2.schema.json',
+  'docs/route-security-v3.schema.json',
 ]) {
   assert.ok(pkg.files.includes(entry), `npm files is missing ${entry}`);
 }

@@ -14,9 +14,37 @@ export const ROUTE_SCOPED_CONTROL_STATES = [
 export const APPLICATION_CONTROL_ROLES = ['authentication', 'authorization', 'unclassified'];
 export const ACCESS_CHAIN_STATUSES = ['completed', 'partial', 'not_applicable'];
 export const ACCESS_CHAIN_OUTCOMES = [
+  'authorization_constraint_observed', 'external_policy_required',
+  'authorization_constraint_not_observed', 'no_supported_object_operation', 'incomplete',
+];
+export const LEGACY_ACCESS_CHAIN_OUTCOMES = [
   'principal_constraint_observed', 'external_policy_required',
   'principal_constraint_not_observed', 'no_supported_object_operation', 'incomplete',
 ];
+export const SELECTOR_ORIGINS = [
+  'request_selected', 'constant', 'principal_derived', 'unknown',
+];
+export const CONSTRAINT_STATES = ['observed', 'not_observed', 'incomplete', 'not_applicable'];
+export const AUTHORIZATION_EVIDENCE_KINDS = [
+  'query_predicate', 'post_load_comparison', 'external_policy_dependency', 'none',
+];
+export const AUTHORIZATION_EVIDENCE_CATEGORIES = ['principal', 'tenant', 'none'];
+export const ACCESS_CHAIN_INCOMPLETE_REASONS = [
+  'call_depth_limit_reached', 'call_state_budget_reached', 'call_site_budget_reached',
+  'transition_budget_reached', 'emitted_chain_limit_reached', 'call_cycle_detected',
+  'call_target_unresolved', 'call_target_ambiguous', 'dynamic_dispatch_unresolved',
+  'reexport_unresolved', 'wrapper_handler_unresolved', 'argument_mapping_ambiguous',
+  'destructuring_mapping_ambiguous', 'return_mapping_unresolved',
+  'selector_source_unresolved', 'identity_source_unresolved', 'data_client_unresolved',
+  'constraint_expression_unresolved', 'module_or_parser_evidence_incomplete',
+];
+export const ACCESS_PATH_LIMITS = Object.freeze({
+  maxLocalCallEdges: 4,
+  maxEmittedChainsPerEntry: 50,
+  maxActiveStatesPerEntry: 512,
+  maxExaminedCallSitesPerSummary: 200,
+  maxTotalTransitionsPerAudit: 50_000,
+});
 export const REVIEW_PRIORITIES = [
   'review_first', 'review_next', 'review_later', 'no_automatic_priority',
 ];
@@ -88,46 +116,123 @@ export function accessChainRecord(input) {
   const identity = input.identity || { state: 'not_observed', provider: null, signals: [], boundary:
     'No supported identity source was observed within this bounded chain.' };
   const dataOperation = input.dataOperation || null;
-  const structural = [input.entryKind, input.entryId, input.outcome,
-    dataOperation?.provider || '', dataOperation?.resource || '', dataOperation?.operation || '',
-    dataOperation?.location?.path || '', dataOperation?.location?.line || 0,
-    ...(input.callEdges || []).flatMap((edge) => [edge.kind, edge.from, edge.to,
-      edge.location?.path || '', edge.location?.line || 0]),
-    ...(input.objectSelectors || []).flatMap((selector) => [selector.kind, selector.name,
-      selector.location?.path || '', selector.location?.line || 0])].join('\u0000');
+  const status = ACCESS_CHAIN_STATUSES.includes(input.status) ? input.status : 'partial';
+  const legacyOutcome = {
+    principal_constraint_observed: 'authorization_constraint_observed',
+    principal_constraint_not_observed: 'authorization_constraint_not_observed',
+  }[input.outcome] || input.outcome;
+  const outcome = ACCESS_CHAIN_OUTCOMES.includes(legacyOutcome) ? legacyOutcome : 'incomplete';
+  const objectSelectors = (input.objectSelectors || []).slice(0, 20).map((selector) => ({
+    kind: selector.kind,
+    name: String(selector.name || 'object').replace(/[^A-Za-z0-9_$.-]/g, '').slice(0, 120) || 'object',
+    origin: selector.origin === undefined ? 'request_selected'
+      : SELECTOR_ORIGINS.includes(selector.origin) ? selector.origin : 'unknown',
+    location: { path: safeRelativePath(selector.location.path), line: selector.location.line ?? null },
+  }));
+  const callEdges = (input.callEdges || []).slice(0, ACCESS_PATH_LIMITS.maxLocalCallEdges).map((edge) => ({
+    kind: edge.kind,
+    from: String(edge.from).replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 160),
+    to: String(edge.to).replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 160),
+    location: { path: safeRelativePath(edge.location.path), line: edge.location.line ?? null },
+  }));
+  const normalizedOperation = dataOperation ? {
+    provider: dataOperation.provider,
+    resource: String(dataOperation.resource || 'unknown').replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 160),
+    operation: dataOperation.operation,
+    location: { path: safeRelativePath(dataOperation.location.path), line: dataOperation.location.line ?? null },
+    objectConstraint: CONSTRAINT_STATES.includes(dataOperation.objectConstraint)
+      ? dataOperation.objectConstraint : 'incomplete',
+    principalConstraint: CONSTRAINT_STATES.includes(dataOperation.principalConstraint)
+      ? dataOperation.principalConstraint : 'incomplete',
+    tenantConstraint: CONSTRAINT_STATES.includes(dataOperation.tenantConstraint)
+      ? dataOperation.tenantConstraint : 'incomplete',
+  } : null;
+  const derivedAuthorizationEvidence = [];
+  if (dataOperation?.externalPolicy === 'external_policy_required') {
+    derivedAuthorizationEvidence.push({
+      kind: 'external_policy_dependency', category: 'none', state: 'not_applicable',
+      field: null, location: normalizedOperation.location,
+    });
+  } else if (normalizedOperation) {
+    for (const category of ['principal', 'tenant']) {
+      const state = normalizedOperation[`${category}Constraint`];
+      if (state === 'observed' || state === 'incomplete') {
+        derivedAuthorizationEvidence.push({
+          kind: 'query_predicate', category, state, field: null,
+          location: normalizedOperation.location,
+        });
+      }
+    }
+    if (!derivedAuthorizationEvidence.length) {
+      derivedAuthorizationEvidence.push({
+        kind: 'none', category: 'none', state: 'not_observed', field: null,
+        location: normalizedOperation.location,
+      });
+    }
+  }
+  const authorizationEvidence = (input.authorizationEvidence || derivedAuthorizationEvidence)
+    .slice(0, 20).map((evidence) => {
+      const recognized = AUTHORIZATION_EVIDENCE_KINDS.includes(evidence.kind)
+        && AUTHORIZATION_EVIDENCE_CATEGORIES.includes(evidence.category)
+        && CONSTRAINT_STATES.includes(evidence.state);
+      return {
+        kind: AUTHORIZATION_EVIDENCE_KINDS.includes(evidence.kind) ? evidence.kind : 'none',
+        category: AUTHORIZATION_EVIDENCE_CATEGORIES.includes(evidence.category)
+          ? evidence.category : 'none',
+        state: recognized ? evidence.state : 'incomplete',
+        field: evidence.field === null || evidence.field === undefined ? null
+          : String(evidence.field).replace(/[^A-Za-z0-9_$.-]/g, '').slice(0, 120) || null,
+        location: evidence.location ? {
+          path: safeRelativePath(evidence.location.path), line: evidence.location.line ?? null,
+        } : null,
+      };
+    });
+  const reasonAliases = {
+    second_local_call_edge_not_followed: 'call_depth_limit_reached',
+    local_function_export_unresolved: 'call_target_unresolved',
+    nest_service_method_unresolved: 'call_target_unresolved',
+    module_alias_resolution_ambiguous: 'reexport_unresolved',
+    workspace_export_resolution_ambiguous: 'reexport_unresolved',
+    workspace_package_ambiguous: 'reexport_unresolved',
+    one_hop_parameter_pattern_ambiguous: 'argument_mapping_ambiguous',
+    one_hop_spread_or_rest_ambiguous: 'argument_mapping_ambiguous',
+    prisma_client_identity_unresolved: 'data_client_unresolved',
+  };
+  const mappedReason = reasonAliases[input.reason] || input.reason;
+  const reason = status === 'partial'
+    ? (ACCESS_CHAIN_INCOMPLETE_REASONS.includes(mappedReason)
+      ? mappedReason : 'module_or_parser_evidence_incomplete')
+    : null;
+  const limitations = [...new Set([
+    ...(input.limitations || []),
+    ...(input.reason && reason !== input.reason ? [input.reason] : []),
+  ])].map((item) => String(item).replace(/[^a-z0-9._-]/gi, '-').toLowerCase().slice(0, 128))
+    .filter(Boolean).sort().slice(0, 20);
+  const structural = [input.entryKind, input.entryId,
+    ...objectSelectors.flatMap((selector) => [selector.kind, selector.name, selector.origin]),
+    ...callEdges.flatMap((edge) => [edge.kind, edge.from, edge.to]),
+    normalizedOperation?.provider || '', normalizedOperation?.resource || '',
+    normalizedOperation?.operation || '',
+    ...authorizationEvidence.flatMap((evidence) => [evidence.category, evidence.kind, evidence.state]),
+    reason || ''].join('\u0000');
   const fingerprint = sha256(structural);
   return {
     id: `access-chain.${fingerprint.slice(0, 24)}`,
     fingerprint,
-    status: ACCESS_CHAIN_STATUSES.includes(input.status) ? input.status : 'partial',
-    outcome: ACCESS_CHAIN_OUTCOMES.includes(input.outcome) ? input.outcome : 'incomplete',
+    status,
+    outcome,
     identity: {
       state: identity.state,
       provider: identity.provider || null,
       signals: (identity.signals || []).slice(0, 20).map(sanitizedSignal),
       boundary: identity.boundary,
     },
-    objectSelectors: (input.objectSelectors || []).slice(0, 20).map((selector) => ({
-      kind: selector.kind,
-      name: String(selector.name || 'object').replace(/[^A-Za-z0-9_$.-]/g, '').slice(0, 120) || 'object',
-      location: { path: safeRelativePath(selector.location.path), line: selector.location.line ?? null },
-    })),
-    callEdges: (input.callEdges || []).slice(0, 2).map((edge) => ({
-      kind: edge.kind,
-      from: String(edge.from).replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 160),
-      to: String(edge.to).replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 160),
-      location: { path: safeRelativePath(edge.location.path), line: edge.location.line ?? null },
-    })),
-    dataOperation: dataOperation ? {
-      provider: dataOperation.provider,
-      resource: String(dataOperation.resource || 'unknown').replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 160),
-      operation: dataOperation.operation,
-      location: { path: safeRelativePath(dataOperation.location.path), line: dataOperation.location.line ?? null },
-      objectConstraint: dataOperation.objectConstraint,
-      principalConstraint: dataOperation.principalConstraint,
-      tenantConstraint: dataOperation.tenantConstraint,
-      externalPolicy: dataOperation.externalPolicy,
-    } : null,
+    objectSelectors,
+    callEdges,
+    dataOperation: normalizedOperation,
+    authorizationEvidence,
+    reason,
+    limitations,
     evidenceBoundary: input.evidenceBoundary
       || 'This bounded static chain does not prove deployed reachability, policy enforcement or exploitability.',
     verification: {
@@ -255,21 +360,24 @@ export function createRouteSecurityDocument(options) {
         right.location.line || 0, right.kind].join('\u0000')));
   const serverActions = [...(options.serverActions || [])];
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     tool: { name: 'Web App Security Skill', version: options.version },
     generatedAt: options.generatedAt || new Date().toISOString(),
     mode: options.mode || 'audit',
     subject: { id: options.subject.id, scopeDigest: options.subject.scopeDigest },
     analyzer: {
-      id: 'builtin-route', revision: '2',
+      id: 'builtin-route', revision: '3',
       parser: { component: parserManifest.component, version: parserManifest.version, sha256: parserManifest.sha256 },
+      analysisLimits: { ...ACCESS_PATH_LIMITS },
     },
     summary: summaryFor(routes, applicationControls, serverActions),
     coverage: [...(options.coverage || [])].sort((a, b) => a.framework.localeCompare(b.framework)),
     applicationControls,
     routes,
     serverActions,
-    limitations: [...new Set(options.limitations || [])].sort(),
+    limitations: [...new Set(options.limitations || [])]
+      .map((item) => String(item).replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 2048))
+      .filter(Boolean).sort().slice(0, 100),
     baseline: options.baseline || null,
   };
 }

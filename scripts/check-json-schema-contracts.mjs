@@ -92,6 +92,18 @@ const routeV2 = createRouteSecurityDocument({
   subject: { id: 'project-0123456789abcdef0123456789abcdef', scopeDigest: 'c'.repeat(64) },
   routes: [], coverage: [], limitations: ['Curated schema-contract fixture.'],
 });
+routeV2.schemaVersion = 2;
+routeV2.analyzer.revision = '2';
+delete routeV2.analyzer.analysisLimits;
+const routeV3 = createRouteSecurityDocument({
+  version: '0.8.0', generatedAt: '2026-08-29T00:00:00.000Z', mode: 'audit',
+  subject: { id: 'project-0123456789abcdef0123456789abcdef', scopeDigest: 'd'.repeat(64) },
+  routes: [], coverage: [], limitations: ['Curated schema-contract fixture.'],
+});
+const routeV3Golden = JSON.parse(readFileSync(join(ROOT,
+  'test/fixtures/route-security-v3-golden.json'), 'utf8'));
+const routeV3Invalid = JSON.parse(readFileSync(join(ROOT,
+  'test/fixtures/route-security-v3-invalid.json'), 'utf8'));
 
 function check(label, schemaPath, manualValidator, value, expected) {
   const schemaValidator = compiled.get(schemaPath);
@@ -124,6 +136,31 @@ check('route v2 positive', 'docs/route-security-v2.schema.json', validateRouteSe
   routeV2, true);
 check('route v2 extra property', 'docs/route-security-v2.schema.json', validateRouteSecurityDocument,
   { ...routeV2, unexpected: true }, false);
+check('route v3 positive', 'docs/route-security-v3.schema.json', validateRouteSecurityDocument,
+  routeV3, true);
+check('route v3 golden path states', 'docs/route-security-v3.schema.json',
+  validateRouteSecurityDocument, routeV3Golden, true);
+check('route v3 extra property', 'docs/route-security-v3.schema.json', validateRouteSecurityDocument,
+  { ...routeV3, unexpected: true }, false);
+
+function setPath(root, path, value) {
+  const segments = path.split('.');
+  let cursor = root;
+  for (const segment of segments.slice(0, -1)) cursor = cursor[Number.isNaN(Number(segment)) ? segment : Number(segment)];
+  cursor[segments.at(-1)] = value;
+}
+
+for (const fixture of routeV3Invalid) {
+  const invalid = structuredClone(routeV3Golden);
+  let value = fixture.mutation.value;
+  if (value === 'repeat_first_edge_five_times') {
+    value = Array.from({ length: 5 }, () => structuredClone(
+      routeV3Golden.routes[0].accessChains[1].callEdges[0]));
+  } else if (value === 'repeat_x_121') value = 'x'.repeat(121);
+  setPath(invalid, fixture.mutation.path, value);
+  check(`route v3 invalid ${fixture.id}`, 'docs/route-security-v3.schema.json',
+    validateRouteSecurityDocument, invalid, false);
+}
 
 const totalValidators = [
   validateFindingV2, validateFindingV3, validateReportV2, validateReportV3,
@@ -139,4 +176,4 @@ for (const value of [null, true, 1, 'text', [], {}]) {
   }
 }
 
-console.log(`JSON Schema contracts ok: ${schemas.length} schemas compiled; 10 overlap cases agreed`);
+console.log(`JSON Schema contracts ok: ${schemas.length} schemas compiled; ${13 + routeV3Invalid.length} overlap cases agreed`);

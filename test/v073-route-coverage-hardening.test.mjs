@@ -110,7 +110,7 @@ app.get('/projects/:id', async (req, res) => { const identity = await auth(); re
 const prismaRoute = extractExpressRoutes(prismaGraph).routes[0];
 const prismaAudit = auditJsTsRouteAuthorization(prismaGraph, [prismaRoute]);
 assert.equal(prismaAudit.routes[0].accessChains.length, 1);
-assert.equal(prismaAudit.routes[0].accessChains[0].outcome, 'principal_constraint_observed');
+assert.equal(prismaAudit.routes[0].accessChains[0].outcome, 'authorization_constraint_observed');
 assert.equal(prismaAudit.routes[0].accessChains[0].dataOperation.tenantConstraint, 'observed');
 
 const unresolvedPrismaGraph = buildJsTsModuleGraph([{ path: 'src/app.ts', text: `

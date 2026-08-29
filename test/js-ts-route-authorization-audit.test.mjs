@@ -109,23 +109,24 @@ const nestAccess = result.routes.find((route) => route.path === '/projects/:id'
   && route.framework === 'nestjs').accessChains;
 assert.equal(nestAccess.length, 1);
 assert.equal(nestAccess[0].dataOperation.provider, 'prisma');
-assert.equal(nestAccess[0].outcome, 'principal_constraint_not_observed');
+assert.equal(nestAccess[0].outcome, 'authorization_constraint_not_observed');
 assert.deepEqual(nestAccess[0].objectSelectors.map((selector) => selector.name), ['id']);
 const drizzleAccess = result.routes.find((route) => route.path === '/drizzle-orders/:id').accessChains;
 assert.equal(drizzleAccess.length, 1);
 assert.equal(drizzleAccess[0].dataOperation.provider, 'drizzle');
 assert.equal(drizzleAccess[0].identity.provider, 'clerk');
-assert.equal(drizzleAccess[0].outcome, 'principal_constraint_observed');
+assert.equal(drizzleAccess[0].outcome, 'authorization_constraint_observed');
 const supabaseAccess = result.routes.find((route) => route.path === '/supabase-orders/:id').accessChains;
 assert.equal(supabaseAccess.length, 1);
 assert.equal(supabaseAccess[0].dataOperation.provider, 'supabase');
-assert.equal(supabaseAccess[0].dataOperation.externalPolicy, 'external_policy_required');
+assert.deepEqual(supabaseAccess[0].authorizationEvidence.map((evidence) => evidence.kind),
+  ['external_policy_dependency']);
 assert.equal(supabaseAccess[0].outcome, 'external_policy_required');
 const hopAccess = result.routes.find((route) => route.path === '/hop-projects/:id').accessChains;
 assert.equal(hopAccess.length, 1);
 assert.equal(hopAccess[0].callEdges[0].kind, 'local_function');
 assert.equal(hopAccess[0].dataOperation.provider, 'prisma');
-assert.equal(hopAccess[0].outcome, 'principal_constraint_observed');
+assert.equal(hopAccess[0].outcome, 'authorization_constraint_observed');
 
 const disconnected = runAudit(files.map((file) => file.path === 'src/express.ts'
   ? { ...file, text: file.text.replace('where: { id: projectId }',
@@ -135,7 +136,7 @@ assert.equal(disconnected.routes.find((route) => route.path === '/projects/:id'
 const ownerConstraintRemoved = runAudit(files.map((file) => file.path === 'src/express.ts'
   ? { ...file, text: file.text.replace('ownerId: req.user.id', 'displayName: req.user.id') } : file)).result;
 assert.equal(ownerConstraintRemoved.routes.find((route) =>
-  route.path === '/owned/:id').accessChains[0].outcome, 'principal_constraint_not_observed');
+  route.path === '/owned/:id').accessChains[0].outcome, 'authorization_constraint_not_observed');
 
 assert.deepEqual(validateSourceRuleRegistry(SOURCE_RULE_REGISTRY), []);
 

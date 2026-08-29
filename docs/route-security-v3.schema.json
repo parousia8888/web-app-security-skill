@@ -1,0 +1,371 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/parousia8888/web-app-security-skill/main/docs/route-security-v3.schema.json",
+  "title": "Web App Security Skill route security artifact v3",
+  "description": "Bounded static route and access-path evidence. Observed source evidence does not imply runtime enforcement, authorization correctness, reachability or exploitability.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "tool", "generatedAt", "mode", "subject", "analyzer", "summary", "coverage", "applicationControls", "routes", "serverActions", "limitations", "baseline"],
+  "properties": {
+    "schemaVersion": { "const": 3 },
+    "tool": {
+      "type": "object", "additionalProperties": false, "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "Web App Security Skill" },
+        "version": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[^\\u0000-\\u001f\\u007f]+$" }
+      }
+    },
+    "generatedAt": { "type": "string", "format": "date-time", "maxLength": 40 },
+    "mode": { "enum": ["audit", "retest", "demo-before", "demo-after"] },
+    "subject": {
+      "type": "object", "additionalProperties": false, "required": ["id", "scopeDigest"],
+      "properties": { "id": { "$ref": "#/$defs/id" }, "scopeDigest": { "$ref": "#/$defs/sha256" } }
+    },
+    "analyzer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "revision", "parser", "analysisLimits"],
+      "properties": {
+        "id": { "const": "builtin-route" },
+        "revision": { "const": "3" },
+        "parser": {
+          "type": "object", "additionalProperties": false, "required": ["component", "version", "sha256"],
+          "properties": {
+            "component": { "const": "@babel/parser" },
+            "version": { "type": "string", "minLength": 1, "maxLength": 40, "pattern": "^[^\\u0000-\\u001f\\u007f]+$" },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "analysisLimits": {
+          "type": "object", "additionalProperties": false,
+          "required": ["maxLocalCallEdges", "maxEmittedChainsPerEntry", "maxActiveStatesPerEntry", "maxExaminedCallSitesPerSummary", "maxTotalTransitionsPerAudit"],
+          "properties": {
+            "maxLocalCallEdges": { "type": "integer", "minimum": 1, "maximum": 4 },
+            "maxEmittedChainsPerEntry": { "type": "integer", "minimum": 1, "maximum": 50 },
+            "maxActiveStatesPerEntry": { "type": "integer", "minimum": 1, "maximum": 10000 },
+            "maxExaminedCallSitesPerSummary": { "type": "integer", "minimum": 1, "maximum": 10000 },
+            "maxTotalTransitionsPerAudit": { "type": "integer", "minimum": 1, "maximum": 1000000 }
+          }
+        }
+      }
+    },
+    "summary": { "$ref": "#/$defs/summary" },
+    "coverage": { "type": "array", "maxItems": 3, "items": { "$ref": "#/$defs/coverage" } },
+    "applicationControls": { "type": "array", "maxItems": 1000, "items": { "$ref": "#/$defs/applicationControl" } },
+    "routes": { "type": "array", "maxItems": 10000, "items": { "$ref": "#/$defs/route" } },
+    "serverActions": { "type": "array", "maxItems": 5000, "items": { "$ref": "#/$defs/serverAction" } },
+    "limitations": { "type": "array", "maxItems": 100, "uniqueItems": true, "items": { "$ref": "#/$defs/text" } },
+    "baseline": { "$ref": "#/$defs/documentBaseline" }
+  },
+  "$defs": {
+    "id": { "type": "string", "minLength": 3, "maxLength": 128, "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "text": { "type": "string", "minLength": 1, "maxLength": 2048, "pattern": "^[^\\u0000-\\u001f\\u007f]+$" },
+    "safeName": { "type": "string", "minLength": 1, "maxLength": 160, "pattern": "^[^\\u0000-\\u001f\\u007f]+$" },
+    "fieldName": { "type": "string", "minLength": 1, "maxLength": 120, "pattern": "^[A-Za-z0-9_$.-]+$" },
+    "framework": { "enum": ["express", "nestjs", "next-app"] },
+    "controlState": { "enum": ["local_observed", "inherited_observed", "candidate_observed", "not_observed", "incomplete", "not_applicable"] },
+    "routeScopedControlState": { "enum": ["classified_controls_observed", "unclassified_control_observed", "no_route_scoped_control_observed"] },
+    "priority": { "enum": ["review_first", "review_next", "review_later", "no_automatic_priority"] },
+    "constraintState": { "enum": ["observed", "not_observed", "incomplete", "not_applicable"] },
+    "summary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["total", "serverActions", "stateChanging", "objectAddressed", "byFramework", "byPriority", "byAuthentication", "byAuthorization", "byRouteScopedControl", "applicationControls", "byApplicationControlRole"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "serverActions": { "type": "integer", "minimum": 0, "maximum": 5000 },
+        "stateChanging": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "objectAddressed": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "byFramework": { "$ref": "#/$defs/frameworkCounts" },
+        "byPriority": { "$ref": "#/$defs/priorityCounts" },
+        "byAuthentication": { "$ref": "#/$defs/controlCounts" },
+        "byAuthorization": { "$ref": "#/$defs/controlCounts" },
+        "byRouteScopedControl": { "$ref": "#/$defs/routeScopedControlCounts" },
+        "applicationControls": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "byApplicationControlRole": { "$ref": "#/$defs/applicationControlRoleCounts" }
+      }
+    },
+    "frameworkCounts": {
+      "type": "object", "additionalProperties": false, "maxProperties": 3,
+      "properties": {
+        "express": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "nestjs": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "next-app": { "type": "integer", "minimum": 0, "maximum": 10000 }
+      }
+    },
+    "controlCounts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["local_observed", "inherited_observed", "candidate_observed", "not_observed", "incomplete", "not_applicable"],
+      "properties": {
+        "local_observed": { "type": "integer", "minimum": 0 },
+        "inherited_observed": { "type": "integer", "minimum": 0 },
+        "candidate_observed": { "type": "integer", "minimum": 0 },
+        "not_observed": { "type": "integer", "minimum": 0 },
+        "incomplete": { "type": "integer", "minimum": 0 },
+        "not_applicable": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "routeScopedControlCounts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["classified_controls_observed", "unclassified_control_observed", "no_route_scoped_control_observed"],
+      "properties": {
+        "classified_controls_observed": { "type": "integer", "minimum": 0 },
+        "unclassified_control_observed": { "type": "integer", "minimum": 0 },
+        "no_route_scoped_control_observed": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "applicationControlRoleCounts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["authentication", "authorization", "unclassified"],
+      "properties": {
+        "authentication": { "type": "integer", "minimum": 0 },
+        "authorization": { "type": "integer", "minimum": 0 },
+        "unclassified": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "priorityCounts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["review_first", "review_next", "review_later", "no_automatic_priority"],
+      "properties": {
+        "review_first": { "type": "integer", "minimum": 0 },
+        "review_next": { "type": "integer", "minimum": 0 },
+        "review_later": { "type": "integer", "minimum": 0 },
+        "no_automatic_priority": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "location": {
+      "type": "object", "additionalProperties": false, "required": ["path", "line"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1, "maxLength": 240, "pattern": "^(?!/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000-\\u001f\\u007f]+$" },
+        "line": { "type": ["integer", "null"], "minimum": 1, "maximum": 10000000 }
+      }
+    },
+    "signal": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "origin", "location"],
+      "properties": { "kind": { "$ref": "#/$defs/id" }, "origin": { "$ref": "#/$defs/text" }, "location": { "$ref": "#/$defs/location" } }
+    },
+    "control": {
+      "type": "object", "additionalProperties": false, "required": ["state", "signals", "boundary"],
+      "properties": {
+        "state": { "$ref": "#/$defs/controlState" },
+        "signals": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/signal" } },
+        "boundary": { "$ref": "#/$defs/text" }
+      }
+    },
+    "routeScopedControl": {
+      "type": "object", "additionalProperties": false, "required": ["state", "unclassifiedSignals", "boundary"],
+      "properties": {
+        "state": { "$ref": "#/$defs/routeScopedControlState" },
+        "unclassifiedSignals": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/signal" } },
+        "boundary": { "$ref": "#/$defs/text" }
+      }
+    },
+    "applicationControl": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "fingerprint", "framework", "kind", "origin", "role", "location", "boundary"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "fingerprint": { "$ref": "#/$defs/sha256" },
+        "framework": { "$ref": "#/$defs/framework" }, "kind": { "$ref": "#/$defs/id" },
+        "origin": { "$ref": "#/$defs/text" }, "role": { "enum": ["authentication", "authorization", "unclassified"] },
+        "location": { "$ref": "#/$defs/location" }, "boundary": { "$ref": "#/$defs/text" }
+      }
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false, "required": ["framework", "status", "counts", "reasons"],
+      "properties": {
+        "framework": { "$ref": "#/$defs/framework" },
+        "status": { "enum": ["completed", "partial", "not_applicable"] },
+        "counts": {
+          "type": "object", "additionalProperties": false,
+          "required": ["discovered", "eligible", "parsed", "incomplete"],
+          "properties": {
+            "discovered": { "type": "integer", "minimum": 0, "maximum": 100000 },
+            "eligible": { "type": "integer", "minimum": 0, "maximum": 100000 },
+            "parsed": { "type": "integer", "minimum": 0, "maximum": 100000 },
+            "incomplete": { "type": "integer", "minimum": 0, "maximum": 100000 }
+          }
+        },
+        "reasons": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/coverageReason" } }
+      }
+    },
+    "coverageReason": {
+      "type": "object", "additionalProperties": false, "required": ["code", "count", "samplePaths"],
+      "properties": {
+        "code": { "$ref": "#/$defs/id" }, "count": { "type": "integer", "minimum": 1, "maximum": 100000 },
+        "samplePaths": { "type": "array", "maxItems": 10, "items": { "$ref": "#/$defs/safePath" } }
+      }
+    },
+    "safePath": { "type": "string", "minLength": 1, "maxLength": 240, "pattern": "^(?!/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000-\\u001f\\u007f]+$" },
+    "selector": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "name", "origin", "location"],
+      "properties": {
+        "kind": { "$ref": "#/$defs/id" }, "name": { "$ref": "#/$defs/fieldName" },
+        "origin": { "enum": ["request_selected", "constant", "principal_derived", "unknown"] },
+        "location": { "$ref": "#/$defs/location" }
+      }
+    },
+    "callEdge": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "from", "to", "location"],
+      "properties": {
+        "kind": { "enum": ["direct", "local_function", "local_import", "local_reexport", "class_method", "nest_injected_service", "static_member", "react_cache_callback", "wrapper_handler"] },
+        "from": { "$ref": "#/$defs/safeName" }, "to": { "$ref": "#/$defs/safeName" },
+        "location": { "$ref": "#/$defs/location" }
+      }
+    },
+    "dataOperation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["provider", "resource", "operation", "location", "objectConstraint", "principalConstraint", "tenantConstraint"],
+      "properties": {
+        "provider": { "$ref": "#/$defs/id" }, "resource": { "$ref": "#/$defs/safeName" },
+        "operation": { "$ref": "#/$defs/id" }, "location": { "$ref": "#/$defs/location" },
+        "objectConstraint": { "$ref": "#/$defs/constraintState" },
+        "principalConstraint": { "$ref": "#/$defs/constraintState" },
+        "tenantConstraint": { "$ref": "#/$defs/constraintState" }
+      }
+    },
+    "identity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["state", "provider", "signals", "boundary"],
+      "properties": {
+        "state": { "enum": ["identity_call_observed", "session_lookup_observed", "candidate_observed", "not_observed", "incomplete", "not_applicable"] },
+        "provider": { "type": ["string", "null"], "maxLength": 80, "pattern": "^[^\\u0000-\\u001f\\u007f]*$" },
+        "signals": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/signal" } },
+        "boundary": { "$ref": "#/$defs/text" }
+      }
+    },
+    "authorizationEvidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "category", "state", "field", "location"],
+      "properties": {
+        "kind": { "enum": ["query_predicate", "post_load_comparison", "external_policy_dependency", "none"] },
+        "category": { "enum": ["principal", "tenant", "none"] },
+        "state": { "$ref": "#/$defs/constraintState" },
+        "field": { "oneOf": [{ "$ref": "#/$defs/fieldName" }, { "type": "null" }] },
+        "location": { "oneOf": [{ "$ref": "#/$defs/location" }, { "type": "null" }] }
+      }
+    },
+    "incompleteReason": {
+      "enum": ["call_depth_limit_reached", "call_state_budget_reached", "call_site_budget_reached", "transition_budget_reached", "emitted_chain_limit_reached", "call_cycle_detected", "call_target_unresolved", "call_target_ambiguous", "dynamic_dispatch_unresolved", "reexport_unresolved", "wrapper_handler_unresolved", "argument_mapping_ambiguous", "destructuring_mapping_ambiguous", "return_mapping_unresolved", "selector_source_unresolved", "identity_source_unresolved", "data_client_unresolved", "constraint_expression_unresolved", "module_or_parser_evidence_incomplete"]
+    },
+    "verification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["unauthenticated", "owner", "nonOwner", "lowerRole", "functional"],
+      "properties": {
+        "unauthenticated": { "$ref": "#/$defs/text" }, "owner": { "$ref": "#/$defs/text" },
+        "nonOwner": { "$ref": "#/$defs/text" }, "lowerRole": { "$ref": "#/$defs/text" },
+        "functional": { "$ref": "#/$defs/text" }
+      }
+    },
+    "accessChain": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "fingerprint", "status", "outcome", "identity", "objectSelectors", "callEdges", "dataOperation", "authorizationEvidence", "reason", "limitations", "evidenceBoundary", "verification"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "fingerprint": { "$ref": "#/$defs/sha256" },
+        "status": { "enum": ["completed", "partial", "not_applicable"] },
+        "outcome": { "enum": ["authorization_constraint_observed", "external_policy_required", "authorization_constraint_not_observed", "no_supported_object_operation", "incomplete"] },
+        "identity": { "$ref": "#/$defs/identity" },
+        "objectSelectors": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/selector" } },
+        "callEdges": { "type": "array", "maxItems": 4, "items": { "$ref": "#/$defs/callEdge" } },
+        "dataOperation": { "oneOf": [{ "$ref": "#/$defs/dataOperation" }, { "type": "null" }] },
+        "authorizationEvidence": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/authorizationEvidence" } },
+        "reason": { "oneOf": [{ "$ref": "#/$defs/incompleteReason" }, { "type": "null" }] },
+        "limitations": { "type": "array", "maxItems": 20, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "evidenceBoundary": { "$ref": "#/$defs/text" },
+        "verification": { "$ref": "#/$defs/verification" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "partial" } }, "required": ["status"] },
+          "then": { "properties": { "outcome": { "const": "incomplete" }, "reason": { "$ref": "#/$defs/incompleteReason" } } }
+        },
+        {
+          "if": { "properties": { "status": { "enum": ["completed", "not_applicable"] } }, "required": ["status"] },
+          "then": { "properties": { "reason": { "type": "null" } } }
+        },
+        {
+          "if": { "properties": { "outcome": { "const": "authorization_constraint_observed" } }, "required": ["outcome"] },
+          "then": { "properties": { "authorizationEvidence": { "contains": { "type": "object", "properties": { "kind": { "enum": ["query_predicate", "post_load_comparison"] }, "category": { "enum": ["principal", "tenant"] }, "state": { "const": "observed" } }, "required": ["kind", "category", "state"] } } } }
+        },
+        {
+          "if": { "properties": { "outcome": { "const": "external_policy_required" } }, "required": ["outcome"] },
+          "then": { "properties": { "authorizationEvidence": { "contains": { "type": "object", "properties": { "kind": { "const": "external_policy_dependency" } }, "required": ["kind"] } } } }
+        },
+        {
+          "if": { "properties": { "outcome": { "const": "authorization_constraint_not_observed" } }, "required": ["outcome"] },
+          "then": { "properties": { "authorizationEvidence": { "contains": { "type": "object", "properties": { "kind": { "const": "none" }, "category": { "const": "none" }, "state": { "const": "not_observed" } }, "required": ["kind", "category", "state"] } } } }
+        },
+        {
+          "if": { "properties": { "outcome": { "const": "no_supported_object_operation" } }, "required": ["outcome"] },
+          "then": { "properties": { "dataOperation": { "type": "null" } } }
+        }
+      ]
+    },
+    "recordBaseline": {
+      "type": "object", "additionalProperties": false,
+      "required": ["state", "priorFingerprint", "reasonCode"],
+      "properties": {
+        "state": { "enum": ["new", "unchanged", "changed", "added", "removed", "unretested", "not_comparable", null] },
+        "priorFingerprint": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] },
+        "reasonCode": { "oneOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] }
+      }
+    },
+    "route": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "fingerprint", "framework", "method", "path", "pathKind", "location", "handler", "stateChanging", "objectAddressed", "authentication", "authorization", "routeScopedControl", "accessChains", "operations", "priority", "limitations", "baseline"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "fingerprint": { "$ref": "#/$defs/sha256" },
+        "framework": { "$ref": "#/$defs/framework" },
+        "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "ALL", "UNKNOWN"] },
+        "path": { "type": ["string", "null"], "minLength": 1, "maxLength": 512, "pattern": "^[^\\u0000-\\u001f\\u007f]+$" },
+        "pathKind": { "enum": ["static", "parameterized", "dynamic", "unknown"] },
+        "location": { "$ref": "#/$defs/location" },
+        "handler": { "oneOf": [{ "$ref": "#/$defs/safeName" }, { "type": "null" }] },
+        "stateChanging": { "type": "boolean" }, "objectAddressed": { "type": "boolean" },
+        "authentication": { "$ref": "#/$defs/control" }, "authorization": { "$ref": "#/$defs/control" },
+        "routeScopedControl": { "$ref": "#/$defs/routeScopedControl" },
+        "accessChains": { "type": "array", "maxItems": 50, "items": { "$ref": "#/$defs/accessChain" } },
+        "operations": { "type": "array", "maxItems": 30, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "priority": { "$ref": "#/$defs/priorityRecord" },
+        "limitations": { "type": "array", "maxItems": 20, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "baseline": { "$ref": "#/$defs/recordBaseline" }
+      }
+    },
+    "serverAction": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "fingerprint", "framework", "name", "location", "authentication", "authorization", "actionScopedControl", "accessChains", "operations", "priority", "limitations", "baseline"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "fingerprint": { "$ref": "#/$defs/sha256" },
+        "framework": { "const": "next-app" }, "name": { "$ref": "#/$defs/safeName" },
+        "location": { "$ref": "#/$defs/location" },
+        "authentication": { "$ref": "#/$defs/control" }, "authorization": { "$ref": "#/$defs/control" },
+        "actionScopedControl": { "$ref": "#/$defs/routeScopedControl" },
+        "accessChains": { "type": "array", "maxItems": 50, "items": { "$ref": "#/$defs/accessChain" } },
+        "operations": { "type": "array", "maxItems": 30, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "priority": { "$ref": "#/$defs/priorityRecord" },
+        "limitations": { "type": "array", "maxItems": 20, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "baseline": { "$ref": "#/$defs/recordBaseline" }
+      }
+    },
+    "priorityRecord": {
+      "type": "object", "additionalProperties": false, "required": ["level", "reasons"],
+      "properties": {
+        "level": { "$ref": "#/$defs/priority" },
+        "reasons": { "type": "array", "maxItems": 12, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } }
+      }
+    },
+    "documentBaseline": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["sourceDigest", "compatibility", "reasonCode"],
+          "properties": {
+            "sourceDigest": { "$ref": "#/$defs/sha256" },
+            "compatibility": { "enum": ["compatible", "not_comparable"] },
+            "reasonCode": { "oneOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] }
+          }
+        }
+      ]
+    }
+  }
+}

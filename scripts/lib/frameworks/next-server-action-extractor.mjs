@@ -127,7 +127,7 @@ function directChain(action, identity, selectors, operation) {
 
 function priorityFor(action) {
   const reasons = [];
-  if (action.accessChains.some((chain) => ['principal_constraint_not_observed',
+  if (action.accessChains.some((chain) => ['authorization_constraint_not_observed',
     'external_policy_required', 'incomplete'].includes(chain.outcome))) {
     reasons.push('server-action-object-authorization-review');
   }

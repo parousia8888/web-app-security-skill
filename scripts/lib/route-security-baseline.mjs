@@ -49,6 +49,9 @@ function evidenceChain(chain) {
       signals: chain.identity.signals },
     objectSelectors: chain.objectSelectors, callEdges: chain.callEdges,
     dataOperation: chain.dataOperation,
+    authorizationEvidence: chain.authorizationEvidence,
+    reason: chain.reason,
+    limitations: chain.limitations,
   };
 }
 
@@ -78,9 +81,11 @@ const CONTROL_ABSENT = new Set(['not_observed', 'incomplete', 'not_applicable'])
 function chainKey(chain) {
   const operation = chain.dataOperation;
   if (operation) return [operation.provider, operation.resource, operation.operation,
-    chain.objectSelectors.map((item) => item.name).join(',')].join('\u0000');
+    chain.objectSelectors.map((item) => `${item.kind}:${item.name}:${item.origin || 'legacy'}`).join(','),
+    chain.callEdges.map((edge) => `${edge.kind}:${edge.from}:${edge.to}`).join(',')].join('\u0000');
   return [chain.callEdges.at(-1)?.to || '<none>',
-    chain.objectSelectors.map((item) => item.name).join(',')].join('\u0000');
+    chain.objectSelectors.map((item) => `${item.kind}:${item.name}:${item.origin || 'legacy'}`).join(','),
+    chain.callEdges.map((edge) => `${edge.kind}:${edge.from}:${edge.to}`).join(',')].join('\u0000');
 }
 
 function uniqueChains(chains) {
@@ -104,13 +109,14 @@ function degradationReason(current, previous, scopedField) {
   for (const [key, prior] of priorChains) {
     const next = currentChains.get(key);
     if (!next) continue;
-    const priorConstrained = prior.dataOperation?.principalConstraint === 'observed'
-      || prior.dataOperation?.tenantConstraint === 'observed';
-    const nextConstrained = next.dataOperation?.principalConstraint === 'observed'
-      || next.dataOperation?.tenantConstraint === 'observed';
-    if (priorConstrained && !nextConstrained) return 'principal_or_tenant_constraint_disappeared';
+    const observedAuthorization = (chain) => (chain.authorizationEvidence || []).some((evidence) =>
+      ['principal', 'tenant'].includes(evidence.category) && evidence.state === 'observed'
+        && ['query_predicate', 'post_load_comparison'].includes(evidence.kind));
+    if (observedAuthorization(prior) && !observedAuthorization(next)) {
+      return 'authorization_evidence_disappeared';
+    }
     if (prior.status === 'completed' && next.status === 'partial') {
-      return 'complete_access_chain_became_incomplete';
+      return 'complete_access_path_became_incomplete';
     }
   }
   return null;
@@ -164,6 +170,17 @@ export function compareRouteSecurityDocuments(current, previous, sourceDigest) {
     )), current.serverActions.map((action) => withBaseline(action,
       'not_comparable', null, 'route_analyzer_changed')),
     { sourceDigest, compatibility: 'not_comparable', reasonCode: 'route_analyzer_changed' });
+  }
+  const priorLimits = previous.analyzer.analysisLimits || {};
+  const currentLimits = current.analyzer.analysisLimits || {};
+  const limitsCompatible = Object.keys(priorLimits).length === Object.keys(currentLimits).length
+    && Object.entries(currentLimits).every(([key, value]) => priorLimits[key] === value);
+  if (!limitsCompatible) {
+    return recreate(current, current.routes.map((route) => withBaseline(
+      route, 'not_comparable', null, 'route_analysis_limits_changed',
+    )), current.serverActions.map((action) => withBaseline(action,
+      'not_comparable', null, 'route_analysis_limits_changed')),
+    { sourceDigest, compatibility: 'not_comparable', reasonCode: 'route_analysis_limits_changed' });
   }
 
   const currentGroups = grouped(current.routes);
@@ -263,7 +280,7 @@ export function compareRouteSecurityDocuments(current, previous, sourceDigest) {
 const ROUTE_REGRESSION_REASONS = new Set([
   'classified_authentication_disappeared', 'classified_authorization_disappeared',
   'route_scoped_control_degraded', 'action_scoped_control_degraded',
-  'principal_or_tenant_constraint_disappeared', 'complete_access_chain_became_incomplete',
+  'authorization_evidence_disappeared', 'complete_access_path_became_incomplete',
   'new_sensitive_route_control_unresolved', 'new_server_action_control_unresolved',
 ]);
 

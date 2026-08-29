@@ -9,7 +9,8 @@ const signalList = (signals) => signals?.length
   : 'none';
 
 function chainTitle(chain) {
-  if (chain.outcome === 'principal_constraint_not_observed') return {
+  if (['authorization_constraint_not_observed', 'principal_constraint_not_observed']
+    .includes(chain.outcome)) return {
     term: 'Object-level authorization review (BOLA/IDOR)',
     plain: 'A user-selected record ID reaches a database operation, but this bounded path did not show the same user or tenant in that operation.',
     consequence: 'If no equivalent policy exists elsewhere, one signed-in user may be able to read or change another user\'s record.',
@@ -46,12 +47,14 @@ function chainSummary(chains) {
 function reviewEntries(document) {
   const entries = [];
   for (const route of document.routes) for (const chain of route.accessChains || []) {
-    if (['principal_constraint_not_observed', 'external_policy_required', 'incomplete'].includes(chain.outcome)) {
+    if (['authorization_constraint_not_observed', 'principal_constraint_not_observed',
+      'external_policy_required', 'incomplete'].includes(chain.outcome)) {
       entries.push({ kind: 'Route', name: `${route.method} ${route.path || '(dynamic path)'}`, chain });
     }
   }
   for (const action of document.serverActions || []) for (const chain of action.accessChains || []) {
-    if (['principal_constraint_not_observed', 'external_policy_required', 'incomplete'].includes(chain.outcome)) {
+    if (['authorization_constraint_not_observed', 'principal_constraint_not_observed',
+      'external_policy_required', 'incomplete'].includes(chain.outcome)) {
       entries.push({ kind: 'Server Action', name: action.name, chain });
     }
   }
@@ -118,12 +121,18 @@ export function renderRouteSecurityMarkdown(document) {
   if (!accessReview.length) lines.push('No access chain matched the bounded review conditions.', '');
   for (const [index, item] of accessReview.entries()) {
     const description = chainTitle(item.chain);
-    const selectors = item.chain.objectSelectors.map((selector) => selector.name).join(', ') || 'unknown';
+    const selectors = item.chain.objectSelectors.map((selector) =>
+      `${selector.name} (${selector.origin || 'legacy-origin-unrecorded'})`).join(', ') || 'unknown';
+    const authorizationEvidence = (item.chain.authorizationEvidence || []).map((evidence) =>
+      `${evidence.kind}/${evidence.category}/${evidence.state}${evidence.field ? `:${evidence.field}` : ''}`)
+      .join(', ') || 'none recorded';
     lines.push(
       `### ${index + 1}. ${item.kind}: ${item.name}`, '',
       `- Industry term: ${description.term}.`,
       `- Plain language: ${description.plain}`,
       `- Observed fact: selector ${code(selectors)} reaches ${code(chainOperation(item.chain))}; chain outcome is ${code(item.chain.outcome)}.`,
+      `- Authorization evidence: ${code(authorizationEvidence)}.`,
+      `- Primary incomplete reason: ${item.chain.reason ? code(item.chain.reason) : 'not applicable'}.`,
       `- Not proved: ${item.chain.evidenceBoundary}`,
       `- Possible consequence if project review confirms a defect: ${description.consequence}`,
       `- Review proposal: ${description.proposal}`,

@@ -1,0 +1,235 @@
+{
+  "schemaVersion": 3,
+  "tool": { "name": "Web App Security Skill", "version": "0.8.0" },
+  "generatedAt": "2026-08-29T00:00:00.000Z",
+  "mode": "audit",
+  "subject": {
+    "id": "subject.route-v3-golden",
+    "scopeDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "analyzer": {
+    "id": "builtin-route",
+    "revision": "3",
+    "parser": {
+      "component": "@babel/parser",
+      "version": "7.28.4",
+      "sha256": "f8d700c78a6d0a50513a672b419074a87597093733d2d69ecee92675d8139698"
+    },
+    "analysisLimits": {
+      "maxLocalCallEdges": 4,
+      "maxEmittedChainsPerEntry": 50,
+      "maxActiveStatesPerEntry": 512,
+      "maxExaminedCallSitesPerSummary": 200,
+      "maxTotalTransitionsPerAudit": 50000
+    }
+  },
+  "summary": {
+    "total": 1,
+    "serverActions": 0,
+    "stateChanging": 0,
+    "objectAddressed": 1,
+    "byFramework": { "express": 1 },
+    "byPriority": {
+      "review_first": 0,
+      "review_next": 0,
+      "review_later": 0,
+      "no_automatic_priority": 1
+    },
+    "byAuthentication": {
+      "local_observed": 0,
+      "inherited_observed": 0,
+      "candidate_observed": 0,
+      "not_observed": 1,
+      "incomplete": 0,
+      "not_applicable": 0
+    },
+    "byAuthorization": {
+      "local_observed": 0,
+      "inherited_observed": 0,
+      "candidate_observed": 0,
+      "not_observed": 1,
+      "incomplete": 0,
+      "not_applicable": 0
+    },
+    "byRouteScopedControl": {
+      "classified_controls_observed": 0,
+      "unclassified_control_observed": 0,
+      "no_route_scoped_control_observed": 1
+    },
+    "applicationControls": 0,
+    "byApplicationControlRole": {
+      "authentication": 0,
+      "authorization": 0,
+      "unclassified": 0
+    }
+  },
+  "coverage": [
+    {
+      "framework": "express",
+      "status": "completed",
+      "counts": { "discovered": 1, "eligible": 1, "parsed": 1, "incomplete": 0 },
+      "reasons": []
+    }
+  ],
+  "applicationControls": [],
+  "routes": [
+    {
+      "id": "route.2c7c28943105b786663eb94f",
+      "fingerprint": "2c7c28943105b786663eb94f074a2a611328aa3e3e0c9f2f208a1026c0a0f70b",
+      "framework": "express",
+      "method": "GET",
+      "path": "/projects/:id",
+      "pathKind": "parameterized",
+      "location": { "path": "src/routes/project.ts", "line": 10 },
+      "handler": "getProject",
+      "stateChanging": false,
+      "objectAddressed": true,
+      "authentication": {
+        "state": "not_observed",
+        "signals": [],
+        "boundary": "Static source evidence does not prove runtime enforcement or correctness."
+      },
+      "authorization": {
+        "state": "not_observed",
+        "signals": [],
+        "boundary": "Static source evidence does not prove runtime enforcement or correctness."
+      },
+      "routeScopedControl": {
+        "state": "no_route_scoped_control_observed",
+        "unclassifiedSignals": [],
+        "boundary": "No route, controller or statically inherited route-scoped control was observed; application controls and runtime policy still require review."
+      },
+      "accessChains": [
+        {
+          "id": "access-chain.ae809d36a51b5bf31ca9303d",
+          "fingerprint": "ae809d36a51b5bf31ca9303d03f473cee8c818488e7ff137e93876df679dc811",
+          "status": "completed",
+          "outcome": "authorization_constraint_observed",
+          "identity": {
+            "state": "identity_call_observed",
+            "provider": "authjs",
+            "signals": [],
+            "boundary": "An exact identity lookup was observed; runtime session validity is not proved."
+          },
+          "objectSelectors": [
+            {
+              "kind": "route-parameter",
+              "name": "id",
+              "origin": "request_selected",
+              "location": { "path": "src/routes/project.ts", "line": 10 }
+            }
+          ],
+          "callEdges": [],
+          "dataOperation": {
+            "provider": "prisma",
+            "resource": "project",
+            "operation": "find-first",
+            "location": { "path": "src/repositories/project.ts", "line": 42 },
+            "objectConstraint": "observed",
+            "principalConstraint": "observed",
+            "tenantConstraint": "not_observed"
+          },
+          "authorizationEvidence": [
+            {
+              "kind": "query_predicate",
+              "category": "principal",
+              "state": "observed",
+              "field": "ownerId",
+              "location": { "path": "src/repositories/project.ts", "line": 42 }
+            }
+          ],
+          "reason": null,
+          "limitations": [],
+          "evidenceBoundary": "Static source evidence does not prove deployed runtime enforcement.",
+          "verification": {
+            "unauthenticated": "Verify the owned surface rejects an unauthenticated request when authentication is required.",
+            "owner": "Verify an owner-controlled account can complete the intended operation.",
+            "nonOwner": "Using two owner-controlled accounts, verify one account cannot access the other account's object.",
+            "lowerRole": "Verify a lower-privileged owner-controlled account cannot perform a higher-privileged operation.",
+            "functional": "Run the normal product flow and project tests after any approved control change."
+          }
+        },
+        {
+          "id": "access-chain.9a328840acc45511a0675525",
+          "fingerprint": "9a328840acc45511a06755257f935ac1647a0159d4268885fe28778d16e3e298",
+          "status": "partial",
+          "outcome": "incomplete",
+          "identity": {
+            "state": "identity_call_observed",
+            "provider": "authjs",
+            "signals": [],
+            "boundary": "An exact identity lookup was observed; runtime session validity is not proved."
+          },
+          "objectSelectors": [
+            {
+              "kind": "route-parameter",
+              "name": "id",
+              "origin": "request_selected",
+              "location": { "path": "src/routes/project.ts", "line": 10 }
+            }
+          ],
+          "callEdges": [
+            {
+              "kind": "local_function",
+              "from": "getProject",
+              "to": "findProject",
+              "location": { "path": "src/routes/project.ts", "line": 14 }
+            }
+          ],
+          "dataOperation": null,
+          "authorizationEvidence": [],
+          "reason": "call_target_unresolved",
+          "limitations": ["dynamic-dispatch-unresolved"],
+          "evidenceBoundary": "The next local target could not be resolved; no authorization conclusion is available.",
+          "verification": {
+            "unauthenticated": "Verify the owned surface rejects an unauthenticated request when authentication is required.",
+            "owner": "Verify an owner-controlled account can complete the intended operation.",
+            "nonOwner": "Using two owner-controlled accounts, verify one account cannot access the other account's object.",
+            "lowerRole": "Verify a lower-privileged owner-controlled account cannot perform a higher-privileged operation.",
+            "functional": "Run the normal product flow and project tests after any approved control change."
+          }
+        },
+        {
+          "id": "access-chain.dcd3ad239ae174a26dd6cab4",
+          "fingerprint": "dcd3ad239ae174a26dd6cab440ccb8cc860f228473abe12cb0d909d30a03de5d",
+          "status": "not_applicable",
+          "outcome": "no_supported_object_operation",
+          "identity": {
+            "state": "identity_call_observed",
+            "provider": "authjs",
+            "signals": [],
+            "boundary": "An exact identity lookup was observed; runtime session validity is not proved."
+          },
+          "objectSelectors": [
+            {
+              "kind": "route-parameter",
+              "name": "id",
+              "origin": "request_selected",
+              "location": { "path": "src/routes/project.ts", "line": 10 }
+            }
+          ],
+          "callEdges": [],
+          "dataOperation": null,
+          "authorizationEvidence": [],
+          "reason": null,
+          "limitations": [],
+          "evidenceBoundary": "No supported object operation was observed in this bounded callable.",
+          "verification": {
+            "unauthenticated": "Verify the owned surface rejects an unauthenticated request when authentication is required.",
+            "owner": "Verify an owner-controlled account can complete the intended operation.",
+            "nonOwner": "Using two owner-controlled accounts, verify one account cannot access the other account's object.",
+            "lowerRole": "Verify a lower-privileged owner-controlled account cannot perform a higher-privileged operation.",
+            "functional": "Run the normal product flow and project tests after any approved control change."
+          }
+        }
+      ],
+      "operations": ["database-read"],
+      "priority": { "level": "no_automatic_priority", "reasons": [] },
+      "limitations": [],
+      "baseline": { "state": null, "priorFingerprint": null, "reasonCode": null }
+    }
+  ],
+  "serverActions": [],
+  "limitations": ["Static source evidence does not prove runtime enforcement."],
+  "baseline": null
+}

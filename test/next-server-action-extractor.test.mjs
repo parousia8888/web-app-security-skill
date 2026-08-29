@@ -44,7 +44,7 @@ assert.ok(result.coverage.reasons.some((reason) => reason.code === 'next_server_
 const update = result.serverActions.find((action) => action.name === 'updateProject');
 assert.equal(update.authentication.state, 'local_observed');
 assert.equal(update.accessChains.length, 1);
-assert.equal(update.accessChains[0].outcome, 'principal_constraint_observed');
+assert.equal(update.accessChains[0].outcome, 'authorization_constraint_observed');
 assert.equal(update.accessChains[0].objectSelectors[0].kind, 'action-parameter');
 const form = result.serverActions.find((action) => action.name === 'loadOrder');
 assert.equal(form.accessChains.length, 1);

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "unknown-access-chain-field",
+    "mutation": { "path": "routes.0.accessChains.0.runtimeEnforced", "value": true }
+  },
+  {
+    "id": "fifth-call-edge",
+    "mutation": { "path": "routes.0.accessChains.1.callEdges", "value": "repeat_first_edge_five_times" }
+  },
+  {
+    "id": "partial-without-primary-reason",
+    "mutation": { "path": "routes.0.accessChains.1.reason", "value": null }
+  },
+  {
+    "id": "runtime-enforcement-state",
+    "mutation": { "path": "routes.0.accessChains.0.authorizationEvidence.0.state", "value": "enforced" }
+  },
+  {
+    "id": "unbounded-selector-name",
+    "mutation": { "path": "routes.0.accessChains.0.objectSelectors.0.name", "value": "repeat_x_121" }
+  }
+]
