@@ -1,8 +1,23 @@
 {
   "schemaVersion": 1,
   "release": "0.8.0",
-  "state": "owner_decision_required",
+  "state": "owner_approved",
   "frozenOn": "2026-08-29",
+  "ownerDecision": {
+    "gate": "D1",
+    "approvedOn": "2026-08-29",
+    "selection": [
+      "exact_react_cache_callback_and_proven_omitted_tx",
+      "direct_single_element_array_return_mapping"
+    ],
+    "statement": "The owner approved options 1 and 3 after the initial four-path freeze. All historical entries affected solely by either approved semantic boundary were reclassified consistently before production analyzer implementation.",
+    "boundaries": [
+      "React cache is transparent only when the imported React cache binding and its single callback are exact; arbitrary higher-order wrappers remain unresolved.",
+      "tx ?? prisma resolves to prisma only when exact argument mapping proves the optional tx parameter was omitted on the analyzed path.",
+      "Array return identity is preserved only for a direct single-element destructuring binding from one exact supported operation; indexing, rest, transforms and ambiguous arrays remain unresolved.",
+      "Caller-supplied userId remains an object candidate and never becomes a current-principal fact by name."
+    ]
+  },
   "historicalSource": {
     "path": "docs/reviews/v0.7.0-access-control-review.json",
     "toolCommit": "bfed608b5d1abe56b6b34b09f0c6ef59f17eab4a",
@@ -11,8 +26,8 @@
     "observationsSha256": "735c541c57d4ae0aa7534860ad2faccebd7b652325572da57996b104771d187b"
   },
   "criteria": {
-    "eligible": "A fixed-commit ordinary entry has an exact v0.8.0 selector, a uniquely resolved local path within four edges and a supported Prisma or Drizzle object operation without relying on an excluded mapping.",
-    "excluded": "The historical entry remains visible but does not enter the completion denominator when it lacks an object selector/operation or requires an explicit non-goal such as TypeORM, Mongoose, arbitrary validator semantics, external higher-order wrapper semantics or dynamic data-client dispatch.",
+    "eligible": "A fixed-commit ordinary entry has an exact v0.8.0 selector, a uniquely resolved local path within four edges and a supported Prisma or Drizzle object operation. D1 additionally permits exact React cache callbacks, a proven omitted optional tx resolving tx ?? prisma, and direct single-element array return bindings.",
+    "excluded": "The historical entry remains visible but does not enter the completion denominator when it is a labeled expected-public negative, lacks an object selector/operation or requires an explicit non-goal such as TypeORM, Mongoose, arbitrary validator semantics, arbitrary higher-order wrapper semantics, an unproved dynamic data client or transformed/ambiguous array identity.",
     "evidenceBoundary": "Eligibility predicts structural analyzability, not security, vulnerability, runtime reachability, deployed enforcement or production accuracy."
   },
   "projects": [
@@ -47,16 +62,16 @@
   ],
   "optionalFifthProject": {
     "selected": false,
-    "reason": "No project was added before the owner decides whether to extend one bounded mapping or use the single optional project slot. Adding an easy project now would hide the current-corpus shortfall."
+    "reason": "D1 selected two bounded semantic extensions over a fifth project. The existing fixed projects now provide a feasible denominator without adding an easy corpus solely to satisfy the floor."
   },
   "aggregate": {
     "totalEntries": 32,
-    "eligibleEntries": 4,
-    "excludedEntries": 28,
+    "eligibleEntries": 14,
+    "excludedEntries": 18,
     "byExpectedStatus": {
-      "completed": 4,
-      "not_applicable": 11,
-      "partial": 17
+      "completed": 14,
+      "not_applicable": 12,
+      "partial": 6
     },
     "bySelectorOrigin": {
       "nest_param": 2,
@@ -101,12 +116,12 @@
   },
   "targetCalculation": {
     "completionRate": 0.7,
-    "denominator": 4,
-    "minimumByRate": 3,
+    "denominator": 14,
+    "minimumByRate": 10,
     "groundedPathFloor": 6,
-    "effectiveMinimum": 6,
-    "feasibleWithCurrentBoundary": false,
-    "pathShortfall": 2,
+    "effectiveMinimum": 10,
+    "feasibleWithCurrentBoundary": true,
+    "pathShortfall": 0,
     "completedProjectFloor": 2,
     "representedEligibleProjects": [
       "formbricks",
@@ -120,14 +135,14 @@
       "drizzle",
       "prisma"
     ],
-    "queryConstraintCases": 0,
-    "postLoadComparisonCases": 3,
-    "queryConstraintShortfall": 1
+    "queryConstraintCases": 2,
+    "postLoadComparisonCases": 10,
+    "queryConstraintShortfall": 0
   },
-  "decisionRequired": {
-    "code": "current_boundary_cannot_meet_release_floor",
-    "statement": "The current contract has four eligible paths, two fewer than the six-path floor, and no eligible query-constraint case. D1 must approve a bounded scope adjustment or a fifth grounded project before P2.",
-    "prohibitedResolution": "Do not lower the six-path floor, relabel client input as a principal, erase excluded entries or count fixtures as real paths."
+  "decisionOutcome": {
+    "code": "d1_scope_approved_and_refrozen",
+    "statement": "D1 approved options 1 and 3. The refrozen contract has 14 eligible real paths, an effective completion minimum of 10 and at least one eligible query-constraint case. P2 may proceed.",
+    "prohibitedResolution": "Do not lower the frozen denominator or six-path floor, relabel client input as a principal, erase excluded entries, generalize the approved wrappers beyond their exact shapes or count fixtures as real paths."
   },
   "claims": [
     "This ledger freezes manual expectations before v0.8.0 production analyzer implementation.",
@@ -579,22 +594,19 @@
         "path": "lib/db/queries.ts:379"
       },
       "expectedAuthorizationEvidence": {
-        "state": "incomplete",
+        "state": "observed",
         "kind": "post_load_comparison",
         "category": "principal",
-        "limitation": "return_mapping_unresolved"
+        "limitation": null
       },
-      "eligibleForV080": false,
-      "eligibilityReason": "single_element_array_return_mapping_not_in_contract",
-      "exclusion": {
-        "code": "single_element_array_return_mapping_not_in_contract",
-        "boundary": "The queried array is unpacked with const [document] = documents; the current v0.8.0 return mapping does not include array element identity."
-      },
-      "expectedStatus": "partial",
-      "expectedPrimaryReason": "return_mapping_unresolved",
+      "eligibleForV080": true,
+      "eligibilityReason": "supported_direct_single_element_array_return_and_comparison",
+      "exclusion": null,
+      "expectedStatus": "completed",
+      "expectedPrimaryReason": null,
       "missFamily": "selector_origin",
-      "reviewerNote": "The sink is visible, but the plan cannot yet bind the selected array element to the later owner comparison.",
-      "recordSha256": "055009c541132fbdf1cc315dc6f85e991154c7449afe34cccddbf7011a4af616"
+      "reviewerNote": "D1 approves only direct const [document] = documents identity from one exact supported operation; transformed, indexed or ambiguous arrays remain partial.",
+      "recordSha256": "08f34ebf2a258fe7fea61a9dd238e1256b99bdf6517762c109a931638b9fd76b"
     },
     {
       "id": "v080-eval-12",
@@ -629,22 +641,19 @@
         "path": "lib/db/queries.ts:379"
       },
       "expectedAuthorizationEvidence": {
-        "state": "incomplete",
+        "state": "observed",
         "kind": "post_load_comparison",
         "category": "principal",
-        "limitation": "return_mapping_unresolved"
+        "limitation": null
       },
-      "eligibleForV080": false,
-      "eligibilityReason": "single_element_array_return_mapping_not_in_contract",
-      "exclusion": {
-        "code": "single_element_array_return_mapping_not_in_contract",
-        "boundary": "The queried array is unpacked before the owner comparison; array element identity is not in the frozen return mapping."
-      },
-      "expectedStatus": "partial",
-      "expectedPrimaryReason": "return_mapping_unresolved",
+      "eligibleForV080": true,
+      "eligibilityReason": "supported_direct_single_element_array_return_and_comparison",
+      "exclusion": null,
+      "expectedStatus": "completed",
+      "expectedPrimaryReason": null,
       "missFamily": "selector_origin",
-      "reviewerNote": "The create/update branches do not change the pre-load comparison boundary used for this label.",
-      "recordSha256": "af646744a07b9662dbeae10bee6cebeb6dba9807b4392b0017f8d9b4acac9c6e"
+      "reviewerNote": "The direct first-element binding grounds the pre-load owner comparison; create/update branches remain outside this labeled path.",
+      "recordSha256": "08125ac5e4211340800aa380cf397ce3faac12d271e7db20397057fa6519a286"
     },
     {
       "id": "v080-eval-13",
@@ -679,22 +688,19 @@
         "path": "lib/db/queries.ts:379"
       },
       "expectedAuthorizationEvidence": {
-        "state": "incomplete",
+        "state": "observed",
         "kind": "post_load_comparison",
         "category": "principal",
-        "limitation": "return_mapping_unresolved"
+        "limitation": null
       },
-      "eligibleForV080": false,
-      "eligibilityReason": "single_element_array_return_mapping_not_in_contract",
-      "exclusion": {
-        "code": "single_element_array_return_mapping_not_in_contract",
-        "boundary": "The queried array is unpacked before the owner comparison; array element identity is not in the frozen return mapping."
-      },
-      "expectedStatus": "partial",
-      "expectedPrimaryReason": "return_mapping_unresolved",
+      "eligibleForV080": true,
+      "eligibilityReason": "supported_direct_single_element_array_return_and_comparison",
+      "exclusion": null,
+      "expectedStatus": "completed",
+      "expectedPrimaryReason": null,
       "missFamily": "selector_origin",
-      "reviewerNote": "The later delete remains downstream of a comparison the current return contract cannot ground.",
-      "recordSha256": "b146f0cb7bcc4765adf561ba2f30605872274dbaaf603ab7fd31502088a82c87"
+      "reviewerNote": "The direct first-element binding grounds the owner comparison before the later delete.",
+      "recordSha256": "fa6593c01215ea6b765b1d0c7db45a38cd63f2aedf4034f04fb75dbd97536988"
     },
     {
       "id": "v080-eval-14",
@@ -870,19 +876,16 @@
         "state": "incomplete",
         "kind": "post_load_comparison",
         "category": "principal",
-        "limitation": "wrapper_handler_unresolved"
+        "limitation": "constraint_expression_unresolved"
       },
-      "eligibleForV080": false,
-      "eligibilityReason": "external_higher_order_wrapper_outside_contract",
-      "exclusion": {
-        "code": "external_higher_order_wrapper_outside_contract",
-        "boundary": "getWorkspace is exported through React cache(callback); external higher-order wrapper semantics are not included."
-      },
-      "expectedStatus": "partial",
-      "expectedPrimaryReason": "wrapper_handler_unresolved",
+      "eligibleForV080": true,
+      "eligibilityReason": "supported_exact_react_cache_callback_prisma_operation",
+      "exclusion": null,
+      "expectedStatus": "completed",
+      "expectedPrimaryReason": null,
       "missFamily": "callable_wrapper_reexport",
-      "reviewerNote": "The source callback is visible, but exported-call identity is not inferred through an external wrapper.",
-      "recordSha256": "043954d1463ac6f6f47a854696e5abef45924e93931dd2431f62afcb563438f6"
+      "reviewerNote": "D1 permits only a direct React cache(callback) binding with one local callback; later membership evidence remains separately bounded.",
+      "recordSha256": "b43ddbcd6b1c77ad9d6b322a748a91b0ce84d97fcfef4e9ad50de464caabf23f"
     },
     {
       "id": "v080-eval-18",
@@ -973,19 +976,16 @@
         "state": "incomplete",
         "kind": "post_load_comparison",
         "category": "tenant",
-        "limitation": "wrapper_handler_unresolved"
+        "limitation": "constraint_expression_unresolved"
       },
-      "eligibleForV080": false,
-      "eligibilityReason": "external_higher_order_wrapper_outside_contract",
-      "exclusion": {
-        "code": "external_higher_order_wrapper_outside_contract",
-        "boundary": "getActionClass is exported through React cache(callback); external higher-order wrapper semantics are not included."
-      },
-      "expectedStatus": "partial",
-      "expectedPrimaryReason": "wrapper_handler_unresolved",
+      "eligibleForV080": true,
+      "eligibilityReason": "supported_exact_react_cache_callback_prisma_operation",
+      "exclusion": null,
+      "expectedStatus": "completed",
+      "expectedPrimaryReason": null,
       "missFamily": "callable_wrapper_reexport",
-      "reviewerNote": "The local V1 handler wrapper is reducible; the later React cache wrapper remains the stop.",
-      "recordSha256": "074deaddc034ddca05d008662903e10e1461579cf065887013ccdd2d7b5a9cd6"
+      "reviewerNote": "The local V1 handler and direct React cache callback are exact; hasPermission remains an unresolved authorization candidate.",
+      "recordSha256": "032819015d25a6f720e3bb663f45222390dfac6004e31e9d5ac2d4d1964ae36b"
     },
     {
       "id": "v080-eval-20",
@@ -1024,19 +1024,16 @@
         "state": "incomplete",
         "kind": "post_load_comparison",
         "category": "tenant",
-        "limitation": "wrapper_handler_unresolved"
+        "limitation": "constraint_expression_unresolved"
       },
-      "eligibleForV080": false,
-      "eligibilityReason": "external_higher_order_wrapper_outside_contract",
-      "exclusion": {
-        "code": "external_higher_order_wrapper_outside_contract",
-        "boundary": "getResponse is exported through React cache(callback); external higher-order wrapper semantics are not included."
-      },
-      "expectedStatus": "partial",
-      "expectedPrimaryReason": "wrapper_handler_unresolved",
+      "eligibleForV080": true,
+      "eligibilityReason": "supported_exact_react_cache_callback_prisma_operation",
+      "exclusion": null,
+      "expectedStatus": "completed",
+      "expectedPrimaryReason": null,
       "missFamily": "callable_wrapper_reexport",
-      "reviewerNote": "The wrapper handler and helper are exact; the external cache wrapper blocks the terminal callable identity.",
-      "recordSha256": "cdb7b4f17d202f381bfa4ec5109e044422a82dc1d9975ef3eff73fe5c673249e"
+      "reviewerNote": "The wrapper handler, helper and direct React cache callback are exact; hasPermission remains outside name-only inference.",
+      "recordSha256": "619a08a840f496a0795594e190709b2383265c80535a558d2afdcb74ba90b39b"
     },
     {
       "id": "v080-eval-21",
@@ -1075,19 +1072,16 @@
         "state": "incomplete",
         "kind": "post_load_comparison",
         "category": "tenant",
-        "limitation": "wrapper_handler_unresolved"
+        "limitation": "constraint_expression_unresolved"
       },
-      "eligibleForV080": false,
-      "eligibilityReason": "external_higher_order_wrapper_outside_contract",
-      "exclusion": {
-        "code": "external_higher_order_wrapper_outside_contract",
-        "boundary": "getSurvey is exported through React cache(callback); external higher-order wrapper semantics are not included."
-      },
-      "expectedStatus": "partial",
-      "expectedPrimaryReason": "wrapper_handler_unresolved",
+      "eligibleForV080": true,
+      "eligibilityReason": "supported_exact_react_cache_callback_prisma_operation",
+      "exclusion": null,
+      "expectedStatus": "completed",
+      "expectedPrimaryReason": null,
       "missFamily": "callable_wrapper_reexport",
-      "reviewerNote": "The V1 wrapper itself is local and exact; React cache is the remaining higher-order boundary.",
-      "recordSha256": "18d93cbdec68a10e57060d08fa7b6076dd622be3d3c17435b4d88e0bb2f4bda7"
+      "reviewerNote": "The V1 wrapper and direct React cache callback are exact; hasPermission remains an unresolved authorization candidate.",
+      "recordSha256": "95bdb8d5b84161022e0aa6c4720a2fc87758ed31850527b942fcfc338abd7fe9"
     },
     {
       "id": "v080-eval-22",
@@ -1175,16 +1169,16 @@
         "limitation": null
       },
       "eligibleForV080": false,
-      "eligibilityReason": "expected_public_ingestion_and_external_wrapper",
+      "eligibilityReason": "expected_public_ingestion_outside_completion_denominator",
       "exclusion": {
-        "code": "expected_public_ingestion_and_external_wrapper",
-        "boundary": "This public submission path intentionally lacks a principal and its first resolver is exported through React cache(callback)."
+        "code": "expected_public_ingestion_outside_completion_denominator",
+        "boundary": "The exact cache callback may be inspected, but this intentionally public ingestion path remains a labeled negative outside the ordinary completion denominator."
       },
-      "expectedStatus": "partial",
-      "expectedPrimaryReason": "wrapper_handler_unresolved",
+      "expectedStatus": "not_applicable",
+      "expectedPrimaryReason": null,
       "missFamily": "none",
       "reviewerNote": "Retained to prevent route-control logic from converting an expected public client endpoint into an authentication finding.",
-      "recordSha256": "5b3a5009f4466a32470be3c2c8a06fbab04431669bec8893f0ca9f8f7049c478"
+      "recordSha256": "7490757542cbbc607f8484be0d3e4b49ab37eccadae932245dc56055725a2aa7"
     },
     {
       "id": "v080-eval-24",
@@ -1275,19 +1269,16 @@
         "state": "incomplete",
         "kind": "query_predicate",
         "category": "tenant",
-        "limitation": "wrapper_handler_unresolved"
+        "limitation": "constraint_expression_unresolved"
       },
-      "eligibleForV080": false,
-      "eligibilityReason": "external_higher_order_wrapper_outside_contract",
-      "exclusion": {
-        "code": "external_higher_order_wrapper_outside_contract",
-        "boundary": "The first ordinary data functions are exported through React cache(callback)."
-      },
-      "expectedStatus": "partial",
-      "expectedPrimaryReason": "wrapper_handler_unresolved",
+      "eligibleForV080": true,
+      "eligibilityReason": "supported_exact_react_cache_callback_prisma_operation",
+      "exclusion": null,
+      "expectedStatus": "completed",
+      "expectedPrimaryReason": null,
       "missFamily": "depth_propagation",
-      "reviewerNote": "Both arguments are client-selected facts; userId is not promoted to a current-principal fact by its name.",
-      "recordSha256": "13791a148674c67fa09a36e6d926b76fa4d8e28a7fb7010301a0102d46b8a13e"
+      "reviewerNote": "The direct cache callback is analyzable. Both arguments remain client-selected facts; userId is not promoted to a current-principal fact by its name.",
+      "recordSha256": "f0c6a102f3b1e714f3f160cc4717e0ad7c018ccf766b37582dda2867924eeb44"
     },
     {
       "id": "v080-eval-26",
@@ -1324,22 +1315,19 @@
         "path": "apps/web/lib/membership/service.ts:25"
       },
       "expectedAuthorizationEvidence": {
-        "state": "incomplete",
+        "state": "observed",
         "kind": "query_predicate",
         "category": "tenant",
-        "limitation": "data_client_unresolved"
+        "limitation": null
       },
-      "eligibleForV080": false,
-      "eligibilityReason": "external_cache_and_dynamic_data_client_outside_contract",
-      "exclusion": {
-        "code": "external_cache_and_dynamic_data_client_outside_contract",
-        "boundary": "The path crosses React cache(callback) and getDbClient(tx), whose receiver depends on an optional transaction."
-      },
-      "expectedStatus": "partial",
-      "expectedPrimaryReason": "data_client_unresolved",
+      "eligibleForV080": true,
+      "eligibilityReason": "supported_exact_cache_and_proven_omitted_transaction_client",
+      "exclusion": null,
+      "expectedStatus": "completed",
+      "expectedPrimaryReason": null,
       "missFamily": "depth_propagation",
-      "reviewerNote": "The compound key is grounded source evidence, but the caller-supplied userId is not an authenticated principal.",
-      "recordSha256": "bb697cc76ce36fdb255d418746bc5d9843dca5e8209b58a04fd44b3054ba5d1d"
+      "reviewerNote": "The cache callback calls the uncached function without tx, so tx is exactly undefined and tx ?? prisma resolves to prisma. The compound tenant predicate is visible, but caller-supplied userId is not an authenticated principal.",
+      "recordSha256": "02940fd3ccd9b9da965f00f913ab6f8c38887ccaafb7a05145d825fd73e7ccaf"
     },
     {
       "id": "v080-eval-27",
@@ -1423,19 +1411,16 @@
         "state": "incomplete",
         "kind": "none",
         "category": "tenant",
-        "limitation": "wrapper_handler_unresolved"
+        "limitation": "constraint_expression_unresolved"
       },
-      "eligibleForV080": false,
-      "eligibilityReason": "external_higher_order_wrapper_outside_contract",
-      "exclusion": {
-        "code": "external_higher_order_wrapper_outside_contract",
-        "boundary": "getOrganization is exported through React cache(callback), and the later feature check is not authorization evidence."
-      },
-      "expectedStatus": "partial",
-      "expectedPrimaryReason": "wrapper_handler_unresolved",
+      "eligibleForV080": true,
+      "eligibilityReason": "supported_exact_react_cache_callback_prisma_operation",
+      "exclusion": null,
+      "expectedStatus": "completed",
+      "expectedPrimaryReason": null,
       "missFamily": "depth_propagation",
-      "reviewerNote": "The function name is not an authorization conclusion and no current-principal fact is present.",
-      "recordSha256": "7a134253ae888ff583180503822c904be5f339464b69ada0917774dd0cc02ed6"
+      "reviewerNote": "The direct React cache callback is analyzable. The function name is not an authorization conclusion and no current-principal fact is present.",
+      "recordSha256": "fb97ae254b047df8ede95e7db8b6e1f584c1fb60ee5c6c88baf1481566555575"
     },
     {
       "id": "v080-eval-29",
@@ -1590,5 +1575,5 @@
       "recordSha256": "aee475c9a2ab46ae266b4785c1a83f47dc06762eabfb43bbe9ccd63c305b4eb6"
     }
   ],
-  "ledgerSha256": "a4b1d9c2834accc30e35e2af2ff48e87b144ec7a74b8b75da2ab40fb15f64749"
+  "ledgerSha256": "b57a3e7e281e3d08ed88205004be3d6dc5c2e39549aa7c8953a1e48d23014ee6"
 }
