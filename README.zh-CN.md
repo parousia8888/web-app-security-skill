@@ -126,8 +126,8 @@ stable 规则清单仍是 25 条 built-in risk、3 条 evidence-integrity 和 16
 共 44 条；访问路径是独立能力，不算新增漏洞规则。模式命中继续保持 `suspected`；不完整分析保持
 `unknown`，并可能退出 3。v0.8.0 签名 tag、GitHub Release、npm 包与可信安装器已经公开，并共同指向
 源码提交 `119cbcc7f8d327482df8abfa50a4af0b69fcceee`。v0.8.0 不可变 consumer 与 guarded promotion
-lease 已通过，移动的 `v1` Action 现指向同一源码。组合公开 consumer 与持久 live-verification 记录
-仍是独立的最终门禁。
+lease 已通过，移动的 `v1` Action 现指向同一源码。组合公开 consumer 也已通过，逐字节一致的持久
+live-verification 记录已随 release 发布。
 
 ## 安装
 
@@ -400,7 +400,7 @@ v0.8.0。以后接受更新前应检查 release note；工作流不能随版本�
 - tag 必须同时匹配 `VERSION`、changelog 和该版本的证据文件；tag 带签名，release 记录来源 commit。
 - release 产物包含可复现源码包、SPDX 2.3 SBOM、`SHA256SUMS` 与 GitHub build provenance attestation。
   CI 会构建两次并逐字节比较全部产物，再在禁止网络的隔离 HOME 中从解包产物执行完整生命周期。
-- [v0.7.3 公开验证](https://github.com/parousia8888/web-app-security-skill/actions/runs/32981490467)
+- [v0.8.0 公开验证](https://github.com/parousia8888/web-app-security-skill/actions/runs/33265256940)
   同时消费不可变 release commit 与签名 `v1`，强制验证 installer attestation，并把同一份
   live-verification 记录作为 workflow artifact 与 Release asset 发布；两份字节一致。
 - [`SECURITY.md`](SECURITY.md)、[威胁模型](docs/threat-model.md)、

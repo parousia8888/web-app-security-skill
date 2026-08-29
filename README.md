@@ -137,7 +137,8 @@ vulnerability rules. Pattern matches remain `suspected`; incomplete analysis rem
 may exit 3. The signed v0.8.0 tag, GitHub Release, npm package and verified installer are public and
 identify source commit `119cbcc7f8d327482df8abfa50a4af0b69fcceee`. The moving `v1` Action now
 identifies the same v0.8.0 source after its immutable consumer and guarded promotion lease passed.
-The combined public consumer and durable live-verification record remain separate final gates.
+The combined public consumer also passed, and its byte-matched durable live-verification record is
+published with the release.
 
 ## Install
 
@@ -437,7 +438,7 @@ when the workflow must not move.
 - Release assets contain a reproducible source archive, SPDX 2.3 SBOM, `SHA256SUMS` and GitHub
   build-provenance attestation. CI builds the archive twice, compares every byte, then runs the
   lifecycle from the extracted archive in an isolated home with network access denied.
-- [Public v0.7.3 verification](https://github.com/parousia8888/web-app-security-skill/actions/runs/32981490467)
+- [Public v0.8.0 verification](https://github.com/parousia8888/web-app-security-skill/actions/runs/33265256940)
   consumed both the immutable release commit and signed `v1`, required installer attestation, and
   published one byte-matched live-verification record as a workflow artifact and Release asset.
 - [`SECURITY.md`](SECURITY.md), [threat model](docs/threat-model.md),
