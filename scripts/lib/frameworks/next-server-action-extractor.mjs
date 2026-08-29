@@ -88,11 +88,20 @@ function priorityFor(action) {
     ? 'review_next' : 'no_automatic_priority', reasons };
 }
 
-export function extractNextServerActions(graph) {
+export function extractNextServerActions(graph, options = {}) {
   const records = [];
   const reasons = [];
-  const accessBudget = createAccessPathBudget();
+  const pathReasons = [];
+  const context = options.accessPathContext || {
+    budget: createAccessPathBudget(),
+    callableIndex: options.callableIndex,
+  };
   let eligible = 0;
+  let pathDiscovered = 0;
+  let pathEligible = 0;
+  let pathScanned = 0;
+  let pathTruncated = 0;
+  let pathErrors = 0;
   for (const module of graph.modules.values()) {
     if (!module.ast) continue;
     const exported = exportedActions(module);
@@ -100,12 +109,12 @@ export function extractNextServerActions(graph) {
     eligible += 1;
     reasons.push(...exported.reasons);
     for (const candidate of exported.actions) {
+      pathDiscovered += 1;
       const identity = analyzeIdentityEvidence(graph, module, candidate.handler);
       const selected = extractSelectorEvidence({
         module, handler: candidate.handler, entryKind: 'server-action',
         imports: importedBindings(module), principalAliases: identity.principalAliases,
       });
-      reasons.push(...selected.limitations.map((item) => ({ code: item.code, path: module.path })));
       const authentication = authenticationEvidence(identity.identity);
       const actionScopedControl = routeScopedControlEvidence(
         authentication.state === 'local_observed' ? authentication.signals : [], [],
@@ -117,14 +126,27 @@ export function extractNextServerActions(graph) {
         actionScopedControl, limitations: selected.limitations.map((item) => item.code),
       });
       const exactSelectors = selected.selectors.filter((selector) => selector.origin === 'request_selected');
-      const paths = analyzeAccessPaths({
+      const pathRelevant = selected.selectors.length > 0 || selected.limitations.length > 0;
+      const paths = pathRelevant ? analyzeAccessPaths({
         graph, module, handler: candidate.handler, entry: { kind: 'server-action', id: seed.id,
           name: candidate.name, module },
         identity: identity.identity, selectorGroups: selected.selectorGroups,
         principalAliases: identity.principalAliases, tenantAliases: identity.tenantAliases,
-        budget: accessBudget,
-      });
-      reasons.push(...paths.coverage.reasons.map((code) => ({ code, path: module.path })));
+        budget: context.budget, callableIndex: context.callableIndex,
+      }) : {
+        chains: [], operations: [], limitations: [],
+        coverage: { counts: { truncated: 0 }, reasons: [] },
+      };
+      if (pathRelevant) {
+        pathEligible += 1;
+        pathScanned += 1;
+        const entryReasons = new Set([
+          ...selected.limitations.map((item) => item.code), ...paths.coverage.reasons,
+        ]);
+        for (const code of entryReasons) pathReasons.push({ code, path: module.path });
+        if (entryReasons.size) pathErrors += 1;
+        if (paths.coverage.counts.truncated > 0) pathTruncated += 1;
+      }
       const accessChains = paths.chains.map(accessChainRecord);
       if (!accessChains.length && selected.limitations.length && selected.selectors.length) {
         const unresolvedSelectors = selected.selectors.some((selector) => selector.origin === 'unknown')
@@ -156,6 +178,23 @@ export function extractNextServerActions(graph) {
       counts: { discovered: graph.modules.size, eligible, parsed: eligible,
         incomplete: new Set(reasons.map((item) => item.path)).size },
       reasons: aggregateReasons(reasons),
+    },
+    pathCoverage: {
+      id: 'source-js-route-object-authorization-review',
+      adapterId: 'builtin-source',
+      ruleId: 'js-route-object-authorization-review',
+      ruleRevision: '1',
+      status: !pathEligible ? 'not_applicable'
+        : pathErrors || pathTruncated ? 'partial' : 'completed',
+      counts: {
+        discovered: pathDiscovered,
+        eligible: pathEligible,
+        scanned: pathScanned,
+        skipped: pathEligible - pathScanned,
+        truncated: pathTruncated,
+        errors: pathErrors,
+      },
+      reasons: aggregateReasons(pathReasons),
     },
   };
 }

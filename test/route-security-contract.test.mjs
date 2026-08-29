@@ -40,6 +40,8 @@ const document = createRouteSecurityDocument({
   applicationControls: [{ framework: 'nestjs', kind: 'nest-global-guard-candidate',
     origin: 'RateLimitGuard', role: 'unclassified', location: { path: 'src/app.module.ts', line: 8 } }],
   coverage: [{ framework: 'express', status: 'completed', counts: { discovered: 1, eligible: 1, parsed: 1, incomplete: 0 }, reasons: [] }],
+  accessPathCoverage: { status: 'completed', counts: { discovered: 1, eligible: 1,
+    scanned: 1, skipped: 0, truncated: 0, errors: 0 }, reasons: [] },
   limitations: ['Static analysis does not prove runtime enforcement.'],
 });
 assert.deepEqual(validateRouteSecurityDocument(document), []);
@@ -80,8 +82,9 @@ degradedRoute.accessChains[0].authorizationEvidence = [{
 }];
 const degradedDocument = createRouteSecurityDocument({
   version: '0.7.0', generatedAt: document.generatedAt, mode: 'retest', subject: document.subject,
-  routes: [degradedRoute], applicationControls: document.applicationControls,
-  coverage: document.coverage, limitations: document.limitations,
+    routes: [degradedRoute], applicationControls: document.applicationControls,
+    coverage: document.coverage, accessPathCoverage: document.accessPathCoverage,
+    limitations: document.limitations,
 });
 const compared = compareRouteSecurityDocuments(degradedDocument, document, 'd'.repeat(64));
 assert.equal(compared.routes[0].baseline.reasonCode, 'authorization_evidence_disappeared');
@@ -110,6 +113,7 @@ legacy.analyzer.revision = '1';
 delete legacy.analyzer.analysisLimits;
 delete legacy.applicationControls;
 delete legacy.serverActions;
+delete legacy.accessPathCoverage;
 for (const key of ['serverActions', 'byRouteScopedControl', 'applicationControls',
   'byApplicationControlRole']) delete legacy.summary[key];
 for (const route of legacy.routes) {
@@ -128,6 +132,7 @@ const legacyV2 = structuredClone(document);
 legacyV2.schemaVersion = 2;
 legacyV2.analyzer.revision = '2';
 delete legacyV2.analyzer.analysisLimits;
+delete legacyV2.accessPathCoverage;
 for (const item of [...legacyV2.routes, ...legacyV2.serverActions]) {
   for (const chain of item.accessChains) {
     chain.outcome = chain.outcome === 'authorization_constraint_observed'
@@ -162,6 +167,7 @@ assert.deepEqual(golden.routes[0].accessChains.map((chain) => chain.status),
 assert.deepEqual(createRouteSecurityDocument({
   version: golden.tool.version, generatedAt: golden.generatedAt, mode: golden.mode,
   subject: golden.subject, routes: golden.routes, coverage: golden.coverage,
+  accessPathCoverage: golden.accessPathCoverage,
   applicationControls: golden.applicationControls, serverActions: golden.serverActions,
   limitations: golden.limitations, baseline: golden.baseline,
 }), golden, 'the checked-in v3 golden artifact must match the deterministic document model');

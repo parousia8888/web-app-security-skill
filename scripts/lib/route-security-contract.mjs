@@ -199,6 +199,7 @@ export function validateRouteSecurityDocument(document) {
     ? ['schemaVersion', 'tool', 'generatedAt', 'mode', 'subject', 'analyzer', 'summary', 'coverage',
       'routes', 'limitations', 'baseline']
     : ['schemaVersion', 'tool', 'generatedAt', 'mode', 'subject', 'analyzer', 'summary', 'coverage',
+      ...(version === 3 ? ['accessPathCoverage'] : []),
       'applicationControls', 'routes', 'serverActions', 'limitations', 'baseline'];
   for (const key of Object.keys(document)) {
     if (!allowed.includes(key)) errors.push(`document.${key} is not allowed`);
@@ -278,6 +279,41 @@ export function validateRouteSecurityDocument(document) {
     if (!['completed', 'partial', 'not_applicable'].includes(coverage.status)) errors.push(`coverage[${index}].status is invalid`);
     for (const key of ['discovered', 'eligible', 'parsed', 'incomplete']) {
       if (!Number.isInteger(coverage.counts?.[key]) || coverage.counts[key] < 0) errors.push(`coverage[${index}].counts.${key} is invalid`);
+    }
+  }
+  if (version === 3) {
+    const coverage = document?.accessPathCoverage;
+    rejectUnknown(errors, 'accessPathCoverage', coverage, ['status', 'counts', 'reasons']);
+    rejectUnknown(errors, 'accessPathCoverage.counts', coverage?.counts,
+      ['discovered', 'eligible', 'scanned', 'skipped', 'truncated', 'errors']);
+    const counts = coverage?.counts || {};
+    const countKeys = ['discovered', 'eligible', 'scanned', 'skipped', 'truncated', 'errors'];
+    if (!['completed', 'partial', 'not_applicable'].includes(coverage?.status)
+        || !countKeys.every((key) => Number.isInteger(counts[key])
+          && counts[key] >= 0 && counts[key] <= 15_000)
+        || counts.eligible > counts.discovered || counts.scanned > counts.eligible
+        || counts.skipped !== counts.eligible - counts.scanned
+        || counts.errors > counts.eligible || counts.truncated > counts.scanned
+        || !Array.isArray(coverage?.reasons) || coverage.reasons.length > 100) {
+      errors.push('accessPathCoverage is invalid');
+    }
+    if (coverage?.status === 'not_applicable' && counts.eligible !== 0) {
+      errors.push('accessPathCoverage not_applicable has eligible entries');
+    }
+    if (coverage?.status === 'completed'
+        && (counts.eligible === 0 || counts.skipped || counts.truncated || counts.errors)) {
+      errors.push('accessPathCoverage completed counts are inconsistent');
+    }
+    if (coverage?.status === 'partial'
+        && !(counts.skipped || counts.truncated || counts.errors)) {
+      errors.push('accessPathCoverage partial lacks an incomplete count');
+    }
+    for (const [index, reason] of (coverage?.reasons || []).entries()) {
+      const label = `accessPathCoverage.reasons[${index}]`;
+      rejectUnknown(errors, label, reason, ['code', 'count', 'samplePaths']);
+      if (!id(reason?.code) || !Number.isInteger(reason?.count) || reason.count < 1
+          || !Array.isArray(reason?.samplePaths) || reason.samplePaths.length > 10
+          || !reason.samplePaths.every(safePath)) errors.push(`${label} is invalid`);
     }
   }
   if (version >= 2) for (const [index, control] of (document.applicationControls || []).entries()) {

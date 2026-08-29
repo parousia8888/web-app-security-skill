@@ -39,7 +39,16 @@ function assertContext(document, mode) {
   assert.equal(route.authentication.state, 'inherited_observed');
   assert.ok(route.authentication.signals.some((signal) =>
     signal.location.path === 'src/app.ts' && signal.origin === 'passport:authenticate'));
-  assert.match(document.limitations.join('\n'), new RegExp(`This ${mode} artifact filters route records`));
+  assert.equal(route.accessChains[0].status, 'completed');
+  assert.equal(route.accessChains[0].callEdges[0].to, 'loadProject');
+  assert.equal(route.accessChains[0].dataOperation.location.path, 'src/project-service.ts');
+  assert.equal(document.serverActions.length, 0,
+    `${mode} must filter unchanged Server Actions after whole-project analysis`);
+  assert.deepEqual(document.accessPathCoverage.counts, {
+    discovered: 2, eligible: 2, scanned: 2, skipped: 0, truncated: 0, errors: 0,
+  });
+  assert.match(document.limitations.join('\n'),
+    new RegExp(`This ${mode} artifact filters route and Server Action records`));
 }
 
 try {
@@ -48,7 +57,8 @@ try {
   git('config', 'user.name', 'Route Diff Fixture');
   git('config', 'user.email', 'route-diff@example.invalid');
   write(join(project, 'package.json'), `${JSON.stringify({
-    private: true, dependencies: { express: '5.1.0', passport: '0.7.0' },
+    private: true, dependencies: { express: '5.1.0', passport: '0.7.0', next: '15.0.0',
+      '@prisma/client': '6.0.0' },
   })}\n`);
   write(join(project, 'package-lock.json'), '{"lockfileVersion":3}\n');
   write(join(project, 'src', 'app.ts'), `
@@ -61,16 +71,33 @@ app.use('/api', router);
 `);
   write(join(project, 'src', 'router.ts'), `
 import express from 'express';
+import { loadProject } from './project-service';
 const router = express.Router();
 export default router;
+`);
+  write(join(project, 'src', 'project-service.ts'), `
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+export function loadProject(id) {
+  return prisma.project.findUnique({ where: { id } });
+}
+`);
+  write(join(project, 'src', 'unchanged-action.ts'), `
+"use server";
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+export async function loadAction(projectId) {
+  return prisma.project.findUnique({ where: { id: projectId } });
+}
 `);
   git('add', '.');
   git('commit', '-qm', 'fixture baseline');
 
   write(join(project, 'src', 'router.ts'), `
 import express from 'express';
+import { loadProject } from './project-service';
 const router = express.Router();
-router.patch('/projects/:id', updateProject);
+router.patch('/projects/:id', async (req, res) => res.json(await loadProject(req.params.id)));
 export default router;
 `);
   assertContext(audit('since-report', ['--since', 'HEAD']), 'since');

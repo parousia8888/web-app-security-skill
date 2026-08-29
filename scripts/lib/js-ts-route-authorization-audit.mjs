@@ -93,7 +93,7 @@ function handlerForRoute(module, route) {
   return null;
 }
 
-function directAccessChains(graph, module, route, handler, budget) {
+function directAccessChains(graph, module, route, handler, context) {
   const identity = analyzeIdentityEvidence(graph, module, handler);
   const selected = extractSelectorEvidence({
     module, handler, framework: route.framework, routePath: route.path, entryKind: 'route',
@@ -104,7 +104,8 @@ function directAccessChains(graph, module, route, handler, budget) {
     graph, module, handler, entry: { kind: 'route', id: route.id,
       name: route.handler || route.id, module },
     identity: identity.identity, selectorGroups: selected.selectorGroups,
-    principalAliases: identity.principalAliases, tenantAliases: identity.tenantAliases, budget,
+    principalAliases: identity.principalAliases, tenantAliases: identity.tenantAliases,
+    budget: context.budget, callableIndex: context.callableIndex,
   });
   const pathChains = paths.chains.map(accessChainRecord);
   const selectorIncomplete = selected.limitations.length > 0;
@@ -127,6 +128,7 @@ function directAccessChains(graph, module, route, handler, budget) {
       ...paths.limitations,
       ...paths.chains.map((item) => item.reason).filter(Boolean)],
     coverageReasons: paths.coverage.reasons,
+    coverageCounts: paths.coverage.counts,
     selectors: selected.selectors,
   };
 }
@@ -144,21 +146,32 @@ function aggregateReasons(items) {
   return [...grouped.values()].sort((left, right) => left.code.localeCompare(right.code));
 }
 
-export function auditJsTsRouteAuthorization(graph, routes) {
-  const reasons = [...graph.reasons];
-  const accessBudget = createAccessPathBudget();
+export function auditJsTsRouteAuthorization(graph, routes, options = {}) {
+  const reasons = [];
+  const context = options.accessPathContext || {
+    budget: createAccessPathBudget(),
+    callableIndex: options.callableIndex,
+  };
   const reviewedRoutes = [];
   let scanned = 0;
   let eligible = 0;
+  let truncated = 0;
+  let errors = 0;
   for (const route of routes) {
     if (!route.path) {
-      reviewedRoutes.push(route);
+      eligible += 1;
+      errors += 1;
+      reasons.push({ code: 'route_path_unresolved', path: route.location.path });
+      reviewedRoutes.push({ ...route, limitations: [...new Set([
+        ...route.limitations, 'route-object-authorization-analysis-incomplete',
+      ])].sort() });
       continue;
     }
     const module = graph.modules.get(route.location.path);
     if (!module?.ast) {
       if (route.objectAddressed) {
         eligible += 1;
+        errors += 1;
         reasons.push({ code: 'route_handler_source_incomplete', path: route.location.path });
         reviewedRoutes.push({ ...route, limitations: [...new Set([
           ...route.limitations, 'route-object-authorization-analysis-incomplete',
@@ -170,6 +183,7 @@ export function auditJsTsRouteAuthorization(graph, routes) {
     if (!handler) {
       if (route.objectAddressed) {
         eligible += 1;
+        errors += 1;
         reasons.push({ code: 'route_handler_unresolved', path: route.location.path });
         reviewedRoutes.push({ ...route, limitations: [...new Set([
           ...route.limitations, 'route-object-authorization-analysis-incomplete',
@@ -177,17 +191,21 @@ export function auditJsTsRouteAuthorization(graph, routes) {
       } else reviewedRoutes.push(route);
       continue;
     }
-    const access = directAccessChains(graph, module, route, handler, accessBudget);
+    const access = directAccessChains(graph, module, route, handler, context);
     if (!route.objectAddressed && !access.selectors.length) {
       reviewedRoutes.push(route);
       continue;
     }
     eligible += 1;
     scanned += 1;
+    const entryReasons = new Set(access.coverageReasons);
     for (const code of access.limitations.filter((item) => item.startsWith('selector_'))) {
+      entryReasons.add(code);
       reasons.push({ code, path: route.location.path });
     }
     for (const code of access.coverageReasons) reasons.push({ code, path: route.location.path });
+    if (entryReasons.size) errors += 1;
+    if (access.coverageCounts.truncated > 0) truncated += 1;
     const operations = access.operations.map((item) => `${item.provider}-${item.operation}`);
     const limitations = [...route.limitations];
     limitations.push(...access.limitations);
@@ -203,7 +221,9 @@ export function auditJsTsRouteAuthorization(graph, routes) {
   }
   const uniqueReasons = reasons.filter((item, index, items) =>
     items.findIndex((candidate) => candidate.code === item.code && candidate.path === item.path) === index);
-  const status = !eligible ? 'not_applicable' : uniqueReasons.length ? 'partial' : 'completed';
+  const skipped = eligible - scanned;
+  const status = !eligible ? 'not_applicable'
+    : errors || truncated || skipped ? 'partial' : 'completed';
   return {
     routes: reviewedRoutes,
     coverage: {
@@ -216,10 +236,9 @@ export function auditJsTsRouteAuthorization(graph, routes) {
         discovered: routes.length,
         eligible,
         scanned,
-        excluded: routes.length - eligible,
-        skipped: eligible - scanned,
-        truncated: 0,
-        errors: uniqueReasons.length,
+        skipped,
+        truncated,
+        errors,
       },
       reasons: aggregateReasons(uniqueReasons),
     },

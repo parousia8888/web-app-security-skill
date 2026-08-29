@@ -5,7 +5,7 @@
   "description": "Bounded static route and access-path evidence. Observed source evidence does not imply runtime enforcement, authorization correctness, reachability or exploitability.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "tool", "generatedAt", "mode", "subject", "analyzer", "summary", "coverage", "applicationControls", "routes", "serverActions", "limitations", "baseline"],
+  "required": ["schemaVersion", "tool", "generatedAt", "mode", "subject", "analyzer", "summary", "coverage", "accessPathCoverage", "applicationControls", "routes", "serverActions", "limitations", "baseline"],
   "properties": {
     "schemaVersion": { "const": 3 },
     "tool": {
@@ -50,6 +50,7 @@
     },
     "summary": { "$ref": "#/$defs/summary" },
     "coverage": { "type": "array", "maxItems": 3, "items": { "$ref": "#/$defs/coverage" } },
+    "accessPathCoverage": { "$ref": "#/$defs/accessPathCoverage" },
     "applicationControls": { "type": "array", "maxItems": 1000, "items": { "$ref": "#/$defs/applicationControl" } },
     "routes": { "type": "array", "maxItems": 10000, "items": { "$ref": "#/$defs/route" } },
     "serverActions": { "type": "array", "maxItems": 5000, "items": { "$ref": "#/$defs/serverAction" } },
@@ -192,6 +193,26 @@
       "properties": {
         "code": { "$ref": "#/$defs/id" }, "count": { "type": "integer", "minimum": 1, "maximum": 100000 },
         "samplePaths": { "type": "array", "maxItems": 10, "items": { "$ref": "#/$defs/safePath" } }
+      }
+    },
+    "accessPathCoverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "counts", "reasons"],
+      "properties": {
+        "status": { "enum": ["completed", "partial", "not_applicable"] },
+        "counts": {
+          "type": "object", "additionalProperties": false,
+          "required": ["discovered", "eligible", "scanned", "skipped", "truncated", "errors"],
+          "properties": {
+            "discovered": { "type": "integer", "minimum": 0, "maximum": 15000 },
+            "eligible": { "type": "integer", "minimum": 0, "maximum": 15000 },
+            "scanned": { "type": "integer", "minimum": 0, "maximum": 15000 },
+            "skipped": { "type": "integer", "minimum": 0, "maximum": 15000 },
+            "truncated": { "type": "integer", "minimum": 0, "maximum": 15000 },
+            "errors": { "type": "integer", "minimum": 0, "maximum": 15000 }
+          }
+        },
+        "reasons": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/coverageReason" } }
       }
     },
     "safePath": { "type": "string", "minLength": 1, "maxLength": 240, "pattern": "^(?!/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000-\\u001f\\u007f]+$" },

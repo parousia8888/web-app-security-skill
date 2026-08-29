@@ -313,10 +313,13 @@ try {
     const routeAnalysis = audit.routeAnalysis;
     const selectedRoutes = diffScope
       ? selectDiffRoutes(routeAnalysis.routes, diffScope) : routeAnalysis.routes;
+    const selectedServerActions = diffScope
+      ? selectDiffRoutes(routeAnalysis.serverActions || [], diffScope)
+      : routeAnalysis.serverActions || [];
     const routeLimitations = [
       ...routeAnalysis.limitations,
       ...(diffScope ? [
-        `This ${diffScope.selection.mode} artifact filters route records to changed declarations or control evidence after whole-project context analysis.`,
+        `This ${diffScope.selection.mode} artifact filters route and Server Action records to changed declarations or control evidence after whole-project context analysis.`,
         diffScope.selection.mode === 'since'
           ? `Untracked files were outside the Git diff (${diffScope.selection.untrackedFilesExcluded} observed).`
           : 'The route analysis used the isolated Git index snapshot; unstaged content was excluded.',
@@ -325,8 +328,9 @@ try {
     routeDocument = createRouteSecurityDocument({
       version: report.tool.version, generatedAt: now.toISOString(), mode, subject,
       routes: selectedRoutes, coverage: routeAnalysis.coverage,
+      accessPathCoverage: routeAnalysis.accessPathCoverage,
       applicationControls: routeAnalysis.applicationControls,
-      serverActions: routeAnalysis.serverActions || [], limitations: routeLimitations,
+      serverActions: selectedServerActions, limitations: routeLimitations,
     });
     if (baselinePath) {
       const routeBaseline = readRouteSecurityBaseline(resolve(baselinePath));
@@ -338,7 +342,8 @@ try {
         routeDocument = createRouteSecurityDocument({
           version: routeDocument.tool.version, generatedAt: routeDocument.generatedAt,
           mode: routeDocument.mode, subject: routeDocument.subject, routes: routeDocument.routes,
-          coverage: routeDocument.coverage, applicationControls: routeDocument.applicationControls,
+          coverage: routeDocument.coverage, accessPathCoverage: routeDocument.accessPathCoverage,
+          applicationControls: routeDocument.applicationControls,
           serverActions: routeDocument.serverActions,
           limitations: [...routeDocument.limitations,
             'The report baseline has no route-security companion artifact, so route baseline comparison was not attempted.'],

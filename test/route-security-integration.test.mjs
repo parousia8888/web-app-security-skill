@@ -61,6 +61,7 @@ import express from 'express';
 import passport from 'passport';
 const app = express();
 app.patch('/projects/:id', passport.authenticate('jwt'), updateProject);
+function updateProject(_req, res) { return res.sendStatus(204); }
 `);
   const normalOut = join(temp, 'normal-report');
   let result = run(['audit', normal, '--out', normalOut, '--fail-on', 'never'], 0);
@@ -75,6 +76,23 @@ app.patch('/projects/:id', passport.authenticate('jwt'), updateProject);
   for (const name of ['route-security.json', 'route-security.md', 'route-security.sha256']) {
     assert.equal(statSync(join(normalOut, name)).mode & 0o077, 0, `${name} must be private`);
   }
+
+  const pathIncomplete = project('path-incomplete', `
+import express from 'express';
+const app = express();
+app.get('/projects/:id', missingHandler);
+`);
+  const pathIncompleteOut = join(temp, 'path-incomplete-report');
+  run(['audit', pathIncomplete, '--out', pathIncompleteOut, '--fail-on', 'never'], 3);
+  const pathIncompleteRoute = loadRoute(pathIncompleteOut);
+  assert.equal(pathIncompleteRoute.coverage.find((entry) => entry.framework === 'express').status,
+    'completed');
+  assert.equal(pathIncompleteRoute.accessPathCoverage.status, 'partial');
+  assert.equal(pathIncompleteRoute.accessPathCoverage.counts.skipped, 1);
+  const pathIncompleteReport = JSON.parse(readFileSync(
+    join(pathIncompleteOut, 'report.json'), 'utf8'));
+  assert.ok(pathIncompleteReport.findings.some((finding) =>
+    finding.rule.id === 'js-route-security-evidence-incomplete' && finding.state === 'unknown'));
 
   const malformed = project('malformed', `
 import express from 'express';
@@ -97,6 +115,7 @@ app.use('/api', require('./routes'));
   write(join(commonJs, 'src', 'routes.js'), `
 const router = require('express').Router();
 router.get('/orders/:id', showOrder);
+function showOrder(_req, res) { return res.sendStatus(200); }
 module.exports = router;
 `);
   const commonJsOut = join(temp, 'commonjs-direct-report');
@@ -143,6 +162,9 @@ const app = express();
 app.get('/same', sameHandler);
 app.patch('/changed/:id', passport.authenticate('jwt'), changedHandler);
 app.delete('/removed/:id', removedHandler);
+function sameHandler(_req, res) { return res.sendStatus(200); }
+function changedHandler(_req, res) { return res.sendStatus(204); }
+function removedHandler(_req, res) { return res.sendStatus(204); }
 `);
   const runs = join(temp, 'lifecycle-runs');
   const baselineDir = start(lifecycle, runs, 'baseline');
@@ -154,6 +176,9 @@ const app = express();
 app.get('/same', sameHandler);
 app.patch('/changed/:id', changedHandler);
 app.post('/added', addedHandler);
+function sameHandler(_req, res) { return res.sendStatus(200); }
+function changedHandler(_req, res) { return res.sendStatus(204); }
+function addedHandler(_req, res) { return res.sendStatus(201); }
 `);
   const changedDir = start(lifecycle, runs, 'changed');
   run(['retest', changedDir, '--name', 'changed', '--baseline', baselinePath,

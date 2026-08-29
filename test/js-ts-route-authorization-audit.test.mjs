@@ -200,7 +200,8 @@ const incomplete = auditJsTsRouteAuthorization(incompleteGraph, [{
   ...routes[0], location: { path: 'src/broken.ts', line: 1 },
 }]);
 assert.equal(incomplete.coverage.status, 'partial');
-assert.ok(incomplete.coverage.reasons.some((reason) => reason.code === 'js_ts_ast_parse_error'));
+assert.ok(incomplete.coverage.reasons.some((reason) =>
+  reason.code === 'route_handler_source_incomplete'));
 
 const transformed = runAudit([{ path: 'src/app/transformed/route.ts', text: `
 export async function POST(request) {

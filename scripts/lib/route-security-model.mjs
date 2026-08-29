@@ -358,7 +358,14 @@ export function createRouteSecurityDocument(options) {
     .sort((left, right) => [left.framework, left.location.path, left.location.line || 0, left.kind]
       .join('\u0000').localeCompare([right.framework, right.location.path,
         right.location.line || 0, right.kind].join('\u0000')));
-  const serverActions = [...(options.serverActions || [])];
+  const serverActions = [...(options.serverActions || [])].sort((left, right) =>
+    [left.location.path, left.location.line || 0, left.name].join('\u0000')
+      .localeCompare([right.location.path, right.location.line || 0, right.name].join('\u0000')));
+  const accessPathCoverage = options.accessPathCoverage || {
+    status: 'not_applicable',
+    counts: { discovered: 0, eligible: 0, scanned: 0, skipped: 0, truncated: 0, errors: 0 },
+    reasons: [],
+  };
   return {
     schemaVersion: 3,
     tool: { name: 'Web App Security Skill', version: options.version },
@@ -372,6 +379,7 @@ export function createRouteSecurityDocument(options) {
     },
     summary: summaryFor(routes, applicationControls, serverActions),
     coverage: [...(options.coverage || [])].sort((a, b) => a.framework.localeCompare(b.framework)),
+    accessPathCoverage,
     applicationControls,
     routes,
     serverActions,

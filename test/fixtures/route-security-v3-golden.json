@@ -71,6 +71,24 @@
       "reasons": []
     }
   ],
+  "accessPathCoverage": {
+    "status": "partial",
+    "counts": {
+      "discovered": 1,
+      "eligible": 1,
+      "scanned": 1,
+      "skipped": 0,
+      "truncated": 0,
+      "errors": 1
+    },
+    "reasons": [
+      {
+        "code": "call_target_unresolved",
+        "count": 1,
+        "samplePaths": ["src/routes/project.ts"]
+      }
+    ]
+  },
   "applicationControls": [],
   "routes": [
     {
