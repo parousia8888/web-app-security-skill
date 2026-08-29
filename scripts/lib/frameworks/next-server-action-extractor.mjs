@@ -1,14 +1,14 @@
 import { analyzeDataOperations } from '../js-ts-data-operation-evidence.mjs';
 import { analyzeIdentityEvidence } from '../js-ts-identity-evidence.mjs';
 import { analyzeOneHopAccess } from '../js-ts-one-hop-access.mjs';
+import { extractSelectorEvidence } from '../js-ts-selector-evidence.mjs';
 import {
   accessChainRecord, controlEvidence, routeScopedControlEvidence, serverActionRecord,
 } from '../route-security-model.mjs';
 import {
-  aggregateReasons, sourceLocation, walkJsTsAst,
+  aggregateReasons, importedBindings, sourceLocation,
 } from './route-extractor-helpers.mjs';
 
-const ID_NAME = /(?:^|[_-])id$|Id$/;
 const FUNCTION_TYPES = new Set(['FunctionDeclaration', 'FunctionExpression', 'ArrowFunctionExpression']);
 
 function directiveObserved(container) {
@@ -69,36 +69,6 @@ function exportedActions(module) {
     applicable: moduleDirective || [...values.values()].some((handler) => directiveObserved(handler.body)) };
 }
 
-function objectSelectors(module, handler) {
-  const aliases = new Set();
-  const selectors = [];
-  const parameters = new Set();
-  for (const raw of handler.params || []) {
-    const parameter = raw.type === 'AssignmentPattern' ? raw.left : raw;
-    if (parameter?.type !== 'Identifier') continue;
-    parameters.add(parameter.name);
-    if (ID_NAME.test(parameter.name)) {
-      aliases.add(parameter.name);
-      selectors.push({ kind: 'action-parameter', name: parameter.name,
-        location: sourceLocation(module.path, parameter) });
-    }
-  }
-  walkJsTsAst(handler.body, (node) => {
-    if (node.type !== 'VariableDeclarator' || node.id?.type !== 'Identifier'
-        || node.init?.type !== 'CallExpression' || node.init.arguments.length !== 1) return;
-    const callee = node.init.callee;
-    if (callee?.type !== 'MemberExpression' || callee.computed
-        || callee.property?.name !== 'get' || callee.object?.type !== 'Identifier'
-        || !parameters.has(callee.object.name)) return;
-    const selected = node.init.arguments[0]?.type === 'StringLiteral' ? node.init.arguments[0].value : null;
-    if (!selected || !ID_NAME.test(selected)) return;
-    aliases.add(node.id.name);
-    selectors.push({ kind: 'form-data-field', name: selected,
-      location: sourceLocation(module.path, node) });
-  });
-  return { aliases, selectors };
-}
-
 function authenticationEvidence(identity) {
   if (identity.state === 'not_observed') return controlEvidence('not_observed', [],
     'No exact supported identity-provider call was observed in this Server Action.');
@@ -149,8 +119,12 @@ export function extractNextServerActions(graph) {
     eligible += 1;
     reasons.push(...exported.reasons);
     for (const candidate of exported.actions) {
-      const selected = objectSelectors(module, candidate.handler);
       const identity = analyzeIdentityEvidence(graph, module, candidate.handler);
+      const selected = extractSelectorEvidence({
+        module, handler: candidate.handler, entryKind: 'server-action',
+        imports: importedBindings(module), principalAliases: identity.principalAliases,
+      });
+      reasons.push(...selected.limitations.map((item) => ({ code: item.code, path: module.path })));
       const authentication = authenticationEvidence(identity.identity);
       const actionScopedControl = routeScopedControlEvidence(
         authentication.state === 'local_observed' ? authentication.signals : [], [],
@@ -159,27 +133,46 @@ export function extractNextServerActions(graph) {
         name: candidate.name, location: sourceLocation(module.path, candidate.handler),
         authentication, authorization: controlEvidence('not_observed', [],
           'No supported action-scoped authorization construct was observed.'),
-        actionScopedControl, limitations: [],
+        actionScopedControl, limitations: selected.limitations.map((item) => item.code),
       });
-      const direct = analyzeDataOperations(graph, module, candidate.handler, {
-        objectAliases: selected.aliases, principalAliases: identity.principalAliases,
-      });
-      const oneHop = analyzeOneHopAccess({
+      const exactSelectors = selected.selectors.filter((selector) => selector.origin === 'request_selected');
+      const analyzedGroups = selected.selectorGroups.map((group) => ({ group,
+        analyzed: analyzeDataOperations(graph, module, candidate.handler, {
+          objectAliases: group.aliases, objectNodes: group.nodes,
+          principalAliases: identity.principalAliases,
+        }) }));
+      const oneHop = selected.selectorGroups.flatMap((group) => analyzeOneHopAccess({
         graph, module, handler: candidate.handler, entry: { kind: 'server-action', id: seed.id,
           name: candidate.name, module },
-        identity: identity.identity, objectAliases: selected.aliases,
-        principalAliases: identity.principalAliases, objectSelectors: selected.selectors,
-      });
+        identity: identity.identity, objectAliases: group.aliases,
+        objectNodes: group.nodes,
+        principalAliases: identity.principalAliases, objectSelectors: [group.selector],
+      }));
       const accessChains = [
-        ...direct.operations.map((operation) => directChain(seed, identity.identity,
-          selected.selectors, operation)),
+        ...analyzedGroups.flatMap(({ group, analyzed }) => analyzed.operations
+          .map((operation) => directChain(seed, identity.identity, [group.selector], operation))),
         ...oneHop.map(accessChainRecord),
       ];
+      if (!accessChains.length && selected.limitations.length && selected.selectors.length) {
+        const unresolvedSelectors = selected.selectors.some((selector) => selector.origin === 'unknown')
+          ? selected.selectors.filter((selector) => selector.origin === 'unknown')
+          : exactSelectors.map((selector) => ({ ...selector, origin: 'unknown' }));
+        accessChains.push(accessChainRecord({
+          entryKind: 'server-action', entryId: seed.id, status: 'partial', outcome: 'incomplete',
+          identity: identity.identity,
+          objectSelectors: unresolvedSelectors,
+          callEdges: [], dataOperation: null, reason: 'selector_source_unresolved',
+          limitations: selected.limitations.map((item) => item.code),
+          evidenceBoundary: 'A dynamic or ambiguous Server Action selector was observed, but its exact field or value origin could not be established. No object-authorization conclusion is available.',
+        }));
+      }
       const action = serverActionRecord({
         ...seed, accessChains,
-        operations: [...direct.operations, ...oneHop.map((item) => item.dataOperation).filter(Boolean)]
+        operations: [...analyzedGroups.flatMap(({ analyzed }) => analyzed.operations),
+          ...oneHop.map((item) => item.dataOperation).filter(Boolean)]
           .map((item) => `${item.provider}-${item.operation}`),
-        limitations: oneHop.map((item) => item.reason).filter(Boolean),
+        limitations: [...selected.limitations.map((item) => item.code),
+          ...oneHop.map((item) => item.reason).filter(Boolean)],
       });
       records.push({ ...action, priority: priorityFor(action) });
     }

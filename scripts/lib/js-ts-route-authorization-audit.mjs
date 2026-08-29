@@ -4,9 +4,9 @@ import { analyzeDataOperations } from './js-ts-data-operation-evidence.mjs';
 import { analyzeIdentityEvidence } from './js-ts-identity-evidence.mjs';
 import { analyzeOneHopAccess } from './js-ts-one-hop-access.mjs';
 import { importedBindings } from './frameworks/route-extractor-helpers.mjs';
+import { extractSelectorEvidence } from './js-ts-selector-evidence.mjs';
 import { prioritizeRoute } from './route-security-priority.mjs';
 import { accessChainRecord } from './route-security-model.mjs';
-import { isPrincipalExpressionName, isPrincipalOrTenantKey } from './access-control-vocabulary.mjs';
 
 export const ROUTE_AUTHORIZATION_RULE_ID = 'js-route-object-authorization-review';
 
@@ -14,7 +14,6 @@ const FUNCTION_TYPES = new Set([
   'ArrowFunctionExpression', 'FunctionDeclaration', 'FunctionExpression', 'ClassMethod',
   'ClassPrivateMethod', 'ObjectMethod',
 ]);
-const ID_ROUTE_PARAM = /(?:^|[_-])id$|Id$/;
 
 function unwrap(node) {
   let current = node;
@@ -27,11 +26,6 @@ function unwrap(node) {
 
 function safeName(node) {
   return expressionName(unwrap(node));
-}
-
-function propertyName(property) {
-  if (!property || !['ObjectProperty', 'ObjectMethod'].includes(property.type)) return null;
-  return safeName(property.key);
 }
 
 function functionBodyNodes(root, visit) {
@@ -118,81 +112,6 @@ function handlerForRoute(module, route) {
   return null;
 }
 
-function routeParameterNames(path) {
-  const names = [];
-  const pattern = /:([A-Za-z_$][\w$]*)|\[(?:\.\.\.)?([^\]]+)\]/g;
-  for (const match of String(path || '').matchAll(pattern)) {
-    const name = match[1] || match[2];
-    if (ID_ROUTE_PARAM.test(name)) names.push(name);
-  }
-  return [...new Set(names)];
-}
-
-function objectPatternBindings(pattern, allowedKeys) {
-  const bindings = [];
-  if (pattern?.type !== 'ObjectPattern') return bindings;
-  for (const property of pattern.properties) {
-    if (property.type !== 'ObjectProperty') continue;
-    const key = propertyName(property);
-    if (!allowedKeys.has(key)) continue;
-    const value = unwrap(property.value);
-    if (value?.type === 'Identifier') bindings.push(value.name);
-    if (value?.type === 'AssignmentPattern' && value.left?.type === 'Identifier') bindings.push(value.left.name);
-  }
-  return bindings;
-}
-
-function nestParamAliases(handler, imports, names, aliases, containers) {
-  for (const rawParameter of handler.params || []) {
-    const parameter = rawParameter.type === 'TSParameterProperty' ? rawParameter.parameter : rawParameter;
-    for (const decorator of parameter.decorators || []) {
-      const call = decorator.expression?.type === 'CallExpression' ? decorator.expression : null;
-      const local = safeName(call?.callee);
-      const binding = imports.get(local);
-      if (binding?.source !== '@nestjs/common' || binding.imported !== 'Param') continue;
-      const selected = call.arguments[0]?.type === 'StringLiteral' ? call.arguments[0].value : null;
-      if (selected && names.includes(selected) && parameter.type === 'Identifier') aliases.add(parameter.name);
-      if (!selected && parameter.type === 'Identifier') {
-        containers.add(parameter.name);
-        for (const name of names) aliases.add(`${parameter.name}.${name}`);
-      }
-    }
-  }
-}
-
-function initialRouteAliases(route, handler, imports) {
-  const names = routeParameterNames(route.path);
-  const aliases = new Set();
-  const containers = new Set();
-  if (!names.length) return { names, aliases, containers };
-  if (route.framework === 'express') {
-    const request = unwrap(handler.params?.[0]);
-    if (request?.type === 'Identifier') {
-      containers.add(`${request.name}.params`);
-      for (const name of names) aliases.add(`${request.name}.params.${name}`);
-    } else if (request?.type === 'ObjectPattern') {
-      const params = objectPatternBindings(request, new Set(['params']));
-      for (const local of params) {
-        containers.add(local);
-        for (const name of names) aliases.add(`${local}.${name}`);
-      }
-    }
-  } else if (route.framework === 'next-app') {
-    const context = unwrap(handler.params?.[1]);
-    if (context?.type === 'Identifier') {
-      containers.add(`${context.name}.params`);
-      for (const name of names) aliases.add(`${context.name}.params.${name}`);
-    } else if (context?.type === 'ObjectPattern') {
-      const params = objectPatternBindings(context, new Set(['params']));
-      for (const local of params) {
-        containers.add(local);
-        for (const name of names) aliases.add(`${local}.${name}`);
-      }
-    }
-  } else if (route.framework === 'nestjs') nestParamAliases(handler, imports, names, aliases, containers);
-  return { names, aliases, containers };
-}
-
 function routeExpression(node, aliases) {
   const current = unwrap(node);
   const name = safeName(current);
@@ -232,108 +151,80 @@ function delegatedSelectorObserved(handler, aliases) {
   return observed;
 }
 
-function collectLocalFacts(handler, routeFacts) {
-  const objectValues = new Map();
-  const principalAliases = new Set();
-  const variableNodes = [];
-  functionBodyNodes(handler, (node) => {
-    if (node.type === 'VariableDeclarator') variableNodes.push(node);
-  });
-  for (let pass = 0; pass < 4; pass += 1) {
-    let changed = false;
-    for (const declaration of variableNodes) {
-      const init = unwrap(declaration.init);
-      if (declaration.id?.type === 'Identifier') {
-        if (init?.type === 'ObjectExpression') objectValues.set(declaration.id.name, init);
-        if (routeExpression(init, routeFacts.aliases) && !routeFacts.aliases.has(declaration.id.name)) {
-          routeFacts.aliases.add(declaration.id.name);
-          changed = true;
-        }
-        if (isPrincipalExpression(init, principalAliases) && !principalAliases.has(declaration.id.name)) {
-          principalAliases.add(declaration.id.name);
-          changed = true;
-        }
-      }
-      if (declaration.id?.type !== 'ObjectPattern') continue;
-      const initName = safeName(init);
-      if (routeFacts.containers.has(initName)) {
-        for (const local of objectPatternBindings(declaration.id, new Set(routeFacts.names))) {
-          if (!routeFacts.aliases.has(local)) {
-            routeFacts.aliases.add(local);
-            changed = true;
-          }
-        }
-      }
-      const authCall = init?.type === 'CallExpression'
-        && /(?:^|\.)(?:auth|getSession|getServerSession|currentUser)$/.test(safeName(init.callee) || '');
-      if (authCall) {
-        for (const property of declaration.id.properties) {
-          if (property.type !== 'ObjectProperty'
-              || !isPrincipalOrTenantKey(propertyName(property))) continue;
-          const local = safeName(property.value);
-          if (local && !principalAliases.has(local)) {
-            principalAliases.add(local);
-            changed = true;
-          }
-        }
-      }
-    }
-    if (!changed) break;
-  }
-  return { objectValues, principalAliases };
-}
-
-function isPrincipalExpression(node, aliases = new Set()) {
-  return isPrincipalExpressionName(safeName(node), aliases);
-}
-
 function directAccessChains(graph, module, route, handler) {
-  const routeFacts = initialRouteAliases(route, handler, importedBindings(module));
-  collectLocalFacts(handler, routeFacts);
   const identity = analyzeIdentityEvidence(graph, module, handler);
-  const analyzed = analyzeDataOperations(graph, module, handler, {
-    objectAliases: routeFacts.aliases,
-    principalAliases: identity.principalAliases,
+  const selected = extractSelectorEvidence({
+    module, handler, framework: route.framework, routePath: route.path, entryKind: 'route',
+    imports: importedBindings(module), principalAliases: identity.principalAliases,
   });
-  const objectSelectors = routeFacts.names.map((name) => ({
-    kind: 'route-parameter', name, location: route.location,
-  }));
-  const directChains = analyzed.operations.map((dataOperation) => {
-    const constrained = dataOperation.principalConstraint === 'observed'
-      || dataOperation.tenantConstraint === 'observed';
-    const outcome = constrained ? 'principal_constraint_observed'
-      : dataOperation.externalPolicy === 'external_policy_required'
-        ? 'external_policy_required' : 'principal_constraint_not_observed';
-    return accessChainRecord({
-      entryKind: 'route', entryId: route.id, status: 'completed', outcome,
-      identity: identity.identity, objectSelectors, callEdges: [], dataOperation,
-      evidenceBoundary: dataOperation.externalPolicy === 'external_policy_required'
-        ? 'The request-selected object reaches a supported Supabase operation. Query constraints are static evidence only, and database row-level security must be checked separately.'
-        : 'The request-selected object reaches a supported same-handler data operation. Visible query constraints do not prove runtime authorization, and missing visible constraints do not prove a vulnerability.',
-    });
-  });
-  const incompleteChains = analyzed.incomplete.map((reason) => accessChainRecord({
+  const objectSelectors = selected.selectors.filter((selector) => selector.origin === 'request_selected');
+  const analyzedGroups = selected.selectorGroups.map((group) => ({ group,
+    analyzed: analyzeDataOperations(graph, module, handler, {
+      objectAliases: group.aliases, objectNodes: group.nodes,
+      principalAliases: identity.principalAliases,
+    }) }));
+  const directChains = analyzedGroups.flatMap(({ group, analyzed }) =>
+    analyzed.operations.map((dataOperation) => {
+      const constrained = dataOperation.principalConstraint === 'observed'
+        || dataOperation.tenantConstraint === 'observed';
+      const outcome = constrained ? 'principal_constraint_observed'
+        : dataOperation.externalPolicy === 'external_policy_required'
+          ? 'external_policy_required' : 'principal_constraint_not_observed';
+      return accessChainRecord({
+        entryKind: 'route', entryId: route.id, status: 'completed', outcome,
+        identity: identity.identity, objectSelectors: [group.selector], callEdges: [], dataOperation,
+        evidenceBoundary: dataOperation.externalPolicy === 'external_policy_required'
+          ? 'The request-selected object reaches a supported Supabase operation. Query constraints are static evidence only, and database row-level security must be checked separately.'
+          : 'The request-selected object reaches a supported same-handler data operation. Visible query constraints do not prove runtime authorization, and missing visible constraints do not prove a vulnerability.',
+      });
+    }));
+  const incompleteReasons = analyzedGroups.flatMap(({ analyzed }) => analyzed.incomplete)
+    .filter((item, index, items) => items.findIndex((candidate) => candidate.code === item.code
+      && candidate.location.path === item.location.path
+      && candidate.location.line === item.location.line) === index);
+  const incompleteChains = incompleteReasons.map((reason) => accessChainRecord({
     entryKind: 'route', entryId: route.id, status: 'partial', outcome: 'incomplete',
-    identity: identity.identity, objectSelectors, callEdges: [], dataOperation: null,
+    identity: identity.identity,
+    objectSelectors: objectSelectors.map((selector) => ({ ...selector, origin: 'unknown' })),
+    callEdges: [], dataOperation: null,
     reason: reason.code === 'prisma_client_identity_unresolved'
       ? 'data_client_unresolved' : 'module_or_parser_evidence_incomplete',
     limitations: [reason.code],
     evidenceBoundary: `A Prisma-shaped data operation was observed at ${reason.location.path}:${reason.location.line || '?'} but the client identity could not be resolved to an imported PrismaClient. No authorization conclusion is available.`,
   }));
-  const oneHop = analyzeOneHopAccess({
+  const oneHop = selected.selectorGroups.flatMap((group) => analyzeOneHopAccess({
     graph, module, handler, entry: { kind: 'route', id: route.id,
       name: route.handler || route.id, module },
-    identity: identity.identity, objectAliases: routeFacts.aliases,
-    principalAliases: identity.principalAliases, objectSelectors,
-  });
+    identity: identity.identity, objectAliases: group.aliases,
+    objectNodes: group.nodes,
+    principalAliases: identity.principalAliases, objectSelectors: [group.selector],
+  }));
   const delegatedUnresolved = !directChains.length && !incompleteChains.length && !oneHop.length
-    && delegatedSelectorObserved(handler, routeFacts.aliases);
+    && delegatedSelectorObserved(handler, selected.objectAliases);
+  const selectorIncomplete = selected.limitations.length > 0;
+  const unresolvedSelectors = selected.selectors.some((selector) => selector.origin === 'unknown')
+    ? selected.selectors.filter((selector) => selector.origin === 'unknown')
+    : objectSelectors.map((selector) => ({ ...selector, origin: 'unknown' }));
+  const selectorIncompleteChain = selectorIncomplete && !directChains.length
+    && !incompleteChains.length && !oneHop.length && unresolvedSelectors.length
+    ? [accessChainRecord({
+      entryKind: 'route', entryId: route.id, status: 'partial', outcome: 'incomplete',
+      identity: identity.identity,
+      objectSelectors: unresolvedSelectors,
+      callEdges: [], dataOperation: null, reason: 'selector_source_unresolved',
+      limitations: selected.limitations.map((item) => item.code),
+      evidenceBoundary: 'A dynamic or ambiguous request selector was observed, but its exact field or value origin could not be established. No object-authorization conclusion is available.',
+    })] : [];
   return {
-    chains: [...directChains, ...incompleteChains, ...oneHop.map(accessChainRecord)],
-    operations: [...analyzed.operations, ...oneHop.map((item) => item.dataOperation).filter(Boolean)],
-    limitations: [...analyzed.incomplete.map((item) => item.code),
+    chains: [...directChains, ...incompleteChains, ...oneHop.map(accessChainRecord),
+      ...selectorIncompleteChain],
+    operations: [...analyzedGroups.flatMap(({ analyzed }) => analyzed.operations),
+      ...oneHop.map((item) => item.dataOperation).filter(Boolean)],
+    limitations: [...selected.limitations.map((item) => item.code),
+      ...incompleteReasons.map((item) => item.code),
       ...(delegatedUnresolved ? ['delegated-object-authorization-unresolved'] : []),
       ...oneHop.map((item) => item.reason).filter(Boolean)],
+    selectors: selected.selectors,
   };
 }
 
@@ -354,30 +245,44 @@ export function auditJsTsRouteAuthorization(graph, routes) {
   const reasons = [...graph.reasons];
   const reviewedRoutes = [];
   let scanned = 0;
-  const eligibleRoutes = routes.filter((route) => route.objectAddressed && route.path);
+  let eligible = 0;
   for (const route of routes) {
-    if (!route.objectAddressed || !route.path) {
+    if (!route.path) {
       reviewedRoutes.push(route);
       continue;
     }
     const module = graph.modules.get(route.location.path);
     if (!module?.ast) {
-      reasons.push({ code: 'route_handler_source_incomplete', path: route.location.path });
-      reviewedRoutes.push({ ...route, limitations: [...new Set([
-        ...route.limitations, 'route-object-authorization-analysis-incomplete',
-      ])].sort() });
+      if (route.objectAddressed) {
+        eligible += 1;
+        reasons.push({ code: 'route_handler_source_incomplete', path: route.location.path });
+        reviewedRoutes.push({ ...route, limitations: [...new Set([
+          ...route.limitations, 'route-object-authorization-analysis-incomplete',
+        ])].sort() });
+      } else reviewedRoutes.push(route);
       continue;
     }
     const handler = handlerForRoute(module, route);
     if (!handler) {
-      reasons.push({ code: 'route_handler_unresolved', path: route.location.path });
-      reviewedRoutes.push({ ...route, limitations: [...new Set([
-        ...route.limitations, 'route-object-authorization-analysis-incomplete',
-      ])].sort() });
+      if (route.objectAddressed) {
+        eligible += 1;
+        reasons.push({ code: 'route_handler_unresolved', path: route.location.path });
+        reviewedRoutes.push({ ...route, limitations: [...new Set([
+          ...route.limitations, 'route-object-authorization-analysis-incomplete',
+        ])].sort() });
+      } else reviewedRoutes.push(route);
       continue;
     }
-    scanned += 1;
     const access = directAccessChains(graph, module, route, handler);
+    if (!route.objectAddressed && !access.selectors.length) {
+      reviewedRoutes.push(route);
+      continue;
+    }
+    eligible += 1;
+    scanned += 1;
+    for (const code of access.limitations.filter((item) => item.startsWith('selector_'))) {
+      reasons.push({ code, path: route.location.path });
+    }
     const operations = access.operations.map((item) => `${item.provider}-${item.operation}`);
     const limitations = [...route.limitations];
     limitations.push(...access.limitations);
@@ -385,7 +290,7 @@ export function auditJsTsRouteAuthorization(graph, routes) {
         || item.tenantConstraint === 'observed')) {
       limitations.push('principal-constraint-observed-not-validated');
     }
-    reviewedRoutes.push(prioritizeRoute({ ...route,
+    reviewedRoutes.push(prioritizeRoute({ ...route, objectAddressed: true,
       accessChains: [...(route.accessChains || []), ...access.chains],
       operations: [...new Set([...route.operations, ...operations])].sort(),
       limitations: [...new Set(limitations)].sort(),
@@ -393,7 +298,7 @@ export function auditJsTsRouteAuthorization(graph, routes) {
   }
   const uniqueReasons = reasons.filter((item, index, items) =>
     items.findIndex((candidate) => candidate.code === item.code && candidate.path === item.path) === index);
-  const status = !eligibleRoutes.length ? 'not_applicable' : uniqueReasons.length ? 'partial' : 'completed';
+  const status = !eligible ? 'not_applicable' : uniqueReasons.length ? 'partial' : 'completed';
   return {
     routes: reviewedRoutes,
     coverage: {
@@ -404,10 +309,10 @@ export function auditJsTsRouteAuthorization(graph, routes) {
       status,
       counts: {
         discovered: routes.length,
-        eligible: eligibleRoutes.length,
+        eligible,
         scanned,
-        excluded: routes.length - eligibleRoutes.length,
-        skipped: eligibleRoutes.length - scanned,
+        excluded: routes.length - eligible,
+        skipped: eligible - scanned,
         truncated: 0,
         errors: uniqueReasons.length,
       },

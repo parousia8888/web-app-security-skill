@@ -138,25 +138,26 @@ function resolveCall(graph, module, handler, call, services = null) {
     : { incomplete: 'nest_service_method_unresolved' };
 }
 
-function directAlias(node, aliases) {
+function directAlias(node, aliases, nodes = new Set()) {
   const current = unwrap(node);
+  if (nodes.has(current)) return true;
   const name = safeName(current);
   if (name && aliases.has(name)) return true;
   if (current?.type === 'CallExpression' && ['String', 'Number', 'parseInt'].includes(safeName(current.callee))) {
-    return directAlias(current.arguments[0], aliases);
+    return directAlias(current.arguments[0], aliases, nodes);
   }
   return false;
 }
 
-function argumentCarriesAlias(argument, aliases) {
-  if (argument?.type !== 'SpreadElement') return directAlias(argument, aliases);
+function argumentCarriesAlias(argument, aliases, nodes = new Set()) {
+  if (argument?.type !== 'SpreadElement') return directAlias(argument, aliases, nodes);
   const stack = [argument.argument];
   let visited = 0;
   while (stack.length && visited < 200) {
     const node = stack.pop();
     if (!node || typeof node !== 'object') continue;
     visited += 1;
-    if (directAlias(node, aliases)) return true;
+    if (directAlias(node, aliases, nodes)) return true;
     if (FUNCTION_TYPES.has(node.type)) continue;
     for (const [key, value] of Object.entries(node)) {
       if (['loc', 'start', 'end', 'extra', 'comments', 'tokens'].includes(key)) continue;
@@ -167,7 +168,7 @@ function argumentCarriesAlias(argument, aliases) {
   return false;
 }
 
-function mapArguments(call, callee, objectAliases, principalAliases) {
+function mapArguments(call, callee, objectAliases, principalAliases, objectNodes = new Set()) {
   if (call.arguments.some((argument) => argument.type === 'SpreadElement')
       || callee.params.some((parameter) => parameter.type === 'RestElement')) {
     return { incomplete: 'one_hop_spread_or_rest_ambiguous' };
@@ -178,12 +179,12 @@ function mapArguments(call, callee, objectAliases, principalAliases) {
     const rawParameter = callee.params[index]?.type === 'TSParameterProperty'
       ? callee.params[index].parameter : callee.params[index];
     if (rawParameter?.type !== 'Identifier') {
-      if (directAlias(call.arguments[index], objectAliases)) {
+      if (directAlias(call.arguments[index], objectAliases, objectNodes)) {
         return { incomplete: 'one_hop_parameter_pattern_ambiguous' };
       }
       continue;
     }
-    if (directAlias(call.arguments[index], objectAliases)) mappedObjects.add(rawParameter.name);
+    if (directAlias(call.arguments[index], objectAliases, objectNodes)) mappedObjects.add(rawParameter.name);
     if (directAlias(call.arguments[index], principalAliases)) mappedPrincipals.add(rawParameter.name);
   }
   return { objectAliases: mappedObjects, principalAliases: mappedPrincipals };
@@ -215,19 +216,21 @@ function partialResult(entry, identity, selector, call, resolved, reason) {
 
 export function analyzeOneHopAccess(input) {
   const { graph, module, handler, entry, identity, objectAliases, principalAliases } = input;
+  const objectNodes = input.objectNodes || new Set();
   const selectors = input.objectSelectors || [];
   const services = nestInjectedServices(graph, module, handler);
   const results = [];
   functionWalk(handler, (call) => {
     if (call.type !== 'CallExpression'
-        || !call.arguments.some((argument) => argumentCarriesAlias(argument, objectAliases))) return;
+        || !call.arguments.some((argument) => argumentCarriesAlias(argument, objectAliases,
+          objectNodes))) return;
     const resolved = resolveCall(graph, module, handler, call, services);
     if (!resolved) return;
     if (resolved.incomplete) {
       results.push(partialResult(entry, identity, selectors, call, null, resolved.incomplete));
       return;
     }
-    const mapped = mapArguments(call, resolved.node, objectAliases, principalAliases);
+    const mapped = mapArguments(call, resolved.node, objectAliases, principalAliases, objectNodes);
     if (mapped.incomplete) {
       results.push(partialResult(entry, identity, selectors, call, resolved, mapped.incomplete));
       return;

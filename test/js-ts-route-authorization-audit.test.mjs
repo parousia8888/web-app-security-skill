@@ -24,15 +24,34 @@ app.get('/owned/:id', async (req, res) => {
 });
 app.get('/constant/:id', async (_req, res) => res.json(await db.project.findUnique({ where: { id: 'server-owned' } })));
 app.get('/delegated/:id', async (req, res) => res.json(await projectService.get(req.params.id)));
+app.get('/query-projects', async (req, res) => {
+  const { projectId: selected } = req.query;
+  return res.json(await db.project.findUnique({ where: { id: selected } }));
+});
+app.post('/body-projects', async ({ body }, res) => {
+  const { projectId: selected } = body;
+  return res.json(await db.project.delete({ where: { id: selected } }));
+});
+app.get('/mixed/:id', async (req, res) => {
+  const pathId = req.params.id;
+  const selected = req.query.projectId;
+  return res.json(await db.project.findUnique({ where: { id: selected } }));
+});
 ` },
   { path: 'src/projects.controller.ts', text: `
-import { Controller, Get, Param } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { PrismaClient as Database } from '@prisma/client';
 @Controller('projects')
 class ProjectsController {
   private db = new Database();
   @Get(':id') async one(@Param('id') projectId) {
     return this.db.project.findUnique({ where: { id: projectId } });
+  }
+  @Get('lookup') async lookup(@Query('projectId') projectId) {
+    return this.db.project.findUnique({ where: { id: projectId } });
+  }
+  @Post('remove') async remove(@Body() dto) {
+    return this.db.project.delete({ where: { id: dto.projectId } });
   }
 }
 ` },
@@ -42,6 +61,19 @@ const prisma = new PrismaClient();
 export async function DELETE(_request, { params }) {
   const { accountId: selectedId } = await params;
   return Response.json(await prisma.account.delete({ where: { id: selectedId } }));
+}
+` },
+  { path: 'src/app/search/route.ts', text: `
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+export async function GET(request) {
+  return Response.json(await prisma.project.findUnique({
+    where: { id: request.nextUrl.searchParams.get('projectId') },
+  }));
+}
+export async function POST(request) {
+  const { projectId: selected } = await request.json();
+  return Response.json(await prisma.project.delete({ where: { id: selected } }));
 }
 ` },
   { path: 'src/drizzle.ts', text: `
@@ -127,6 +159,26 @@ assert.equal(hopAccess.length, 1);
 assert.equal(hopAccess[0].callEdges[0].kind, 'local_function');
 assert.equal(hopAccess[0].dataOperation.provider, 'prisma');
 assert.equal(hopAccess[0].outcome, 'authorization_constraint_observed');
+for (const expected of [
+  ['/query-projects', 'express-query-field'],
+  ['/body-projects', 'express-body-field'],
+  ['/projects/lookup', 'nest-query-field'],
+  ['/projects/remove', 'nest-body-field'],
+  ['/search', 'next-search-param', 'GET'],
+  ['/search', 'next-json-field', 'POST'],
+]) {
+  const [path, kind, method] = expected;
+  const route = result.routes.find((item) => item.path === path && (!method || item.method === method));
+  assert.ok(route, `missing integrated selector route ${method || '*'} ${path}`);
+  assert.equal(route.objectAddressed, true);
+  assert.equal(route.accessChains.length, 1);
+  assert.equal(route.accessChains[0].objectSelectors[0].kind, kind);
+  assert.equal(route.accessChains[0].outcome, 'authorization_constraint_not_observed');
+}
+const mixed = result.routes.find((route) => route.path === '/mixed/:id');
+assert.equal(mixed.accessChains.length, 1);
+assert.deepEqual(mixed.accessChains[0].objectSelectors.map((selector) =>
+  `${selector.kind}:${selector.name}`), ['express-query-field:projectId']);
 
 const disconnected = runAudit(files.map((file) => file.path === 'src/express.ts'
   ? { ...file, text: file.text.replace('where: { id: projectId }',
@@ -147,4 +199,28 @@ const incomplete = auditJsTsRouteAuthorization(incompleteGraph, [{
 assert.equal(incomplete.coverage.status, 'partial');
 assert.ok(incomplete.coverage.reasons.some((reason) => reason.code === 'js_ts_ast_parse_error'));
 
-console.log('route authorization audit ok: three frameworks, direct Prisma boundary, safe neighbours and fail-closed coverage');
+const transformed = runAudit([{ path: 'src/app/transformed/route.ts', text: `
+export async function POST(request) {
+  const { projectId } = schema.parse(await request.json());
+  return Response.json(projectId);
+}
+` }]).result;
+const transformedRoute = transformed.routes.find((route) => route.path === '/transformed');
+assert.equal(transformed.coverage.status, 'partial');
+assert.equal(transformedRoute.accessChains[0].reason, 'selector_source_unresolved');
+assert.equal(transformedRoute.accessChains[0].objectSelectors[0].origin, 'unknown');
+assert.ok(transformed.coverage.reasons.some((reason) => reason.code === 'selector_transform_unresolved'));
+
+const dynamic = runAudit([{ path: 'src/dynamic.ts', text: `
+import express from 'express';
+const app = express();
+app.get('/dynamic', async (req, res) => res.json(req.query[req.query.field]));
+` }]).result;
+const dynamicRoute = dynamic.routes.find((route) => route.path === '/dynamic');
+assert.equal(dynamic.coverage.status, 'partial');
+assert.equal(dynamicRoute.objectAddressed, true);
+assert.equal(dynamicRoute.accessChains[0].status, 'partial');
+assert.equal(dynamicRoute.accessChains[0].reason, 'selector_source_unresolved');
+assert.ok(dynamic.coverage.reasons.some((reason) => reason.code === 'selector_dynamic_field_unresolved'));
+
+console.log('route authorization audit ok: shared path/query/body selectors, direct Prisma boundary, safe neighbours and fail-closed coverage');

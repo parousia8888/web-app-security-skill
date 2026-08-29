@@ -64,17 +64,18 @@ function functionWalk(root, visit) {
   }
 }
 
-function expressionMatches(node, aliases) {
+function expressionMatches(node, aliases, nodes = new Set()) {
   const current = unwrap(node);
+  if (nodes.has(current)) return true;
   const name = safeName(current);
   if (name && aliases.has(name)) return true;
   if (current?.type === 'CallExpression' && ['String', 'Number', 'parseInt'].includes(safeName(current.callee))) {
-    return expressionMatches(current.arguments[0], aliases);
+    return expressionMatches(current.arguments[0], aliases, nodes);
   }
   return false;
 }
 
-function containsExpression(node, aliases, includeFunctions = true) {
+function containsExpression(node, aliases, includeFunctions = true, nodes = new Set()) {
   let matched = false;
   let visited = 0;
   const stack = [unwrap(node)];
@@ -82,7 +83,7 @@ function containsExpression(node, aliases, includeFunctions = true) {
     const current = stack.pop();
     if (!current || typeof current !== 'object') continue;
     visited += 1;
-    if (expressionMatches(current, aliases)) {
+    if (expressionMatches(current, aliases, nodes)) {
       matched = true;
       break;
     }
@@ -96,8 +97,9 @@ function containsExpression(node, aliases, includeFunctions = true) {
   return matched;
 }
 
-function collectLocalAliases(handler, objectSeed, principalSeed) {
+function collectLocalAliases(handler, objectSeed, principalSeed, objectNodeSeed = []) {
   const objectAliases = new Set(objectSeed);
+  const objectNodes = new Set(objectNodeSeed);
   const principalAliases = new Set(principalSeed);
   const objectValues = new Map();
   const declarations = [];
@@ -110,7 +112,7 @@ function collectLocalAliases(handler, objectSeed, principalSeed) {
       const init = unwrap(declaration.init);
       if (declaration.id?.type !== 'Identifier') continue;
       if (init?.type === 'ObjectExpression') objectValues.set(declaration.id.name, init);
-      if (expressionMatches(init, objectAliases) && !objectAliases.has(declaration.id.name)) {
+      if (expressionMatches(init, objectAliases, objectNodes) && !objectAliases.has(declaration.id.name)) {
         objectAliases.add(declaration.id.name);
         changed = true;
       }
@@ -121,7 +123,7 @@ function collectLocalAliases(handler, objectSeed, principalSeed) {
     }
     if (!changed) break;
   }
-  return { objectAliases, principalAliases, objectValues };
+  return { objectAliases, objectNodes, principalAliases, objectValues };
 }
 
 function resolvedObject(node, objectValues) {
@@ -155,7 +157,8 @@ function constraintsIn(node, facts, objectValues = new Map()) {
       for (const property of current.properties) {
         if (property.type !== 'ObjectProperty') continue;
         const category = keyCategory(propertyName(property));
-        if (category === 'object' && containsExpression(property.value, facts.objectAliases)) result.object = true;
+        if (category === 'object' && containsExpression(property.value, facts.objectAliases,
+          true, facts.objectNodes)) result.object = true;
         if (category === 'principal' && containsExpression(property.value, facts.principalAliases)) result.principal = true;
         if (category === 'tenant' && containsExpression(property.value, facts.principalAliases)) result.tenant = true;
         const nested = resolvedObject(property.value, objectValues);
@@ -169,7 +172,8 @@ function constraintsIn(node, facts, objectValues = new Map()) {
         const key = literalString(current.arguments[0]) || safeName(current.arguments[0]);
         const value = current.arguments[1];
         const category = keyCategory(key);
-        if (category === 'object' && containsExpression(value, facts.objectAliases)) result.object = true;
+        if (category === 'object' && containsExpression(value, facts.objectAliases,
+          true, facts.objectNodes)) result.object = true;
         if (category === 'principal' && containsExpression(value, facts.principalAliases)) result.principal = true;
         if (category === 'tenant' && containsExpression(value, facts.principalAliases)) result.tenant = true;
     }
@@ -364,7 +368,8 @@ function operation(module, call, provider, resource, operationName, constraints,
 }
 
 export function analyzeDataOperations(graph, module, handler, options = {}) {
-  const facts = collectLocalAliases(handler, options.objectAliases || [], options.principalAliases || []);
+  const facts = collectLocalAliases(handler, options.objectAliases || [], options.principalAliases || [],
+    options.objectNodes || []);
   const clients = moduleClientSymbols(graph, module);
   for (const [name, descriptor] of identityProviderSymbolsForHandler(graph, module, handler)) {
     if (descriptor.instance === 'supabase') clients.set(name, { provider: 'supabase' });

@@ -14,8 +14,9 @@ export function createClient() { return createServerClient('url', 'key', {}); }
 import { PrismaClient } from '@prisma/client';
 import { currentUser } from '@clerk/nextjs/server';
 const prisma = new PrismaClient();
-export async function updateProject(projectId) {
+export async function updateProject(projectId, accountId) {
   const user = await currentUser();
+  void accountId;
   return prisma.project.update({ where: { id: projectId, ownerId: user.id }, data: {} });
 }
 async function internalHelper(id) { return prisma.project.findUnique({ where: { id } }); }
@@ -46,6 +47,7 @@ assert.equal(update.authentication.state, 'local_observed');
 assert.equal(update.accessChains.length, 1);
 assert.equal(update.accessChains[0].outcome, 'authorization_constraint_observed');
 assert.equal(update.accessChains[0].objectSelectors[0].kind, 'action-parameter');
+assert.deepEqual(update.accessChains[0].objectSelectors.map((selector) => selector.name), ['projectId']);
 const form = result.serverActions.find((action) => action.name === 'loadOrder');
 assert.equal(form.accessChains.length, 1);
 assert.equal(form.accessChains[0].outcome, 'external_policy_required');
