@@ -155,20 +155,34 @@ digest-bound and independently checkable. Exact public facts are in the
 [v0.7.2 release evidence](docs/releases/v0.7.2.md) and
 [patch plan](docs/V0.7.2_PATCH_PLAN.md).
 
-## v0.7.3 external-audit remediation candidate
+## Shipped in v0.7.3
 
 v0.7.3 addresses the full 26-item external-audit ledger across bounded input containment,
 fail-closed route and access-chain evidence, narrow source-rule correctness, reproducible ordinary-
 project journeys, test accounting, release-state separation and executable public documentation.
 It does not add a detector family, framework or production accuracy claim.
 
-The candidate retains actual historical and Phase 4 execution identities instead of relabelling
-them. Public v0.7.2 npm, installer and Action facts stay active until v0.7.3 passes exact-commit CI
-and CodeQL, signed immutable publication, npm trusted publishing, installer verification, immutable
-consumer, signed `v1` promotion and durable live verification. Exact issue dispositions and phase
-evidence are in the
-[v0.7.3 remediation plan](docs/V0.7.3_EXTERNAL_AUDIT_REMEDIATION_PLAN.md); candidate and later
-public facts are separated in the [release evidence](docs/releases/v0.7.3.md).
+The release retains actual historical and Phase 4 execution identities instead of relabelling
+them. Exact issue dispositions and phase evidence are in the
+[v0.7.3 remediation plan](docs/V0.7.3_EXTERNAL_AUDIT_REMEDIATION_PLAN.md). Signed immutable
+publication, npm trusted publishing, installer verification, immutable Action consumption, signed
+`v1` promotion and durable live verification are recorded in the
+[release evidence](docs/releases/v0.7.3.md).
+
+## Proposed v0.8.0
+
+v0.8.0 is proposed as a bounded interprocedural access-control release for the existing
+JavaScript/TypeScript framework boundary. It should add exact query/body/action selector evidence,
+follow object/principal/tenant facts through up to four exact project-local call edges, distinguish
+Prisma/Drizzle query constraints from post-load comparison evidence and keep every ambiguous path
+partial. It must not claim whole-program SAST, confirmed BOLA/IDOR or deployed enforcement.
+
+The plan freezes an ordinary-project evaluation denominator before implementation, requires zero
+unexpected completed ambiguous paths and separates path completion from production vulnerability
+accuracy. MCP, Strix, Python framework expansion, authenticated DAST, new ORM families and
+unattended source edits are outside the proposed release. Scope, architecture, phase gates, test
+budget, stop conditions and public release gates are in the
+[v0.8.0 engineering plan](docs/V0.8.0_ENGINEERING_PLAN.md).
 
 ## Correctness backlog
 
