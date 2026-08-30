@@ -34,7 +34,7 @@ For published `v0.8.0`, verify the local tag policy and compare immutable identi
 git fetch --tags --force
 git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.8.0
 git rev-parse 'v0.8.0^{}'
-npm view web-app-security-skill@0.8.0 gitHead
+npm view web-app-security-skill@0.8.1 gitHead
 ```
 
 Inspect the exact tag object's GitHub verification separately:

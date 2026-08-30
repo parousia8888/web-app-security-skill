@@ -21,19 +21,19 @@ function run(program, commandArgs, options = {}) {
 
 try {
   const state = JSON.parse(readFileSync(join(ROOT, 'docs', 'release-state.json'), 'utf8'));
-  assert.equal(state.publishedRelease.version, '0.8.0');
+  assert.equal(state.publishedRelease.version, '0.8.1');
   assert.equal(state.stableAction.tag, 'v1');
   assert.equal(state.stableAction.sourceCommit, '119cbcc7f8d327482df8abfa50a4af0b69fcceee');
   assert.deepEqual(state.stableAction.promotion, { state: 'final' });
   assert.equal(state.npmPackage.name, 'web-app-security-skill');
-  assert.equal(state.npmPackage.version, '0.8.0');
-  assert.equal(state.npmPackage.shasum, '1b45330758998f04eeacf71166ab20310fd1c1e7');
+  assert.equal(state.npmPackage.version, '0.8.1');
+  assert.equal(state.npmPackage.shasum, '2c9e06be7bd555a05fd8a8d8d908d3f54506f1d8');
   assert.equal(state.npmPackage.integrity,
-    'sha512-zbnRkSZ4bdMgRtXprWSp8uvgMswAGjdZstXbcObLJlOIvjnpbmmSHQzdzWPTTlID3giNFfsDH8hchnomYQfUNQ==');
+    'sha512-SUonYq1kXt8/Noz0yR3qubR7rhI+ob70heTf5xJPJNMFNdC5eUP4c3GvQ42IsTPozNHCyO3/O8Z2J2sRlffu3w==');
   assert.equal(state.npmPackage.provenance.predicateType, 'https://slsa.dev/provenance/v1');
-  assert.equal(state.verifiedInstaller.defaultVersion, '0.8.0');
+  assert.equal(state.verifiedInstaller.defaultVersion, '0.8.1');
   assert.deepEqual(state.verifiedInstaller.trustedVersions,
-    ['0.3.0', '0.4.0', '0.5.0', '0.5.1', '0.5.2', '0.5.3', '0.5.4', '0.6.0', '0.7.0', '0.7.1', '0.7.2', '0.7.3', '0.8.0']);
+    ['0.3.0', '0.4.0', '0.5.0', '0.5.1', '0.5.2', '0.5.3', '0.5.4', '0.6.0', '0.7.0', '0.7.1', '0.7.2', '0.7.3', '0.8.0', '0.8.1']);
   run(process.execPath, [join(ROOT, 'scripts', 'check-release-state.mjs')]);
 
   const candidateCommit = run('git', ['rev-parse', 'HEAD']).trim();
@@ -60,6 +60,10 @@ try {
   ], { cwd: clone, encoding: 'utf8' });
   assert.notEqual(pendingPublic.status, 0);
   assert.match(pendingPublic.stderr, /promotion is pending/);
+  const publishedTagObject = run(
+    'git', ['rev-parse', `${state.publishedRelease.tag}^{tag}`], { cwd: clone },
+  ).trim();
+  run('git', ['update-ref', 'refs/tags/v1', publishedTagObject], { cwd: clone });
   const pendingRecord = join(temp, 'pending-public-state.json');
   run(process.execPath, [
     join(ROOT, 'scripts', 'check-public-release-state.mjs'), '--root', clone,
@@ -82,21 +86,21 @@ try {
     recursive: true,
     filter: (source) => !source.split('/').includes('.git'),
   });
-  writeFileSync(join(candidate, 'VERSION'), '0.8.1\n');
+  writeFileSync(join(candidate, 'VERSION'), '0.8.2\n');
   const pkgPath = join(candidate, 'package.json');
   const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
-  pkg.version = '0.8.1';
+  pkg.version = '0.8.2';
   writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
   const changelogPath = join(candidate, 'CHANGELOG.md');
   const changelog = readFileSync(changelogPath, 'utf8').replace(
     '## [Unreleased]\n',
-    '## [Unreleased]\n\n## [0.8.1] — 2026-08-30\n',
+    '## [Unreleased]\n\n## [0.8.2] — 2026-08-31\n',
   );
   writeFileSync(changelogPath, changelog);
-  const release080 = readFileSync(join(candidate, 'docs', 'releases', 'v0.8.0.md'), 'utf8');
+  const release081 = readFileSync(join(candidate, 'docs', 'releases', 'v0.8.1.md'), 'utf8');
   writeFileSync(
-    join(candidate, 'docs', 'releases', 'v0.8.1.md'),
-    release080.replaceAll('v0.8.0', 'v0.8.1'),
+    join(candidate, 'docs', 'releases', 'v0.8.2.md'),
+    release081.replaceAll('v0.8.1', 'v0.8.2'),
   );
 
   run(process.execPath, [join(candidate, 'scripts', 'generate-launch-evidence.mjs')], { cwd: candidate });
@@ -107,8 +111,8 @@ try {
     readFileSync(join(candidate, 'docs', 'adoption', 'citations.md'), 'utf8'),
     readFileSync(join(candidate, 'docs', 'adoption', 'share-metadata.json'), 'utf8'),
   ].join('\n');
-  assert.match(generated, /v0\.8\.0/);
-  assert.doesNotMatch(generated, /releases\/tag\/v0\.8\.1|v0\.8\.1 records a signed tag/);
+  assert.match(generated, /v0\.8\.1/);
+  assert.doesNotMatch(generated, /releases\/tag\/v0\.8\.2|v0\.8\.2 records a signed tag/);
   console.log('release state ok: candidate version cannot become a published-release claim');
 } finally {
   rmSync(temp, { recursive: true, force: true });

@@ -7,10 +7,10 @@
   ],
   "width": 1280,
   "height": 640,
-  "bytes": 3287,
-  "sha256": "081c49f6e52f3ca726c449a1a18c75d6eb90e56b93a27028614be5907fb70e1d",
-  "version": "0.8.0",
-  "command": "npx --yes web-app-security-skill@0.8.0 audit . --fail-on never",
+  "bytes": 3292,
+  "sha256": "ffa76dc4e24c926b49a14eb9f849989092269548a8ba2d3274358e5fcef02294",
+  "version": "0.8.1",
+  "command": "npx --yes web-app-security-skill@0.8.1 audit . --fail-on never",
   "boundary": "repository-owned-deterministic-public-metadata",
   "liveUpload": "external_validation_pending"
 }

@@ -9,7 +9,7 @@ Next.js App Router 项目还会得到带有边界访问控制链的路由安全�
 Action。它仍然是范围明确的首次检查，不是通用 SAST、自动 BOLA 证明，也不证明项目已经安全。
 实际生效的词法 token 与 operation 预算会写入报告；预算触顶属于证据不完整并退出 `3`，不是通过。
 
-当前 v0.8.0 release 会写出 route-security v3。对精确且受支持的 selector，它可把 object、
+当前 v0.8.1 release 会写出 route-security v3。对精确且受支持的 selector，它可把 object、
 principal 和 tenant 事实经最多四条项目内调用边带到限定的 Prisma/Drizzle 操作，再区分可见 query
 predicate 与受支持的加载后比较。框架清单覆盖率和 `accessPathCoverage` 必须分开阅读；`completed`
 只表示限定分析走完，不表示授权正确或存在 BOLA/IDOR。route-security v1/v2 与 v3 对比时只会得到
@@ -101,7 +101,7 @@ webapp-security version
 
 macOS 没有 GNU `sha256sum` 时，使用 `shasum -a 256 -c SHA256SUMS`。Release 还提供 SPDX SBOM、
 源码 manifest、build provenance attestation 和签名 tag：
-[v0.8.0 release](https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.8.0)。
+[v0.8.1 release](https://github.com/parousia8888/web-app-security-skill/releases/tag/v0.8.1)。
 
 ### 当前 checkout
 
