@@ -53,8 +53,9 @@ try {
   const candidateCommit = run('git', ['rev-parse', 'HEAD']).trim();
   run('git', ['clone', '--quiet', '--no-hardlinks', ROOT, clone]);
   run('git', ['checkout', '--quiet', '--detach', state.publishedRelease.sourceCommit], { cwd: clone });
-  const priorTagObject = run('git', ['rev-parse', 'v1^{tag}'], { cwd: clone }).trim();
-  assert.equal(priorTagObject, PRIOR_TAG_OBJECT);
+  const priorTagObject = run('git', ['rev-parse', 'v0.8.0^{tag}'], { cwd: clone }).trim();
+  assert.equal(run('git', ['rev-parse', 'v0.8.0^{}'], { cwd: clone }).trim(),
+    PRIOR_STABLE_SOURCE);
   const publishedTagObject = run(
     'git', ['rev-parse', `${state.publishedRelease.tag}^{tag}`], { cwd: clone },
   ).trim();

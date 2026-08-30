@@ -149,8 +149,8 @@ separate `release`-environment job owns publication permissions. Moving `v1` has
 and final states and remains less immutable than a full commit pin. The solo-maintainer
 administrator bypass is documented and is not independent review. WSL2 remains unsupported. The
 signed v0.8.1 tag, GitHub Release, npm package and verified installer are public and identify source
-commit `6e581adcac7a0433ec6428d8080d20761dfc3a93`. The moving `v1` Action remains on v0.8.0 until the
-v0.8.1 immutable consumer and guarded pending/final promotion complete.
+commit `6e581adcac7a0433ec6428d8080d20761dfc3a93`. The signed moving `v1` Action now identifies the
+same source after its immutable consumer and guarded pending-state consumers passed.
 
 ## What's new in v0.8.0
 
@@ -443,8 +443,8 @@ requires deployment authorization acknowledgement:
     fail-on: high
 ```
 
-For repeatable CI, use the immutable v0.8.1 commit above. The signed stable major-version alias
-remains on v0.8.0 until the v0.8.1 promotion gate completes, and remains intentionally movable:
+For repeatable CI, use the immutable v0.8.1 commit above. The signed stable major-version alias now
+identifies the same v0.8.1 source, and remains intentionally movable:
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
@@ -465,8 +465,8 @@ installed and pinned by the caller; the Action never downloads them:
     fail-on: high
 ```
 
-The moving `v1` tag still identifies v0.8.0 while the v0.8.1 immutable consumer is verified. Its
-guarded promotion uses an exact prior-tag-object lease and pending/final public states. Review
+The moving `v1` tag was promoted to v0.8.1 with an exact prior-tag-object lease after the immutable
+and moving-alias consumers passed. Its tracked state used separate pending and final commits. Review
 release notes before accepting an update; use the full commit above when the workflow must not move.
 
 ## Trust and release evidence

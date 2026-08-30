@@ -136,8 +136,8 @@ Release 发布已改为从可信 `main` 手动触发：只读 job 会在安装�
 策略、精确候选提交和托管检查；只有独立的 `release` environment job 拥有发布权限。移动 `v1` 有
 明确的 pending/final 状态，可信度仍低于完整 commit pin。单维护者管理员 bypass 被明确记录，它不
 等于独立 review。WSL2 仍不支持。v0.8.1 签名 tag、GitHub Release、npm 包和可信安装器已经公开，
-共同指向源码提交 `6e581adcac7a0433ec6428d8080d20761dfc3a93`。移动的 `v1` Action 暂时仍指向
-v0.8.0，直到 v0.8.1 不可变 consumer 与 guarded pending/final 提升完成。
+共同指向源码提交 `6e581adcac7a0433ec6428d8080d20761dfc3a93`。签名的移动 `v1` Action 已在
+不可变 consumer 与 guarded pending-state consumer 通过后指向同一源码。
 
 ## v0.8.0 新增内容
 
@@ -403,8 +403,8 @@ Composite Action 保持 v0.3 crawl 输入与输出兼容。Crawl mode 默认被�
     fail-on: high
 ```
 
-需要可重复 CI 时使用上面的 v0.8.1 不可变 commit。签名的稳定大版本别名在 v0.8.1 提升门完成前
-仍指向 v0.8.0；这个别名仍会有意移动：
+需要可重复 CI 时使用上面的 v0.8.1 不可变 commit。签名的稳定大版本别名现指向同一个 v0.8.1
+源码；这个别名仍会有意移动：
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
@@ -424,9 +424,9 @@ Source mode 默认只用内置 adapter。v0.8.1 不可变 Action 运行 v3 源�
     fail-on: high
 ```
 
-移动的 `v1` tag 在验证 v0.8.1 不可变 consumer 期间仍指向 v0.8.0。后续提升会使用精确的旧 tag
-object lease 与 pending/final 公开状态。接受更新前应检查 release note；工作流不能随版本移动时
-使用上面的完整 commit。
+移动的 `v1` tag 已在不可变与移动别名 consumer 通过后，用精确的旧 tag object lease 提升到
+v0.8.1；跟踪状态使用独立的 pending 与 final 提交。接受更新前应检查 release note；工作流不能随
+版本移动时使用上面的完整 commit。
 
 ## 信任与 release 证据
 
