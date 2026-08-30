@@ -12,6 +12,9 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const temp = mkdtempSync(join(tmpdir(), 'web-app-security-release-state-'));
 const candidate = join(temp, 'candidate');
 const clone = join(temp, 'clone');
+const RELEASE_SOURCE = '6e581adcac7a0433ec6428d8080d20761dfc3a93';
+const PRIOR_STABLE_SOURCE = '119cbcc7f8d327482df8abfa50a4af0b69fcceee';
+const PRIOR_TAG_OBJECT = '3e44c123d45f5fc06fa437fe1fbd58a71c5aaaa8';
 
 function run(program, commandArgs, options = {}) {
   const result = spawnSync(program, commandArgs, { cwd: ROOT, encoding: 'utf8', ...options });
@@ -22,9 +25,20 @@ function run(program, commandArgs, options = {}) {
 try {
   const state = JSON.parse(readFileSync(join(ROOT, 'docs', 'release-state.json'), 'utf8'));
   assert.equal(state.publishedRelease.version, '0.8.1');
+  assert.equal(state.publishedRelease.sourceCommit, RELEASE_SOURCE);
   assert.equal(state.stableAction.tag, 'v1');
-  assert.equal(state.stableAction.sourceCommit, '119cbcc7f8d327482df8abfa50a4af0b69fcceee');
-  assert.deepEqual(state.stableAction.promotion, { state: 'final' });
+  if (state.stableAction.promotion.state === 'pending') {
+    assert.equal(state.stableAction.sourceCommit, PRIOR_STABLE_SOURCE);
+    assert.deepEqual(state.stableAction.promotion, {
+      state: 'pending',
+      version: '0.8.1',
+      expectedSourceCommit: RELEASE_SOURCE,
+      priorTagObject: PRIOR_TAG_OBJECT,
+    });
+  } else {
+    assert.equal(state.stableAction.sourceCommit, RELEASE_SOURCE);
+    assert.deepEqual(state.stableAction.promotion, { state: 'final' });
+  }
   assert.equal(state.npmPackage.name, 'web-app-security-skill');
   assert.equal(state.npmPackage.version, '0.8.1');
   assert.equal(state.npmPackage.shasum, '2c9e06be7bd555a05fd8a8d8d908d3f54506f1d8');
@@ -39,30 +53,38 @@ try {
   const candidateCommit = run('git', ['rev-parse', 'HEAD']).trim();
   run('git', ['clone', '--quiet', '--no-hardlinks', ROOT, clone]);
   run('git', ['checkout', '--quiet', '--detach', state.publishedRelease.sourceCommit], { cwd: clone });
-  writeFileSync(join(clone, 'docs', 'release-state.json'), `${JSON.stringify(state, null, 2)}\n`);
+  const priorTagObject = run('git', ['rev-parse', 'v1^{tag}'], { cwd: clone }).trim();
+  assert.equal(priorTagObject, PRIOR_TAG_OBJECT);
+  const publishedTagObject = run(
+    'git', ['rev-parse', `${state.publishedRelease.tag}^{tag}`], { cwd: clone },
+  ).trim();
+  const finalState = structuredClone(state);
+  finalState.stableAction.sourceCommit = RELEASE_SOURCE;
+  finalState.stableAction.promotion = { state: 'final' };
+  writeFileSync(join(clone, 'docs', 'release-state.json'), `${JSON.stringify(finalState, null, 2)}\n`);
+  run('git', ['update-ref', 'refs/tags/v1', publishedTagObject], { cwd: clone });
   const publicRecord = join(temp, 'public-state.json');
   run(process.execPath, [
     join(ROOT, 'scripts', 'check-public-release-state.mjs'), '--root', clone, '--out', publicRecord,
   ], { cwd: clone });
   assert.equal(JSON.parse(readFileSync(publicRecord, 'utf8')).stableAction.sourceCommit,
-    state.stableAction.sourceCommit);
+    RELEASE_SOURCE);
 
-  const pendingState = structuredClone(state);
+  const pendingState = structuredClone(finalState);
+  pendingState.stableAction.sourceCommit = PRIOR_STABLE_SOURCE;
   pendingState.stableAction.promotion = {
     state: 'pending',
     version: state.publishedRelease.version,
     expectedSourceCommit: state.publishedRelease.sourceCommit,
-    priorTagObject: run('git', ['rev-parse', 'v1^{tag}'], { cwd: clone }).trim(),
+    priorTagObject,
   };
   writeFileSync(join(clone, 'docs', 'release-state.json'), `${JSON.stringify(pendingState, null, 2)}\n`);
+  run('git', ['update-ref', 'refs/tags/v1', priorTagObject], { cwd: clone });
   const pendingPublic = spawnSync(process.execPath, [
     join(ROOT, 'scripts', 'check-public-release-state.mjs'), '--root', clone,
   ], { cwd: clone, encoding: 'utf8' });
   assert.notEqual(pendingPublic.status, 0);
   assert.match(pendingPublic.stderr, /promotion is pending/);
-  const publishedTagObject = run(
-    'git', ['rev-parse', `${state.publishedRelease.tag}^{tag}`], { cwd: clone },
-  ).trim();
   run('git', ['update-ref', 'refs/tags/v1', publishedTagObject], { cwd: clone });
   const pendingRecord = join(temp, 'pending-public-state.json');
   run(process.execPath, [
@@ -73,7 +95,7 @@ try {
   assert.equal(pendingEvidence.state, 'promotion_pending_verified');
   assert.equal(pendingEvidence.stableAction.sourceCommit,
     pendingState.stableAction.promotion.expectedSourceCommit);
-  writeFileSync(join(clone, 'docs', 'release-state.json'), `${JSON.stringify(state, null, 2)}\n`);
+  writeFileSync(join(clone, 'docs', 'release-state.json'), `${JSON.stringify(finalState, null, 2)}\n`);
 
   run('git', ['tag', '-f', 'v1', candidateCommit], { cwd: clone });
   let stale = spawnSync(process.execPath, [join(ROOT, 'scripts', 'check-public-release-state.mjs'), '--root', clone], {

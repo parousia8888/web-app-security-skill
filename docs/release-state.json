@@ -12,7 +12,10 @@
     "tag": "v1",
     "sourceCommit": "119cbcc7f8d327482df8abfa50a4af0b69fcceee",
     "promotion": {
-      "state": "final"
+      "state": "pending",
+      "version": "0.8.1",
+      "expectedSourceCommit": "6e581adcac7a0433ec6428d8080d20761dfc3a93",
+      "priorTagObject": "3e44c123d45f5fc06fa437fe1fbd58a71c5aaaa8"
     }
   },
   "npmPackage": {
