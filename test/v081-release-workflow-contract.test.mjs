@@ -9,6 +9,7 @@ const release = read('.github/workflows/release.yml');
 const ci = read('.github/workflows/ci.yml');
 const consumer = read('.github/workflows/action-v1-consumer.yml');
 const verifier = read('scripts/verify-release-candidate.mjs');
+const releaseSource = '6e581adcac7a0433ec6428d8080d20761dfc3a93';
 
 assert.match(release, /workflow_dispatch:/,
   'release publication must be manually dispatched from trusted main');
@@ -54,6 +55,11 @@ assert.match(consumer, /group:\s*["']action-v1-promotion["']/);
 assert.match(consumer, /cancel-in-progress:\s*false/);
 assert.match(consumer, /- ["']promotion["']/);
 assert.match(consumer, /promotion-run-id:/);
+assert.match(consumer, new RegExp(`parousia8888/web-app-security-skill@${releaseSource}`),
+  'the immutable consumer must execute the exact v0.8.1 release source');
+assert.doesNotMatch(consumer,
+  /parousia8888\/web-app-security-skill@119cbcc7f8d327482df8abfa50a4af0b69fcceee/,
+  'the immutable consumer must not remain pinned to v0.8.0');
 assert.match(consumer, /check-public-release-state\.mjs --phase pending/);
 assert.match(consumer, /check-public-release-state\.mjs --phase final/);
 assert.match(consumer, /gh run download ["']\$PROMOTION_RUN_ID["']/);

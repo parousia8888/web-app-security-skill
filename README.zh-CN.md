@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#查看结果">Demo</a> ·
-  <a href="#v081-新增内容">v0.8.1 candidate</a> ·
+  <a href="#v081-新增内容">v0.8.1</a> ·
   <a href="#v080-新增内容">v0.8.0</a> ·
   <a href="#安装">安装</a> ·
   <a href="#执行第一个项目">首个项目</a> ·
@@ -135,8 +135,9 @@ adapter 条目必须填写 owner 和到期时间；过期、漂移、格式错�
 Release 发布已改为从可信 `main` 手动触发：只读 job 会在安装依赖前验证签名 annotated tag、签名人
 策略、精确候选提交和托管检查；只有独立的 `release` environment job 拥有发布权限。移动 `v1` 有
 明确的 pending/final 状态，可信度仍低于完整 commit pin。单维护者管理员 bypass 被明确记录，它不
-等于独立 review。WSL2 仍不支持。在候选版完成托管检查、签名发布、npm provenance、验证安装与
-Action consumer 前，下面的 v0.8.0 仍是最新公开 release。
+等于独立 review。WSL2 仍不支持。v0.8.1 签名 tag、GitHub Release、npm 包和可信安装器已经公开，
+共同指向源码提交 `6e581adcac7a0433ec6428d8080d20761dfc3a93`。移动的 `v1` Action 暂时仍指向
+v0.8.0，直到 v0.8.1 不可变 consumer 与 guarded pending/final 提升完成。
 
 ## v0.8.0 新增内容
 
@@ -198,7 +199,7 @@ bootstrap 并在执行前验证 SHA-256，然后验证选定 release 的 manifes
 显式传入 `--attestation required`。
 
 ```bash
-( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/12cb085d7f3a21c2b6ffb6cb2758ee4247e2af9f/scripts/bootstrap-install.sh?immutable=12cb085d7f3a21c2b6ffb6cb2758ee4247e2af9f'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" '137b5d8fdf6f616be3aa2631e0134b354fd9142ce19419bad6c37e5b0409480f'; sh "$p" )
+( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/0d488226ac55036b8871ff12b5572e697ec37bb7/scripts/bootstrap-install.sh?immutable=0d488226ac55036b8871ff12b5572e697ec37bb7'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" '0b9c43d22c886f1f5394613800701eeeb1919a858168c5ca678f227ba0306c95'; sh "$p" )
 ```
 
 也可以只装单一入口：
@@ -394,7 +395,7 @@ Composite Action 保持 v0.3 crawl 输入与输出兼容。Crawl mode 默认被�
 
 ```yaml
 - name: Audit public crawl boundary
-  uses: parousia8888/web-app-security-skill@119cbcc7f8d327482df8abfa50a4af0b69fcceee
+  uses: parousia8888/web-app-security-skill@6e581adcac7a0433ec6428d8080d20761dfc3a93
   with:
     site: https://example.com
     acknowledge-authorization: true
@@ -402,20 +403,20 @@ Composite Action 保持 v0.3 crawl 输入与输出兼容。Crawl mode 默认被�
     fail-on: high
 ```
 
-需要可重复 CI 时使用上面的 v0.8.0 不可变 commit。签名的稳定大版本别名现在指向同一个 v0.8.0
-源码 commit；这个别名仍会有意移动：
+需要可重复 CI 时使用上面的 v0.8.1 不可变 commit。签名的稳定大版本别名在 v0.8.1 提升门完成前
+仍指向 v0.8.0；这个别名仍会有意移动：
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
 ```
 
-Source mode 默认只用内置 adapter。v0.8.0 不可变 Action 运行 v3 源码合同、25 条 built-in risk、
+Source mode 默认只用内置 adapter。v0.8.1 不可变 Action 运行 v3 源码合同、25 条 built-in risk、
 3 条证据完整性规则、有边界的 Express/NestJS/Next.js 路由与 Server Action 清单，以及有边界的
 访问控制链审查。外部二进制必须由调用方固定版本并安装，Action 不会下载：
 
 ```yaml
 - name: Audit source
-  uses: parousia8888/web-app-security-skill@119cbcc7f8d327482df8abfa50a4af0b69fcceee
+  uses: parousia8888/web-app-security-skill@6e581adcac7a0433ec6428d8080d20761dfc3a93
   with:
     mode: source
     project: .
@@ -423,8 +424,9 @@ Source mode 默认只用内置 adapter。v0.8.0 不可变 Action 运行 v3 源�
     fail-on: high
 ```
 
-移动的 `v1` tag 已在 v0.8.0 不可变 Action consumer 通过后，用精确 guarded lease 提升到
-v0.8.0。以后接受更新前应检查 release note；工作流不能随版本移动时使用上面的完整 commit。
+移动的 `v1` tag 在验证 v0.8.1 不可变 consumer 期间仍指向 v0.8.0。后续提升会使用精确的旧 tag
+object lease 与 pending/final 公开状态。接受更新前应检查 release note；工作流不能随版本移动时
+使用上面的完整 commit。
 
 ## 信任与 release 证据
 

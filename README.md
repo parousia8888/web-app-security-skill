@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#see-the-result">Demo</a> ·
-  <a href="#whats-new-in-v081">v0.8.1 candidate</a> ·
+  <a href="#whats-new-in-v081">v0.8.1</a> ·
   <a href="#whats-new-in-v080">v0.8.0</a> ·
   <a href="#install">Install</a> ·
   <a href="#run-the-first-project">First project</a> ·
@@ -147,9 +147,10 @@ Release publication is now a trusted-`main` manual workflow: a read-only job ver
 annotated tag, signer policy, exact candidate and hosted checks before dependency installation; a
 separate `release`-environment job owns publication permissions. Moving `v1` has explicit pending
 and final states and remains less immutable than a full commit pin. The solo-maintainer
-administrator bypass is documented and is not independent review. WSL2 remains unsupported. Until
-the candidate completes hosted checks, signed publication, npm provenance, verified installation
-and Action consumers, v0.8.0 below remains the latest public release.
+administrator bypass is documented and is not independent review. WSL2 remains unsupported. The
+signed v0.8.1 tag, GitHub Release, npm package and verified installer are public and identify source
+commit `6e581adcac7a0433ec6428d8080d20761dfc3a93`. The moving `v1` Action remains on v0.8.0 until the
+v0.8.1 immutable consumer and guarded pending/final promotion complete.
 
 ## What's new in v0.8.0
 
@@ -216,7 +217,7 @@ Attestation runs when GitHub CLI is installed and authenticated; pass `--attesta
 make an unavailable or failed attestation stop installation.
 
 ```bash
-( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/12cb085d7f3a21c2b6ffb6cb2758ee4247e2af9f/scripts/bootstrap-install.sh?immutable=12cb085d7f3a21c2b6ffb6cb2758ee4247e2af9f'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" '137b5d8fdf6f616be3aa2631e0134b354fd9142ce19419bad6c37e5b0409480f'; sh "$p" )
+( set -eu; p="$(mktemp "${TMPDIR:-/tmp}/web-app-security-bootstrap.XXXXXX")"; trap 'rm -f "$p"' EXIT HUP INT TERM; curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --silent --show-error --location --output "$p" 'https://raw.githubusercontent.com/parousia8888/web-app-security-skill/0d488226ac55036b8871ff12b5572e697ec37bb7/scripts/bootstrap-install.sh?immutable=0d488226ac55036b8871ff12b5572e697ec37bb7'; node -e 'const c=require("node:crypto"),f=require("node:fs"),p=process.argv[1],e=process.argv[2],a=c.createHash("sha256").update(f.readFileSync(p)).digest("hex");if(a!==e){console.error(`bootstrap SHA-256 mismatch: ${a}`);process.exit(1)}' "$p" '0b9c43d22c886f1f5394613800701eeeb1919a858168c5ca678f227ba0306c95'; sh "$p" )
 ```
 
 Select a surface when needed:
@@ -434,7 +435,7 @@ requires deployment authorization acknowledgement:
 
 ```yaml
 - name: Audit public crawl boundary
-  uses: parousia8888/web-app-security-skill@119cbcc7f8d327482df8abfa50a4af0b69fcceee
+  uses: parousia8888/web-app-security-skill@6e581adcac7a0433ec6428d8080d20761dfc3a93
   with:
     site: https://example.com
     acknowledge-authorization: true
@@ -442,21 +443,21 @@ requires deployment authorization acknowledgement:
     fail-on: high
 ```
 
-For repeatable CI, use the immutable v0.8.0 commit above. The signed stable major-version alias now
-targets the same v0.8.0 source commit; it remains intentionally movable:
+For repeatable CI, use the immutable v0.8.1 commit above. The signed stable major-version alias
+remains on v0.8.0 until the v0.8.1 promotion gate completes, and remains intentionally movable:
 
 ```yaml
 uses: parousia8888/web-app-security-skill@v1
 ```
 
-Source mode defaults to the bundled adapter. The immutable v0.8.0 Action runs the v3 source
+Source mode defaults to the bundled adapter. The immutable v0.8.1 Action runs the v3 source
 contract, 25 built-in risk rules, 3 evidence-integrity rules, bounded Express/NestJS/Next.js route
 and Server Action inventory, and bounded access-control-chain review. External binaries must be
 installed and pinned by the caller; the Action never downloads them:
 
 ```yaml
 - name: Audit source
-  uses: parousia8888/web-app-security-skill@119cbcc7f8d327482df8abfa50a4af0b69fcceee
+  uses: parousia8888/web-app-security-skill@6e581adcac7a0433ec6428d8080d20761dfc3a93
   with:
     mode: source
     project: .
@@ -464,9 +465,9 @@ installed and pinned by the caller; the Action never downloads them:
     fail-on: high
 ```
 
-The moving `v1` tag was promoted to v0.8.0 with an exact guarded lease after the immutable Action
-consumer passed. Review release notes before accepting a future update; use the full commit above
-when the workflow must not move.
+The moving `v1` tag still identifies v0.8.0 while the v0.8.1 immutable consumer is verified. Its
+guarded promotion uses an exact prior-tag-object lease and pending/final public states. Review
+release notes before accepting an update; use the full commit above when the workflow must not move.
 
 ## Trust and release evidence
 

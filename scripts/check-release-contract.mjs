@@ -15,9 +15,9 @@ const workflows = [
   '.github/workflows/action-v1-consumer.yml',
   '.github/workflows/npm-publish.yml',
 ];
-const RELEASE_ACTION_COMMIT = '119cbcc7f8d327482df8abfa50a4af0b69fcceee';
-const BOOTSTRAP_COMMIT = '12cb085d7f3a21c2b6ffb6cb2758ee4247e2af9f';
-const BOOTSTRAP_SHA256 = '137b5d8fdf6f616be3aa2631e0134b354fd9142ce19419bad6c37e5b0409480f';
+const RELEASE_ACTION_COMMIT = '6e581adcac7a0433ec6428d8080d20761dfc3a93';
+const BOOTSTRAP_COMMIT = '0d488226ac55036b8871ff12b5572e697ec37bb7';
+const BOOTSTRAP_SHA256 = '0b9c43d22c886f1f5394613800701eeeb1919a858168c5ca678f227ba0306c95';
 const VERIFIER_COMMIT = '0e53aaeb962d51f245b909de803e3fbd12c06b1d';
 const VERIFIER_SHA256 = 'd5e9f4ce50d9c38ef3502d512af1f342e80edd96844351d6134594de75b2edb8';
 let failed = false;
