@@ -3,17 +3,26 @@ on:
   workflow_dispatch:
     inputs:
       phase:
-        description: "Run only the immutable release consumer, or the final immutable + v1 verification"
+        description: "Verify the immutable Action, pending v1 promotion, or finalized public state"
         required: true
         default: "immutable-only"
         type: "choice"
         options:
           - "immutable-only"
+          - "promotion"
           - "final"
+      promotion-run-id:
+        description: "Successful promotion-phase run ID; required only for final"
+        required: false
+        type: "string"
 permissions:
   contents: "read"
+concurrency:
+  group: "action-v1-promotion"
+  cancel-in-progress: false
 jobs:
   immutable-route-consumer:
+    if: "${{ inputs.phase != 'final' }}"
     runs-on: "ubuntu-latest"
     steps:
       - uses: "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803" # v6
@@ -88,7 +97,7 @@ jobs:
           }
           NODE
   consumer:
-    if: "${{ inputs.phase == 'final' }}"
+    if: "${{ inputs.phase == 'promotion' }}"
     runs-on: "ubuntu-latest"
     steps:
       - uses: "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803" # v6
@@ -166,11 +175,11 @@ jobs:
           if test -f "$RUNNER_TEMP/action-v1-server.pid"; then
             kill "$(cat "$RUNNER_TEMP/action-v1-server.pid")" 2>/dev/null || true
           fi
-  live-verification:
+  promotion-verification:
     needs: [immutable-route-consumer, consumer]
-    if: "${{ always() && inputs.phase == 'final' && needs.immutable-route-consumer.result == 'success' && needs.consumer.result == 'success' }}"
+    if: "${{ always() && inputs.phase == 'promotion' && needs.immutable-route-consumer.result == 'success' && needs.consumer.result == 'success' }}"
     permissions:
-      contents: "write"
+      contents: "read"
     runs-on: "ubuntu-latest"
     env:
       GH_TOKEN: "${{ github.token }}"
@@ -184,7 +193,7 @@ jobs:
         with:
           node-version: "22"
       - run: "npm ci --ignore-scripts"
-      - name: "Download and verify public release, package and moving alias"
+      - name: "Download and verify immutable channels and pending moving alias"
         shell: "bash"
         run: |
           set -euo pipefail
@@ -195,7 +204,7 @@ jobs:
           node scripts/prepare-release-promotion.mjs \
             --version "$version" --assets live-evidence/release-assets --live \
             --out live-evidence/release-promotion.json
-          node scripts/check-public-release-state.mjs \
+          node scripts/check-public-release-state.mjs --phase pending \
             --out live-evidence/public-release-state.json
           npm view "web-app-security-skill@$version" --json > live-evidence/npm-metadata.json
           node scripts/check-public-package.mjs \
@@ -209,8 +218,108 @@ jobs:
           HOME="$RUNNER_TEMP/live-install-home" node scripts/install-verified.mjs \
             --version "$version" --from-dir live-evidence/release-assets \
             --attestation required --target all | tee live-evidence/installer.log
+      - name: "Record successful pending-promotion consumers"
+        shell: "bash"
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./docs/release-state.json').publishedRelease.version")"
+          node - <<'NODE' > live-evidence/consumer-results.json
+          const state = require('./docs/release-state.json');
+          if (state.stableAction?.promotion?.state !== 'pending') {
+            throw new Error('promotion phase requires pending stable Action state');
+          }
+          process.stdout.write(`${JSON.stringify({
+            schemaVersion: 1,
+            state: 'promotion_consumers_verified',
+            runId: process.env.GITHUB_RUN_ID,
+            workflow: '.github/workflows/action-v1-consumer.yml',
+            version: state.publishedRelease.version,
+            sourceCommit: state.stableAction.promotion.expectedSourceCommit,
+            pendingStateCommit: process.env.GITHUB_SHA,
+            immutableConsumer: process.env.WEBAPP_SECURITY_IMMUTABLE_CONSUMER_RESULT,
+            stableConsumer: process.env.WEBAPP_SECURITY_STABLE_CONSUMER_RESULT,
+          }, null, 2)}\n`);
+          NODE
+      - name: "Upload pending-promotion workflow evidence"
+        uses: "actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f" # v6
+        with:
+          name: "action-v1-promotion-${{ github.run_id }}"
+          path: "live-evidence/"
+          if-no-files-found: "error"
+          retention-days: 90
+  final-state-verification:
+    if: "${{ inputs.phase == 'final' }}"
+    environment: "release"
+    permissions:
+      actions: "read"
+      contents: "write"
+    runs-on: "ubuntu-latest"
+    env:
+      GH_TOKEN: "${{ github.token }}"
+      PROMOTION_RUN_ID: "${{ inputs['promotion-run-id'] }}"
+    steps:
+      - uses: "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803" # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38" # v6
+        with:
+          node-version: "22"
+      - run: "npm ci --ignore-scripts"
+      - name: "Download and bind the successful promotion run"
+        shell: "bash"
+        run: |
+          set -euo pipefail
+          if [[ ! "$PROMOTION_RUN_ID" =~ ^[0-9]+$ ]]; then
+            echo "final phase requires a numeric promotion-run-id" >&2
+            exit 1
+          fi
+          gh run view "$PROMOTION_RUN_ID" \
+            --json databaseId,workflowName,event,conclusion,headSha,url \
+            > promotion-run.json
+          node - <<'NODE'
+          const run = require('./promotion-run.json');
+          if (String(run.databaseId) !== process.env.PROMOTION_RUN_ID
+              || run.workflowName !== 'Action v1 consumer'
+              || run.event !== 'workflow_dispatch'
+              || run.conclusion !== 'success') {
+            throw new Error('promotion run identity or conclusion disagrees');
+          }
+          NODE
+          mkdir prior-evidence
+          gh run download "$PROMOTION_RUN_ID" \
+            --name "action-v1-promotion-$PROMOTION_RUN_ID" --dir prior-evidence
+      - name: "Verify finalized tracked state against prior consumers"
+        shell: "bash"
+        run: |
+          set -euo pipefail
+          mkdir live-evidence
+          node scripts/check-public-release-state.mjs --phase final \
+            --out live-evidence/public-release-state.json
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const state = require('./docs/release-state.json');
+          const run = require('./promotion-run.json');
+          const consumers = require('./prior-evidence/consumer-results.json');
+          if (state.stableAction?.promotion?.state !== 'final'
+              || consumers.state !== 'promotion_consumers_verified'
+              || consumers.runId !== process.env.PROMOTION_RUN_ID
+              || consumers.pendingStateCommit !== run.headSha
+              || consumers.version !== state.publishedRelease.version
+              || consumers.sourceCommit !== state.stableAction.sourceCommit
+              || consumers.immutableConsumer !== 'success'
+              || consumers.stableConsumer !== 'success') {
+            throw new Error('final stable state disagrees with pending-promotion consumer evidence');
+          }
+          for (const name of ['release-promotion.json', 'public-package.json', 'installer.log']) {
+            fs.copyFileSync(`prior-evidence/${name}`, `live-evidence/${name}`);
+          }
+          NODE
       - name: "Build and publish durable live-verification evidence"
         shell: "bash"
+        env:
+          WEBAPP_SECURITY_IMMUTABLE_CONSUMER_RESULT: "success"
+          WEBAPP_SECURITY_STABLE_CONSUMER_RESULT: "success"
         run: |
           set -euo pipefail
           version="$(node -p "require('./docs/release-state.json').publishedRelease.version")"
@@ -230,10 +339,13 @@ jobs:
             echo "existing live-verification record differs from this verified rerun" >&2
             exit 1
           fi
-      - name: "Upload live-verification workflow evidence"
+      - name: "Upload finalized live-verification evidence"
         uses: "actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f" # v6
         with:
-          name: "live-verification"
-          path: "live-evidence/"
+          name: "live-verification-${{ inputs['promotion-run-id'] }}"
+          path: |
+            live-evidence/
+            promotion-run.json
+            prior-evidence/consumer-results.json
           if-no-files-found: "error"
           retention-days: 90

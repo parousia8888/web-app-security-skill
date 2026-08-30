@@ -18,6 +18,21 @@
 | AWS CLI | v2 recommended | Optional; missing CLI, permission failures and malformed JSON are v2 `unknown` evidence |
 | Windows / WSL2 | Not supported | No maintained native-Windows or clean WSL2 verification environment |
 
+## Scope and adapter execution
+
+| Surface | Restricted file-read behavior | Unavailable boundary |
+|---|---|---|
+| Built-in source, route and access review | Reads only compiled source roots plus explicit governing inputs; excluded directories and symlinks are not followed | Invalid, missing, unreadable or unsafe roots stop before a clean report |
+| `--since` / `--staged` | Builds the Git snapshot, preserves repository-relative paths, then admits only paths allowed by the same policy | Untracked files remain outside Git diff evidence and are counted separately |
+| Checkov | Receives an exact admitted Dockerfile/workflow list | Unsupported input cannot be broadened silently |
+| OSV-Scanner | Receives admitted or governing lockfiles only | No eligible lockfile remains explicit unavailable evidence |
+| Opengrep and Gitleaks working tree | Run in private path-preserving scoped snapshots | Snapshot construction failure is unknown, not pass |
+| Gitleaks history | Full project scope remains supported | Restricted history is `unknown / history_scope_not_supported`; output-only post-filtering is not used |
+
+`sourceRoots` use POSIX-relative project paths. `excludedDirectories` contains basenames rather than
+globs. `.git` and `.webapp-security` are mandatory exclusions. The policy is enforced at file read;
+it is not a claim that discovery, package-manager metadata or external runtime policy was reviewed.
+
 Project discovery currently identifies Node projects from `package.json`, common JavaScript
 lockfiles and supported framework dependencies; Python projects from `pyproject.toml` or
 `requirements*.txt` plus common Python lockfiles; and multi-root combinations of those ecosystems.

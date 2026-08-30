@@ -50,13 +50,19 @@ for (const path of workflows) {
 
 for (const [path, markers] of [
   ['.github/workflows/release.yml', [
-    'v[0-9]*.[0-9]*.[0-9]*',
+    'workflow_dispatch:',
+    'verify-and-build:',
+    'publish:',
+    'post-publish-verify:',
+    'environment: "release"',
+    'scripts/verify-release-candidate.mjs',
     'scripts/build-release-artifacts.mjs',
     'scripts/verify-release-artifacts.mjs',
     'scripts/test-release-artifact.mjs',
     'scripts/prepare-release-promotion.mjs',
     'diff -u dist/SHA256SUMS dist-rebuild/SHA256SUMS',
     'actions/attest-build-provenance@',
+    'actions/download-artifact@',
   ]],
   ['.github/workflows/ci.yml', [
     'fetch-depth: 0',
@@ -73,6 +79,7 @@ for (const [path, markers] of [
     'scripts/check-public-release-state.mjs',
     'scripts/check-public-package.mjs',
     'scripts/build-live-verification-record.mjs',
+    'action-v1-promotion',
   ]],
   ['.github/workflows/npm-publish.yml', [
     'workflow_dispatch:',

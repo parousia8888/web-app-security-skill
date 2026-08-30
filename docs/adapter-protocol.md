@@ -14,11 +14,15 @@ produced.
 Execution follows this sequence:
 
 1. Verify the executable reports the exact supported version.
-2. Determine applicability from recorded project inputs.
-3. Invoke the bounded machine-output command without executing project dependencies.
-4. Parse only documented fields and reject malformed, oversized or path-escaping output.
-5. Convert results to sanitized v2 findings and per-rule coverage.
-6. Convert missing tools, version drift, timeout, malformed output, inconsistent exit status and
+2. Compile the persisted source roots and excluded directory basenames into the same canonical
+   file-read policy used by the built-in analyzer.
+3. Determine applicability from admitted source or governing manifest/lockfile inputs.
+4. Invoke the bounded machine-output command without executing project dependencies or reading a
+   broader tree merely to filter results afterward.
+5. Parse only documented fields and reject malformed, oversized, path-escaping or out-of-scope output.
+6. Convert results to sanitized v3 findings and per-rule coverage, recording `scopeMode`.
+7. Convert missing tools, unsupported exact scope, version drift, timeout, malformed output,
+   inconsistent exit status and
    internal errors to `unknown`/unavailable coverage, never a clean result.
 
 Raw stdout and stderr are not persisted. Adapter implementations must discard secret values,
@@ -31,10 +35,10 @@ runtime or workflow permissions.
 
 | Adapter | Tested version | License | Invocation boundary | Persisted evidence | Network |
 |---|---:|---|---|---|---|
-| Checkov | `3.3.9` | Apache-2.0 | Root `Dockerfile` and root `.github/workflows/*.yml|yaml`; only `CKV_DOCKER_8`, `CKV_DOCKER_2` and `CKV2_GHA_1` | External rule ID, framework and sanitized relative path/line range; code blocks, resources and stderr are discarded | `--skip-download`; may query PyPI for version metadata, never uploads project source |
-| Gitleaks | `8.30.1` | MIT | Git history when `.git` is present, plus working tree; `--redact=100` | External rule ID, sanitized path/line, optional commit and SHA-256 fingerprint digest | No |
-| Opengrep | `1.27.0` | LGPL-2.1-or-later engine; project-owned MIT rules | JavaScript, TypeScript and Python with the bundled SHA-256-pinned local taint ruleset | External rule ID, sanitized relative path/line/column, engine kind and ruleset SHA-256; source lines and metavariables are discarded | No |
-| OSV-Scanner | `2.5.0` | Apache-2.0 | Recorded lockfiles; call analysis disabled | Ecosystem, package/version, advisory IDs, aliases and upstream maximum severity | May query the public OSV database |
+| Checkov | `3.3.9` | Apache-2.0 | Exact admitted root `Dockerfile`/`.github/workflows/*.yml|yaml` input list; only `CKV_DOCKER_8`, `CKV_DOCKER_2` and `CKV2_GHA_1` | External rule ID, framework and sanitized relative path/line range; code blocks, resources and stderr are discarded | `--skip-download`; may query PyPI for version metadata, never uploads project source |
+| Gitleaks | `8.30.1` | MIT | Full scope: Git history plus working tree. Restricted scope: private path-preserving working-tree snapshot; history is explicitly unsupported | External rule ID, sanitized path/line, optional commit and SHA-256 fingerprint digest | No |
+| Opengrep | `1.27.0` | LGPL-2.1-or-later engine; project-owned MIT rules | Admitted JavaScript, TypeScript and Python copied to a private path-preserving snapshot with the bundled SHA-256-pinned local taint ruleset | External rule ID, sanitized relative path/line/column, engine kind and ruleset SHA-256; source lines and metavariables are discarded | No |
+| OSV-Scanner | `2.5.0` | Apache-2.0 | Admitted or ancestor governing recorded lockfiles; call analysis disabled | Ecosystem, package/version, advisory IDs, aliases and upstream maximum severity | May query the public OSV database |
 
 OSV matches use local severity `info`: upstream CVSS or database severity is preserved as evidence,
 not converted into a Web App Security severity. Project reachability and priority require review.
@@ -66,6 +70,13 @@ requires `--acknowledge-alert-policy`; see
 `osv` in stable order. It cannot be combined with explicit `--adapter`, `--since` or `--staged`.
 Unavailable prerequisites still produce one `unknown` result per applicable adapter rule and exit
 3; `webapp-security doctor . --adapter all --json` reports exact version/setup guidance.
+
+The report records adapter `scopeMode` as `full`, `scoped_snapshot`, `governing_inputs` or
+`unsupported`. An adapter that cannot prove the persisted file-read boundary returns unknown
+coverage and exit 3; a broader scan followed by path filtering is not accepted. Working snapshots
+are private temporary directories removed after success, failure or timeout. The root
+`webapp-security.suppressions.json` file is evaluated only after findings are constructed and does
+not broaden adapter input scope.
 
 ## Provenance and deferred adapters
 

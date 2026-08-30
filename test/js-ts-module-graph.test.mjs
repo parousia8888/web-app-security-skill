@@ -31,6 +31,81 @@ assert.equal(aliases.modules.get('apps/web/app/route.ts').imports[0].resolution.
 assert.equal(aliases.modules.get('apps/web/app/route.ts').imports[1].resolution.path,
   'packages/security/src/helper.ts');
 
+const nodeExportWildcards = buildJsTsModuleGraph([
+  {
+    path: 'apps/web/route.ts',
+    text: "import value from '@workspace/pattern/features/a$b/c.d';",
+  },
+  {
+    path: 'packages/pattern/src/a$b/c.d/entry.a$b/c.d.js',
+    text: 'export default true;',
+  },
+], {
+  packageManifests: [{ path: 'packages/pattern/package.json', manifest: {
+    name: '@workspace/pattern',
+    exports: { './features/*': './src/*/entry.*.js' },
+  } }],
+});
+assert.equal(nodeExportWildcards.modules.get('apps/web/route.ts').imports[0].resolution.path,
+  'packages/pattern/src/a$b/c.d/entry.a$b/c.d.js',
+  'Node package exports replace every RHS wildcard with the same captured subpath');
+
+const conditionalExports = buildJsTsModuleGraph([
+  { path: 'apps/web/same.ts', text: "import value from '@workspace/same';" },
+  { path: 'packages/same/src/index.ts', text: 'export default true;' },
+  { path: 'apps/web/different.ts', text: "import value from '@workspace/different';" },
+  { path: 'packages/different/src/node.ts', text: 'export default true;' },
+  { path: 'packages/different/src/browser.ts', text: 'export default true;' },
+  { path: 'apps/web/fallback.ts', text: "import value from '@workspace/fallback';" },
+  { path: 'packages/fallback/src/index.ts', text: 'export default true;' },
+], {
+  packageManifests: [
+    { path: 'packages/same/package.json', manifest: {
+      name: '@workspace/same', exports: { '.': {
+        node: './src/index.ts', custom: './src/index.ts', default: './src/index.ts',
+      } },
+    } },
+    { path: 'packages/different/package.json', manifest: {
+      name: '@workspace/different', exports: { '.': {
+        node: { import: './src/node.ts' }, custom: './src/browser.ts',
+      } },
+    } },
+    { path: 'packages/fallback/package.json', manifest: {
+      name: '@workspace/fallback', exports: { '.': [null, './missing.ts', './src/index.ts'] },
+    } },
+  ],
+});
+assert.equal(conditionalExports.modules.get('apps/web/same.ts').imports[0].resolution.path,
+  'packages/same/src/index.ts', 'different conditions resolving to one source remain exact');
+assert.equal(conditionalExports.modules.get('apps/web/different.ts').imports[0].resolution.reason,
+  'workspace_export_resolution_ambiguous',
+  'unknown runtime conditions resolving to different sources fail closed');
+assert.equal(conditionalExports.modules.get('apps/web/fallback.ts').imports[0].resolution.path,
+  'packages/fallback/src/index.ts', 'array fallback retains the one existing exact target');
+
+const invalidTypeScriptWildcard = buildJsTsModuleGraph([
+  { path: 'src/app.ts', text: "import value from '@/feature';" },
+  { path: 'src/feature/entry/feature.ts', text: 'export default true;' },
+], {
+  configFiles: [{ path: 'tsconfig.json', text: JSON.stringify({
+    compilerOptions: { paths: { '@/*': ['src/*/entry/*'] } },
+  }) }],
+});
+assert.equal(invalidTypeScriptWildcard.modules.get('src/app.ts').imports[0].resolution, null,
+  'TypeScript path targets with more than one wildcard stay outside the supported contract');
+assert.ok(invalidTypeScriptWildcard.reasons.some((item) => item.code === 'module_config_alias_invalid'));
+
+const replacementTextAlias = buildJsTsModuleGraph([
+  { path: 'src/app.ts', text: "import value from '@/a$b';" },
+  { path: 'src/a$b.ts', text: 'export default true;' },
+], {
+  configFiles: [{ path: 'tsconfig.json', text: JSON.stringify({
+    compilerOptions: { paths: { '@/*': ['src/*'] } },
+  }) }],
+});
+assert.equal(replacementTextAlias.modules.get('src/app.ts').imports[0].resolution.path,
+  'src/a$b.ts', 'TypeScript one-wildcard replacement treats dollar text literally');
+
 const builtWorkspace = buildJsTsModuleGraph([
   { path: 'apps/web/route.ts', text: "import { prisma } from '@workspace/database';" },
   { path: 'packages/database/src/index.ts', text: 'export const prisma = {};' },

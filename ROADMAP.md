@@ -169,9 +169,33 @@ publication, npm trusted publishing, installer verification, immutable Action co
 `v1` promotion and durable live verification are recorded in the
 [release evidence](docs/releases/v0.7.3.md).
 
-## v0.8.0 candidate
+## v0.8.1 candidate
 
-The v0.8.0 candidate implements bounded interprocedural access-control review inside the existing
+v0.8.1 is a correctness and release-trust patch for the existing capability set. It does not add
+detector families.
+
+- enforce persisted source roots and exclusions as one file-read boundary across built-in, route,
+  diff and external-adapter execution;
+- expose exact, expiring suppressions as policy dispositions without changing evidence or baseline
+  state, and keep unknown/evidence-integrity results unsuppressible;
+- run a production-only repository self-audit while preserving fixture and disposition evidence;
+- correct repeated Node export wildcards, conditional-export ambiguity and numeric usage-counter
+  redaction without weakening credential cleaning;
+- require trusted-main signed-candidate verification before write-capable publication and model
+  moving `v1` as pending/final state;
+- enable minimum repository protections, owned dependency alerts, a blocking dependency-review
+  gate and checksum-pinned ShellCheck while retaining the solo-maintainer bypass limitation;
+- keep WSL2 unsupported and retain the existing 25 built-in risk, 3 evidence-integrity and 16
+  opt-in external-adapter risk rules.
+
+The canonical execution and residual limits are recorded in the
+[v0.8.1 engineering plan](docs/V0.8.1_ENGINEERING_PLAN.md). Hosted candidate and public release
+evidence remain pending until the exact commit, signed tag, npm provenance, installer and Action
+consumers pass.
+
+## v0.8.0 complete
+
+The published v0.8.0 release implements bounded interprocedural access-control review inside the existing
 JavaScript/TypeScript framework boundary. It adds exact route/query/body/action selector evidence,
 follows object/principal/tenant facts through up to four exact project-local call edges,
 distinguishes Prisma/Drizzle query constraints from post-load comparison evidence and keeps
@@ -182,7 +206,7 @@ The unchanged frozen denominator completed 13 of 14 eligible paths (Drizzle 6/6,
 single miss and four completed paths with supporting limitations remain public. This is bounded
 fixed-corpus effectiveness evidence, not production precision/recall. MCP, Strix, Python framework
 expansion, authenticated DAST, new ORM families and unattended source edits remain outside this
-release. Scope, exact evidence and remaining release gates are in the
+release. Scope and exact evidence are in the
 [engineering plan](docs/V0.8.0_ENGINEERING_PLAN.md) and
 [fixed-commit review](docs/reviews/v0.8.0-access-control-review.md).
 

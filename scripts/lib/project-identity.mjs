@@ -3,6 +3,9 @@ import {
   existsSync, lstatSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync,
 } from 'node:fs';
 import { dirname, isAbsolute, join, posix, resolve } from 'node:path';
+import {
+  compileAuditScope, DEFAULT_EXCLUDED_DIRECTORIES, normalizedAuditBoundary,
+} from './audit-scope.mjs';
 
 export const PROJECT_IDENTITY_FILE = '.webapp-security/project.json';
 export const SUBJECT_ID = /^project-[a-f0-9]{32}$/;
@@ -55,10 +58,7 @@ export function sourceAuditBoundary(traversalLimits = DEFAULT_SOURCE_TRAVERSAL_L
   return {
     version: 2,
     sourceRoots: ['.'],
-    excludedDirectories: [
-      '.git', '.hg', '.svn', '.next', '.nuxt', '.output', '.webapp-security', 'build',
-      'coverage', 'dist', 'node_modules', 'target', 'vendor', '__pycache__', '.venv', 'venv',
-    ],
+    excludedDirectories: [...DEFAULT_EXCLUDED_DIRECTORIES],
     checkModes: ['source', 'local', ...adapters.filter((adapter) => adapter !== 'builtin').map((adapter) => `adapter:${adapter}`)],
     networkAccess: adapters.includes('osv') || adapters.includes('checkov'),
     adapters,
@@ -68,7 +68,7 @@ export function sourceAuditBoundary(traversalLimits = DEFAULT_SOURCE_TRAVERSAL_L
 }
 
 export function scopeDigest(boundary) {
-  return digestValue(boundary);
+  return digestValue(normalizedAuditBoundary(boundary));
 }
 
 function validateIdentity(identity) {
@@ -200,7 +200,9 @@ export function validatePersistedScope(scope) {
     }
   }
   validateTargetPaths(scope.target);
+  const compiledScope = compileAuditScope(scope.target.projectRoot, scope.auditBoundary);
   const actualDigest = scopeDigest(scope.auditBoundary);
   if (scope.subject.scopeDigest !== actualDigest) throw new Error('scope digest does not match its audit boundary');
+  if (compiledScope.scopeDigest !== actualDigest) throw new Error('compiled scope digest does not match its audit boundary');
   return scope;
 }

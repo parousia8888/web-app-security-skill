@@ -162,6 +162,17 @@ function aliasPatternMatch(pattern, specifier) {
     specificity: prefix.length + suffix.length };
 }
 
+function replaceOneLiteralWildcard(pattern, value) {
+  const index = pattern.indexOf('*');
+  if (index < 0) return pattern;
+  if (index !== pattern.lastIndexOf('*')) throw new Error('one wildcard required');
+  return `${pattern.slice(0, index)}${value}${pattern.slice(index + 1)}`;
+}
+
+function replaceAllLiteralWildcards(pattern, value) {
+  return pattern.includes('*') ? pattern.split('*').join(value) : pattern;
+}
+
 function configRecords(configFiles, reasons, limits) {
   const records = [];
   for (const input of (configFiles || []).slice(0, limits.maxResolutionConfigs)) {
@@ -496,7 +507,7 @@ function resolveAlias(fromPath, specifier, files, configs) {
   const resolved = [];
   let escaped = false;
   for (const target of selected.alias.targets) {
-    const value = target.includes('*') ? target.replace('*', selected.match.wildcard) : target;
+    const value = replaceOneLiteralWildcard(target, selected.match.wildcard);
     const base = safeModulePath(posix.join(config.base, value));
     if (!base) {
       escaped = true;
@@ -527,7 +538,7 @@ function stringTargets(value) {
   if (typeof value === 'string') return [value];
   if (Array.isArray(value)) return value.flatMap(stringTargets);
   if (!value || typeof value !== 'object') return [];
-  return ['import', 'default', 'require', 'types'].flatMap((key) => stringTargets(value[key]));
+  return Object.values(value).flatMap(stringTargets);
 }
 
 function exportTargets(exportsField, subpath) {
@@ -541,8 +552,8 @@ function exportTargets(exportsField, subpath) {
   const matches = entries.flatMap(([pattern, value]) => {
     const matched = aliasPatternMatch(pattern, subpath);
     if (!matched || !pattern.includes('*')) return [];
-    return stringTargets(value).map((target) => target.includes('*')
-      ? target.replace('*', matched.wildcard) : target);
+    return stringTargets(value).map((target) =>
+      replaceAllLiteralWildcards(target, matched.wildcard));
   });
   return matches;
 }

@@ -12,11 +12,8 @@ import { DEFAULT_SOURCE_TRAVERSAL_LIMITS, sourceTraversalLimits } from './projec
 import { createSourceAnalysisSession, sourceAnalysisLimits } from './source-analysis-budget.mjs';
 import { analyzeRouteSecurity, ROUTE_INTEGRITY_RULE_ID } from './route-security-audit.mjs';
 import { SOURCE_RULES } from './source-rules.mjs';
+import { compileAuditScope, DEFAULT_EXCLUDED_DIRECTORIES } from './audit-scope.mjs';
 
-const IGNORED = new Set([
-  '.git', '.hg', '.svn', '.next', '.nuxt', '.output', '.webapp-security', 'build', 'coverage',
-  'dist', 'node_modules', 'target', 'vendor', '__pycache__', '.venv', 'venv',
-]);
 const CONFIG_FILES = /^(?:next|vite|nuxt|svelte|astro)\.config\.(?:js|mjs|cjs|ts)$/;
 const ENV_FILE = /^\.env(?:\.[a-z0-9_-]+)?$/i;
 const ENV_TEMPLATE = /^\.env\.(?:example|sample|template|dist|defaults)$/i;
@@ -75,7 +72,7 @@ function resultFor(trackerState) {
   };
 }
 
-function trackedSensitiveEnvFiles(root) {
+function trackedSensitiveEnvFiles(root, scopePolicy) {
   const options = { encoding: 'utf8', timeout: 5000, maxBuffer: 4 * 1024 * 1024, windowsHide: true };
   const identity = spawnSync('git', ['-C', root, 'rev-parse', '--is-inside-work-tree'], options);
   if (identity.error) {
@@ -86,20 +83,23 @@ function trackedSensitiveEnvFiles(root) {
     if (identity.status === 128) return { status: 'not_applicable', code: 'not_git_repository', paths: [] };
     return { status: 'unavailable', code: 'git_identity_failed', paths: [] };
   }
-  const listed = spawnSync('git', ['-C', root, 'ls-files', '-z', '--cached', '--', '.'], options);
+  const roots = scopePolicy.roots.map((entry) => entry.path);
+  const listed = spawnSync('git', ['-C', root, 'ls-files', '-z', '--cached', '--', ...roots], options);
   if (listed.error) {
     return { status: 'unavailable', code: listed.error.code === 'ETIMEDOUT'
       ? 'git_index_timeout' : 'git_index_unavailable', paths: [] };
   }
   if (listed.status !== 0) return { status: 'unavailable', code: 'git_index_failed', paths: [] };
-  const paths = listed.stdout.split('\0').filter(Boolean).map(posix).filter((path) => {
+  const observed = listed.stdout.split('\0').filter(Boolean).map(posix);
+  const excluded = observed.filter((path) => !scopePolicy.includes(path));
+  const paths = observed.filter((path) => scopePolicy.includes(path)).filter((path) => {
     const name = path.split('/').at(-1);
     return ENV_FILE.test(name) && !ENV_TEMPLATE.test(name);
   });
-  return { status: 'completed', code: null, paths: [...new Set(paths)].sort() };
+  return { status: 'completed', code: null, paths: [...new Set(paths)].sort(), excluded };
 }
 
-function walk(root, limits) {
+function walk(root, limits, scopePolicy, governingPaths = []) {
   const files = [];
   const events = [];
   let entriesSeen = 0;
@@ -109,8 +109,13 @@ function walk(root, limits) {
     events.push({ outcome, code, path: samplePath(path) });
   }
 
+  const visitedDirectories = new Set();
+  const seenFiles = new Set();
   function visit(directory, depth) {
     if (stopped) return;
+    const realDirectory = resolve(directory);
+    if (visitedDirectories.has(realDirectory)) return;
+    visitedDirectories.add(realDirectory);
     let entries;
     try {
       entries = readdirSync(directory, { withFileTypes: true });
@@ -132,14 +137,21 @@ function walk(root, limits) {
         continue;
       }
       if (entry.isDirectory()) {
-        if (IGNORED.has(entry.name)) {
-          event('excluded', 'policy_excluded_directory', path);
+        const classification = scopePolicy.classify(path);
+        if (!classification.included) {
+          event('excluded', classification.reason, path);
         } else if (depth >= limits.maxDepth) {
           event('truncated', 'depth_limit_reached', path);
         } else {
           visit(absolute, depth + 1);
         }
       } else if (entry.isFile()) {
+        if (!scopePolicy.includes(path) && !governingPaths.includes(path)) {
+          event('excluded', 'outside_source_roots', path);
+          continue;
+        }
+        if (seenFiles.has(path)) continue;
+        seenFiles.add(path);
         if (files.length >= limits.maxFiles) {
           event('truncated', 'file_limit_reached', path);
           stopped = true;
@@ -151,7 +163,19 @@ function walk(root, limits) {
       }
     }
   }
-  visit(root, 0);
+  for (const sourceRoot of scopePolicy.roots) visit(sourceRoot.absolute, 0);
+  for (const path of governingPaths) {
+    if (seenFiles.has(path)) continue;
+    const absolute = resolve(root, path);
+    try {
+      if (statSync(absolute).isFile()) {
+        files.push({ absolute, path, name: posix(path).split('/').at(-1), governingInput: true });
+        seenFiles.add(path);
+      }
+    } catch {
+      event('errors', 'governing_input_unavailable', path);
+    }
+  }
   return { files, events, entriesSeen: Math.min(entriesSeen, limits.maxEntries), stopped };
 }
 
@@ -381,13 +405,21 @@ function coveredByWorkspace(manifest, parsedPackages, pnpmWorkspaces, lockRoots)
 }
 
 export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMITS, evidenceOptions = {}) {
-  const root = resolve(projectRoot);
-  if (!existsSync(root) || !statSync(root).isDirectory()) throw new Error(`project root is invalid: ${projectRoot}`);
+  const requestedRoot = resolve(projectRoot);
+  if (!existsSync(requestedRoot) || !statSync(requestedRoot).isDirectory()) throw new Error(`project root is invalid: ${projectRoot}`);
   const effectiveLimits = sourceTraversalLimits(limits);
   const effectiveAnalysisLimits = sourceAnalysisLimits(evidenceOptions.analysisLimits);
+  const scopePolicy = compileAuditScope(requestedRoot, evidenceOptions.scopeBoundary || {
+    sourceRoots: ['.'],
+    excludedDirectories: [...DEFAULT_EXCLUDED_DIRECTORIES],
+  });
+  const root = scopePolicy.projectRoot;
+  const governingInputs = scopePolicy.governingInputs(
+    evidenceOptions.manifests || [], evidenceOptions.lockfiles || [],
+  );
   const analysisSession = createSourceAnalysisSession(effectiveAnalysisLimits);
   const recordedLimits = { ...effectiveLimits, sourceAnalysis: effectiveAnalysisLimits };
-  const traversal = walk(root, effectiveLimits);
+  const traversal = walk(root, effectiveLimits, scopePolicy, governingInputs.map((entry) => entry.path));
   const { files } = traversal;
   const findings = [];
   const trackers = Object.fromEntries(SOURCE_RULE_IDS.map((ruleId) => [ruleId, tracker()]));
@@ -463,7 +495,7 @@ export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMIT
     }
   }
 
-  const trackedEnvironment = trackedSensitiveEnvFiles(resolve(evidenceOptions.gitRoot || root));
+  const trackedEnvironment = trackedSensitiveEnvFiles(resolve(evidenceOptions.gitRoot || root), scopePolicy);
   if (trackedEnvironment.status === 'not_applicable') {
     account(trackers['tracked-sensitive-env-file'], 'excluded', trackedEnvironment.code, '.');
     trackers['tracked-sensitive-env-file'].statusOverride = 'not_applicable';
@@ -734,6 +766,13 @@ export function auditSource(projectRoot, limits = DEFAULT_SOURCE_TRAVERSAL_LIMIT
     coverage,
     routeAnalysis,
     traversal: {
+      scope: {
+        roots: scopePolicy.roots.map((entry) => entry.path),
+        excludedDirectories: [...scopePolicy.excludedDirectoryNames],
+        recordedExcludedDirectories: [...scopePolicy.recordedExcludedDirectoryNames],
+        governingInputs,
+        scopeDigest: scopePolicy.scopeDigest,
+      },
       effectiveLimits: recordedLimits,
       analysis: analysisSession.snapshot(),
       entriesSeen: traversal.entriesSeen,

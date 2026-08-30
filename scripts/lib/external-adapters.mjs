@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import {
-  chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync,
-  realpathSync, statSync, writeFileSync,
+  chmodSync, copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync,
+  readdirSync, rmSync, realpathSync, statSync, writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
@@ -12,11 +12,52 @@ import {
   OPENGREP_RULE_ID_MAP, OPENGREP_RULES, OPENGREP_RULESET, OSV_ADAPTER, OSV_RULES,
 } from './adapter-definitions.mjs';
 import { sourceRuleRegistryEntry } from './source-rule-registry.mjs';
+import {
+  compileAuditScope, DEFAULT_EXCLUDED_DIRECTORIES,
+} from './audit-scope.mjs';
 
 const MAX_OUTPUT_BYTES = 16 * 1024 * 1024;
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const digest = (value) => createHash('sha256').update(String(value)).digest('hex');
 const posix = (value) => value.split(sep).join('/');
+
+function adapterScope(projectRoot, scopeBoundary) {
+  return compileAuditScope(projectRoot, scopeBoundary || {
+    version: 2,
+    sourceRoots: ['.'],
+    excludedDirectories: [...DEFAULT_EXCLUDED_DIRECTORIES],
+  });
+}
+
+function withScopedSnapshot(policy, callback) {
+  const snapshot = mkdtempSync(resolve(tmpdir(), 'web-app-security-adapter-scope-'));
+  chmodSync(snapshot, 0o700);
+  const copied = new Set();
+  const visit = (directory) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })
+      .sort((left, right) => left.name.localeCompare(right.name))) {
+      const source = resolve(directory, entry.name);
+      const path = posix(relative(policy.projectRoot, source));
+      if (!policy.includes(path) || entry.isSymbolicLink()) continue;
+      const target = resolve(snapshot, path);
+      if (entry.isDirectory()) {
+        mkdirSync(target, { recursive: true, mode: 0o700 });
+        visit(source);
+      } else if (entry.isFile() && !copied.has(path)) {
+        mkdirSync(dirname(target), { recursive: true, mode: 0o700 });
+        copyFileSync(source, target);
+        chmodSync(target, 0o600);
+        copied.add(path);
+      }
+    }
+  };
+  try {
+    for (const root of policy.roots) visit(root.absolute);
+    return callback(snapshot, [...copied].sort());
+  } finally {
+    rmSync(snapshot, { recursive: true, force: true });
+  }
+}
 
 function safeProjectPath(projectRoot, value) {
   if (typeof value !== 'string' || !value) return null;
@@ -246,8 +287,10 @@ function unavailable(adapter, rules, reasonCode, detail = {}) {
 }
 
 export function runGitleaks(projectRoot, {
-  binary = 'gitleaks', timeoutSeconds = 120, historyRef = null,
+  binary = 'gitleaks', timeoutSeconds = 120, historyRef = null, scopeBoundary = null,
 } = {}) {
+  const scopePolicy = adapterScope(projectRoot, scopeBoundary);
+  const scopeMode = scopePolicy.restricted ? 'scoped_snapshot' : 'full';
   if (historyRef !== null && !/^[a-f0-9]{40}$/.test(historyRef)) {
     throw new Error('gitleaks historyRef must be an exact 40-character commit');
   }
@@ -276,7 +319,7 @@ export function runGitleaks(projectRoot, {
           { code: reason, count: 1, samplePaths: [] },
         ]),
       ],
-      networkAccessPerformed: false,
+      networkAccessPerformed: false, scopeMode,
     };
   }
   const modes = [
@@ -292,10 +335,26 @@ export function runGitleaks(projectRoot, {
       }, [{ code: 'not_git_repository', count: 1, samplePaths: [] }]));
       continue;
     }
-    const result = run(binary, [item.command, '--no-banner', '--no-color', '--redact=100',
+    if (item.mode === 'history' && scopePolicy.restricted) {
+      const reason = 'history_scope_not_supported';
+      findings.push(unknownFinding(GITLEAKS_ADAPTER, item.rule, reason));
+      coverageEntries.push(coverage(GITLEAKS_ADAPTER, item.rule, 'unavailable', { errors: 1 }, [
+        { code: reason, count: 1, samplePaths: [] },
+      ]));
+      continue;
+    }
+    const execute = (scanRoot) => run(binary, [item.command, '--no-banner', '--no-color', '--redact=100',
       '--log-level', 'error', '--timeout', String(timeoutSeconds), '--report-format', 'json',
       '--report-path', '-', ...(item.mode === 'history' && historyRef
-        ? ['--log-opts', historyRef] : []), projectRoot], { cwd: projectRoot, timeoutSeconds });
+        ? ['--log-opts', historyRef] : []), scanRoot], { cwd: scanRoot, timeoutSeconds });
+    let result;
+    try {
+      result = item.mode === 'working-tree' && scopePolicy.restricted
+        ? withScopedSnapshot(scopePolicy, (scanRoot) => execute(scanRoot))
+        : execute(scopePolicy.projectRoot);
+    } catch {
+      result = { kind: 'scope_snapshot_failed' };
+    }
     if (result.kind !== 'completed' || ![0, 1].includes(result.status)) {
       const reason = result.kind === 'completed' ? 'adapter_internal_error' : `adapter_${result.kind}`;
       findings.push(unknownFinding(GITLEAKS_ADAPTER, item.rule, reason));
@@ -317,7 +376,10 @@ export function runGitleaks(projectRoot, {
       ]));
     }
   }
-  return { adapter: GITLEAKS_ADAPTER, identity, findings, coverage: coverageEntries, networkAccessPerformed: false };
+  return {
+    adapter: GITLEAKS_ADAPTER, identity, findings, coverage: coverageEntries,
+    networkAccessPerformed: false, scopeMode,
+  };
 }
 
 export function parseOsvJson(stdout, projectRoot) {
@@ -499,7 +561,26 @@ export function parseCheckovJson(stdout, projectRoot, allowedPaths = null) {
   };
 }
 
-function checkovInputs(projectRoot) {
+function checkovInputs(projectRoot, scopePolicy) {
+  if (scopePolicy.restricted) {
+    const dockerfiles = [];
+    const workflows = [];
+    const visit = (directory) => {
+      for (const entry of readdirSync(directory, { withFileTypes: true })
+        .sort((left, right) => left.name.localeCompare(right.name))) {
+        const absolute = resolve(directory, entry.name);
+        const path = posix(relative(scopePolicy.projectRoot, absolute));
+        if (!scopePolicy.includes(path) || entry.isSymbolicLink()) continue;
+        if (entry.isDirectory()) visit(absolute);
+        else if (entry.isFile() && entry.name === 'Dockerfile') dockerfiles.push(path);
+        else if (entry.isFile() && /(?:^|\/)\.github\/workflows\/[^/]+\.ya?ml$/i.test(path)) {
+          workflows.push(path);
+        }
+      }
+    };
+    for (const root of scopePolicy.roots) visit(root.absolute);
+    return { dockerfiles: [...new Set(dockerfiles)], workflows: [...new Set(workflows)] };
+  }
   const dockerfiles = existsSync(resolve(projectRoot, 'Dockerfile'))
     && !lstatSync(resolve(projectRoot, 'Dockerfile')).isSymbolicLink() ? ['Dockerfile'] : [];
   const workflows = [];
@@ -516,9 +597,13 @@ function checkovInputs(projectRoot) {
   return { dockerfiles, workflows };
 }
 
-export function runCheckov(projectRoot, { binary = 'checkov', timeoutSeconds = 120 } = {}) {
+export function runCheckov(projectRoot, {
+  binary = 'checkov', timeoutSeconds = 120, scopeBoundary = null,
+} = {}) {
   projectRoot = resolve(projectRoot);
-  const inputs = checkovInputs(projectRoot);
+  const scopePolicy = adapterScope(projectRoot, scopeBoundary);
+  const scopeMode = scopePolicy.restricted ? 'governing_inputs' : 'full';
+  const inputs = checkovInputs(projectRoot, scopePolicy);
   const allInputs = [...inputs.dockerfiles, ...inputs.workflows];
   const applicableRules = CHECKOV_RULES.filter((rule) => (rule.id.startsWith('checkov-dockerfile-')
     ? inputs.dockerfiles.length : inputs.workflows.length));
@@ -531,7 +616,7 @@ export function runCheckov(projectRoot, { binary = 'checkov', timeoutSeconds = 1
       coverage: CHECKOV_RULES.map((rule) => coverage(CHECKOV_ADAPTER, rule, 'not_applicable', {
         discovered: 1, eligible: 0, excluded: 1,
       }, [{ code: rule.id.startsWith('checkov-dockerfile-') ? 'no_dockerfile_input' : 'no_github_actions_input', count: 1, samplePaths: [] }])),
-      networkAccessPerformed: false,
+      networkAccessPerformed: false, scopeMode,
     };
   }
   return withCheckovState((stateEnv) => {
@@ -549,7 +634,7 @@ export function runCheckov(projectRoot, { binary = 'checkov', timeoutSeconds = 1
           ...unavailable(CHECKOV_ADAPTER, applicableRules, `adapter_${identity.status}`).coverage,
           ...notApplicableCoverage,
         ],
-        networkAccessPerformed: identity.status !== 'missing',
+        networkAccessPerformed: identity.status !== 'missing', scopeMode,
       };
     }
     const result = run(binary, [
@@ -564,6 +649,7 @@ export function runCheckov(projectRoot, { binary = 'checkov', timeoutSeconds = 1
       return {
         adapter: CHECKOV_ADAPTER, identity, findings: failed.findings,
         coverage: [...failed.coverage, ...notApplicableCoverage], networkAccessPerformed: true,
+        scopeMode,
       };
     }
     try {
@@ -621,13 +707,14 @@ export function runCheckov(projectRoot, { binary = 'checkov', timeoutSeconds = 1
           }),
           ...notApplicableCoverage,
         ],
-        networkAccessPerformed: true,
+        networkAccessPerformed: true, scopeMode,
       };
     } catch (error) {
       const failed = unavailable(CHECKOV_ADAPTER, applicableRules, `adapter_${error.message}`);
       return {
         adapter: CHECKOV_ADAPTER, identity, findings: failed.findings,
         coverage: [...failed.coverage, ...notApplicableCoverage], networkAccessPerformed: true,
+        scopeMode,
       };
     }
   });
@@ -637,22 +724,24 @@ export function runOpengrep(projectRoot, {
   binary = 'opengrep', timeoutSeconds = 120,
   rulesPath = resolve(ROOT, OPENGREP_RULESET.relativePath),
   rulesetSha256 = OPENGREP_RULESET.sha256,
+  scopeBoundary = null,
 } = {}) {
-  projectRoot = resolve(projectRoot);
-  return withOpengrepState((stateEnv) => {
+  const scopePolicy = adapterScope(projectRoot, scopeBoundary);
+  const scopeMode = scopePolicy.restricted ? 'scoped_snapshot' : 'full';
+  const execute = (scanRoot) => withOpengrepState((stateEnv) => {
     const identity = probeOpengrep(binary, timeoutSeconds, stateEnv);
     if (identity.status !== 'available') {
       return { adapter: OPENGREP_ADAPTER, identity, ...unavailable(
         OPENGREP_ADAPTER, OPENGREP_RULES, `adapter_${identity.status}`,
         identity.observedVersion ? { observedVersion: identity.observedVersion } : {},
-      ), networkAccessPerformed: false };
+      ), networkAccessPerformed: false, scopeMode };
     }
     const ruleset = verifyOpengrepRuleset(rulesPath, rulesetSha256);
     if (ruleset.status !== 'available') {
       return {
         adapter: OPENGREP_ADAPTER, identity,
         ...unavailable(OPENGREP_ADAPTER, OPENGREP_RULES, `adapter_ruleset_${ruleset.status}`),
-        networkAccessPerformed: false,
+        networkAccessPerformed: false, scopeMode,
       };
     }
     const result = run(binary, [
@@ -664,18 +753,18 @@ export function runOpengrep(projectRoot, {
       '--exclude', '.webapp-security', '--exclude', 'build', '--exclude', 'coverage',
       '--exclude', 'dist', '--exclude', 'node_modules', '--exclude', 'target',
       '--exclude', 'vendor', '--exclude', '__pycache__', '--exclude', '.venv', '--exclude', 'venv',
-      '--error', projectRoot,
-    ], { cwd: projectRoot, timeoutSeconds, env: stateEnv });
+      '--error', scanRoot,
+    ], { cwd: scanRoot, timeoutSeconds, env: stateEnv });
     if (result.kind !== 'completed' || ![0, 1].includes(result.status)) {
       const reason = result.kind === 'completed' ? 'adapter_internal_error' : `adapter_${result.kind}`;
       return {
         adapter: OPENGREP_ADAPTER, identity,
         ...unavailable(OPENGREP_ADAPTER, OPENGREP_RULES, reason),
-        networkAccessPerformed: false,
+        networkAccessPerformed: false, scopeMode,
       };
     }
     try {
-      const findings = parseOpengrepJson(result.stdout, projectRoot);
+      const findings = parseOpengrepJson(result.stdout, scanRoot);
       if ((result.status === 1) !== (findings.length > 0)) throw new Error('inconsistent_exit');
       let parsed;
       try { parsed = JSON.parse(result.stdout); } catch { throw new Error('malformed_json'); }
@@ -692,20 +781,37 @@ export function runOpengrep(projectRoot, {
             discovered: eligible || 1, eligible, scanned: eligible, excluded: eligible ? 0 : 1,
           }, eligible ? [] : [{ code: 'no_supported_source_input', count: 1, samplePaths: [] }]);
         }),
-        networkAccessPerformed: false,
+        networkAccessPerformed: false, scopeMode,
       };
     } catch (error) {
       return {
         adapter: OPENGREP_ADAPTER, identity,
         ...unavailable(OPENGREP_ADAPTER, OPENGREP_RULES, `adapter_${error.message}`),
-        networkAccessPerformed: false,
+        networkAccessPerformed: false, scopeMode,
       };
     }
   });
+  if (!scopePolicy.restricted) return execute(scopePolicy.projectRoot);
+  try {
+    return withScopedSnapshot(scopePolicy, (scanRoot) => execute(scanRoot));
+  } catch {
+    return {
+      adapter: OPENGREP_ADAPTER,
+      identity: { status: 'unavailable', expectedVersion: OPENGREP_ADAPTER.version },
+      ...unavailable(OPENGREP_ADAPTER, OPENGREP_RULES, 'scope_snapshot_failed'),
+      networkAccessPerformed: false,
+      scopeMode,
+    };
+  }
 }
 
-export function runOsv(projectRoot, lockfiles, { binary = 'osv-scanner', timeoutSeconds = 120 } = {}) {
-  if (!lockfiles.length) {
+export function runOsv(projectRoot, lockfiles, {
+  binary = 'osv-scanner', timeoutSeconds = 120, scopeBoundary = null,
+} = {}) {
+  const scopePolicy = adapterScope(projectRoot, scopeBoundary);
+  const scopeMode = scopePolicy.restricted ? 'governing_inputs' : 'full';
+  const eligibleLockfiles = scopePolicy.governingInputs([], lockfiles).map((entry) => entry.path);
+  if (!eligibleLockfiles.length) {
     return {
       adapter: OSV_ADAPTER,
       identity: { status: 'not_applicable', expectedVersion: OSV_ADAPTER.version },
@@ -713,7 +819,7 @@ export function runOsv(projectRoot, lockfiles, { binary = 'osv-scanner', timeout
       coverage: [coverage(OSV_ADAPTER, OSV_RULES[0], 'not_applicable', {
         discovered: 1, eligible: 0, excluded: 1,
       }, [{ code: 'no_supported_dependency_input', count: 1, samplePaths: [] }])],
-      networkAccessPerformed: false,
+      networkAccessPerformed: false, scopeMode,
     };
   }
   const identity = probeOsv(binary, timeoutSeconds);
@@ -721,15 +827,15 @@ export function runOsv(projectRoot, lockfiles, { binary = 'osv-scanner', timeout
     return { adapter: OSV_ADAPTER, identity, ...unavailable(
       OSV_ADAPTER, OSV_RULES, `adapter_${identity.status}`,
       identity.observedVersion ? { observedVersion: identity.observedVersion } : {},
-    ), networkAccessPerformed: false };
+    ), networkAccessPerformed: false, scopeMode };
   }
-  const resolvedLockfiles = lockfiles.map((lockfile) => containedProjectFile(projectRoot, lockfile));
+  const resolvedLockfiles = eligibleLockfiles.map((lockfile) => containedProjectFile(projectRoot, lockfile));
   const invalidInput = resolvedLockfiles.find((item) => item.reason);
   if (invalidInput) {
     return {
       adapter: OSV_ADAPTER, identity,
       ...unavailable(OSV_ADAPTER, OSV_RULES, invalidInput.reason),
-      networkAccessPerformed: false,
+      networkAccessPerformed: false, scopeMode,
     };
   }
   const args = [
@@ -743,7 +849,7 @@ export function runOsv(projectRoot, lockfiles, { binary = 'osv-scanner', timeout
     return {
       adapter: OSV_ADAPTER, identity,
       ...unavailable(OSV_ADAPTER, OSV_RULES, reason),
-      networkAccessPerformed: result.kind !== 'missing',
+      networkAccessPerformed: result.kind !== 'missing', scopeMode,
     };
   }
   try {
@@ -752,16 +858,16 @@ export function runOsv(projectRoot, lockfiles, { binary = 'osv-scanner', timeout
     return {
       adapter: OSV_ADAPTER, identity, findings,
       coverage: [coverage(OSV_ADAPTER, OSV_RULES[0], 'completed', {
-        discovered: lockfiles.length, eligible: lockfiles.length, scanned: lockfiles.length,
+        discovered: lockfiles.length, eligible: eligibleLockfiles.length, scanned: eligibleLockfiles.length,
       })],
-      networkAccessPerformed: true,
+      networkAccessPerformed: true, scopeMode,
     };
   } catch (error) {
     const reason = `adapter_${error.message}`;
     return {
       adapter: OSV_ADAPTER, identity,
       ...unavailable(OSV_ADAPTER, OSV_RULES, reason),
-      networkAccessPerformed: true,
+      networkAccessPerformed: true, scopeMode,
     };
   }
 }
@@ -771,19 +877,23 @@ export function runExternalAdapters(projectRoot, lockfiles, selected, options = 
   if (selected.includes('checkov')) results.push(runCheckov(projectRoot, {
     binary: process.env.WEBAPP_SECURITY_CHECKOV_BIN || 'checkov',
     timeoutSeconds: options.timeoutSeconds,
+    scopeBoundary: options.scopeBoundary,
   }));
   if (selected.includes('gitleaks')) results.push(runGitleaks(projectRoot, {
     binary: process.env.WEBAPP_SECURITY_GITLEAKS_BIN || 'gitleaks',
     timeoutSeconds: options.timeoutSeconds,
     historyRef: options.gitleaksHistoryRef || null,
+    scopeBoundary: options.scopeBoundary,
   }));
   if (selected.includes('opengrep')) results.push(runOpengrep(projectRoot, {
     binary: process.env.WEBAPP_SECURITY_OPENGREP_BIN || 'opengrep',
     timeoutSeconds: options.timeoutSeconds,
+    scopeBoundary: options.scopeBoundary,
   }));
   if (selected.includes('osv')) results.push(runOsv(projectRoot, lockfiles, {
     binary: process.env.WEBAPP_SECURITY_OSV_SCANNER_BIN || 'osv-scanner',
     timeoutSeconds: options.timeoutSeconds,
+    scopeBoundary: options.scopeBoundary,
   }));
   return results;
 }

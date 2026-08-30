@@ -63,13 +63,18 @@ export function explanationForFindingV3(finding, explanation = null) {
 export function createFindingV3(options) {
   const v2 = createFindingV2(options);
   const explanation = explanationForFindingV3(v2, options.explanation);
-  return { ...v2, schemaVersion: 3, explanation };
+  return { ...v2, schemaVersion: 3, explanation, disposition: { status: 'active' } };
 }
 
 export function upgradeFindingV2(finding, explanation = null) {
-  if (finding.schemaVersion === 3) return structuredClone(finding);
+  if (finding.schemaVersion === 3) return {
+    ...structuredClone(finding), disposition: finding.disposition || { status: 'active' },
+  };
   if (finding.schemaVersion !== 2) throw new Error('only v2 findings can be upgraded to v3');
-  return { ...structuredClone(finding), schemaVersion: 3, explanation: explanationForFindingV3(finding, explanation) };
+  return {
+    ...structuredClone(finding), schemaVersion: 3,
+    explanation: explanationForFindingV3(finding, explanation), disposition: { status: 'active' },
+  };
 }
 
 export function sourceFindingV3(legacyFinding, ruleset, explanation = null) {
@@ -124,6 +129,7 @@ export function createReportV3(options) {
   const cleanFindings = options.findings.map((finding) => ({
     ...structuredClone(finding),
     explanation: explanationForFindingV3(finding, finding.explanation),
+    disposition: finding.disposition || { status: 'active' },
   }));
   const base = createReportV2({
     ...options,
@@ -138,6 +144,14 @@ export function createReportV3(options) {
     schemaVersion: 3,
     findings: base.findings.map((finding) => findingById.get(finding.id)),
     baseline: sanitizeEvidence(options.baseline ?? null),
+  };
+  const suppressedTotal = report.findings.filter((finding) =>
+    finding.disposition.status === 'suppressed').length;
+  report.summary = {
+    ...report.summary,
+    activeTotal: report.summary.total - suppressedTotal,
+    suppressedTotal,
+    byDisposition: { active: report.summary.total - suppressedTotal, suppressed: suppressedTotal },
   };
   const errors = validateRuntimeReportV3(report);
   if (errors.length) throw new Error(`invalid v3 report:\n${errors.map((error) => `- ${error}`).join('\n')}`);
@@ -199,6 +213,9 @@ export function renderFindingMarkdownV3(finding, { technical = false } = {}) {
   const lines = [
     `### ${finding.id}: ${finding.title}`, '',
     `**${finding.domain} / ${finding.severity} / ${finding.state} (${evidenceLabels[finding.state]}) / ${finding.baseline.state || 'none'}**`, '',
+    ...(finding.disposition.status === 'suppressed' ? [
+      `**SUPPRESSED (${finding.disposition.suppressionId})${finding.disposition.expiresAt ? ` until ${finding.disposition.expiresAt}` : ''}:** ${finding.disposition.reason}`, '',
+    ] : []),
     `**Professional term:** ${explanation.technicalTerm}`, '',
     `**What this means:** ${explanation.plainLanguage}`, '',
     `**What could happen:** ${explanation.consequence}`, '',
@@ -239,7 +256,7 @@ export function renderMarkdownV3(report, options = {}) {
     `- Mode: \`${report.mode}\``,
     `- Subject: \`${report.subject.id}\` (${report.subject.binding})`,
     `- Generated: ${report.generatedAt}`,
-    `- Findings: ${report.summary.total}`, '',
+    `- Findings: ${report.summary.total} (active=${report.summary.activeTotal}, suppressed=${report.summary.suppressedTotal})`, '',
     '## Risk summary', '',
     ...domainSummaryLines(report).map((line) => `- ${line}`),
     ...(report.summary.total ? [] : ['No findings were produced by the checks that ran.']),
@@ -279,9 +296,11 @@ export function renderHtmlV3(report) {
     const standards = x.standards.length
       ? `<ul>${x.standards.map((item) => `<li><a href="${escapeHtml(item.url)}">${escapeHtml(item.id)}</a></li>`).join('')}</ul>`
       : '<p>None recorded.</p>';
-    return `<article data-finding-id="${escapeHtml(finding.id)}"><h2>${escapeHtml(finding.title)}</h2><p><strong>${escapeHtml(`${finding.domain} / ${finding.severity} / ${finding.state} (${evidenceLabels[finding.state]}) / ${finding.baseline.state || 'none'}`)}</strong></p><dl><dt>Professional term</dt><dd>${escapeHtml(x.technicalTerm)}</dd><dt>What this means</dt><dd>${escapeHtml(x.plainLanguage)}</dd><dt>What could happen</dt><dd>${escapeHtml(x.consequence)}</dd><dt>What the evidence proves</dt><dd>${escapeHtml(x.evidenceBoundary)}</dd><dt>Proposed change (${escapeHtml(`${x.proposal.status}: ${proposalLabels[x.proposal.status]}`)})</dt><dd>${escapeHtml(x.proposal.summary)}</dd><dt>Alternatives</dt><dd>${list(x.alternatives)}</dd><dt>Possible side effects</dt><dd>${list(x.sideEffects)}</dd><dt>Security retest</dt><dd>${escapeHtml(x.securityRetest)}</dd><dt>Functional retest</dt><dd>${escapeHtml(x.functionalRetest)}</dd><dt>Rollback</dt><dd>${escapeHtml(x.rollback)}</dd><dt>Decisions needed from you</dt><dd>${list(x.userDecisions)}</dd><dt>Standards</dt><dd>${standards}</dd></dl></article>`;
+    const disposition = finding.disposition.status === 'suppressed'
+      ? `<p><strong>SUPPRESSED (${escapeHtml(finding.disposition.suppressionId)})${finding.disposition.expiresAt ? ` until ${escapeHtml(finding.disposition.expiresAt)}` : ''}:</strong> ${escapeHtml(finding.disposition.reason)}</p>` : '';
+    return `<article data-finding-id="${escapeHtml(finding.id)}"><h2>${escapeHtml(finding.title)}</h2><p><strong>${escapeHtml(`${finding.domain} / ${finding.severity} / ${finding.state} (${evidenceLabels[finding.state]}) / ${finding.baseline.state || 'none'}`)}</strong></p>${disposition}<dl><dt>Professional term</dt><dd>${escapeHtml(x.technicalTerm)}</dd><dt>What this means</dt><dd>${escapeHtml(x.plainLanguage)}</dd><dt>What could happen</dt><dd>${escapeHtml(x.consequence)}</dd><dt>What the evidence proves</dt><dd>${escapeHtml(x.evidenceBoundary)}</dd><dt>Proposed change (${escapeHtml(`${x.proposal.status}: ${proposalLabels[x.proposal.status]}`)})</dt><dd>${escapeHtml(x.proposal.summary)}</dd><dt>Alternatives</dt><dd>${list(x.alternatives)}</dd><dt>Possible side effects</dt><dd>${list(x.sideEffects)}</dd><dt>Security retest</dt><dd>${escapeHtml(x.securityRetest)}</dd><dt>Functional retest</dt><dd>${escapeHtml(x.functionalRetest)}</dd><dt>Rollback</dt><dd>${escapeHtml(x.rollback)}</dd><dt>Decisions needed from you</dt><dd>${list(x.userDecisions)}</dd><dt>Standards</dt><dd>${standards}</dd></dl></article>`;
   }).join('\n');
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Web App Security report</title><style>body{font:16px/1.5 system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#171717}article{border-top:1px solid #bbb;padding:16px 0}code{overflow-wrap:anywhere}dt{font-weight:700;margin-top:12px}dd{margin-left:0}</style></head><body><h1>Web App Security report</h1><p>Mode: ${escapeHtml(report.mode)} · Findings: ${report.summary.total}</p><h2>Risk summary</h2>${summary ? `<ul>${summary}</ul>` : '<p>No findings were produced by the checks that ran.</p>'}<h2>Adapters</h2><ul>${adapters}</ul><h2>Coverage</h2>${selection}${traversal}<ul>${coverage}</ul><h2>Findings</h2>${rows || '<p>No findings were produced by the checks that ran.</p>'}<h2>Limitations</h2><ul>${report.limitations.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></body></html>\n`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Web App Security report</title><style>body{font:16px/1.5 system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#171717}article{border-top:1px solid #bbb;padding:16px 0}code{overflow-wrap:anywhere}dt{font-weight:700;margin-top:12px}dd{margin-left:0}</style></head><body><h1>Web App Security report</h1><p>Mode: ${escapeHtml(report.mode)} · Findings: ${report.summary.total} (active=${report.summary.activeTotal}, suppressed=${report.summary.suppressedTotal})</p><h2>Risk summary</h2>${summary ? `<ul>${summary}</ul>` : '<p>No findings were produced by the checks that ran.</p>'}<h2>Adapters</h2><ul>${adapters}</ul><h2>Coverage</h2>${selection}${traversal}<ul>${coverage}</ul><h2>Findings</h2>${rows || '<p>No findings were produced by the checks that ran.</p>'}<h2>Limitations</h2><ul>${report.limitations.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></body></html>\n`;
 }
 
 export function renderSarifV3(report) {
@@ -323,6 +342,9 @@ export function renderSarifV3(report) {
           domain: finding.domain, evidenceState: finding.state, baselineState: finding.baseline.state,
           proposalStatus: finding.explanation.proposal.status,
         },
+        ...(finding.disposition.status === 'suppressed' ? { suppressions: [{
+          kind: 'external', status: 'accepted', justification: finding.disposition.reason,
+        }] } : {}),
         ...(finding.location ? { locations: [{ physicalLocation: {
           artifactLocation: { uri: finding.location.path },
           ...(finding.location.line ? { region: { startLine: finding.location.line } } : {}),
@@ -333,12 +355,14 @@ export function renderSarifV3(report) {
 }
 
 export function renderJunitV3(report) {
-  const failures = report.findings.filter((finding) => finding.state === 'confirmed' && finding.baseline.state !== 'fixed').length;
+  const failures = report.findings.filter((finding) => finding.state === 'confirmed'
+    && finding.baseline.state !== 'fixed' && finding.disposition.status !== 'suppressed').length;
   const skipped = report.findings.length - failures;
   const cases = report.findings.map((finding) => {
     const attrs = `classname="web-app-security.${escapeXml(finding.rule.id)}" name="${escapeXml(finding.id)}"`;
     const properties = `<properties><property name="domain" value="${escapeXml(finding.domain)}"/><property name="evidenceState" value="${escapeXml(finding.state)}"/><property name="baselineState" value="${escapeXml(finding.baseline.state)}"/><property name="technicalTerm" value="${escapeXml(finding.explanation.technicalTerm)}"/><property name="proposalStatus" value="${escapeXml(finding.explanation.proposal.status)}"/></properties>`;
     if (finding.baseline.state === 'fixed') return `<testcase ${attrs}>${properties}<skipped message="fixed in retest"/></testcase>`;
+    if (finding.disposition.status === 'suppressed') return `<testcase ${attrs}>${properties}<skipped message="suppressed: ${escapeXml(finding.disposition.suppressionId)}"/></testcase>`;
     if (finding.state !== 'confirmed') return `<testcase ${attrs}>${properties}<skipped message="${escapeXml(finding.state)}"/></testcase>`;
     return `<testcase ${attrs}>${properties}<failure message="${escapeXml(`${finding.severity}: ${finding.title}`)}">${escapeXml(`${finding.explanation.plainLanguage}\n\n${finding.explanation.consequence}`)}</failure></testcase>`;
   }).join('');
@@ -402,7 +426,13 @@ export function readBaselineV3(path) {
 }
 
 export function exitCodeV3(report) {
-  return exitCodeV2(downgradeReportV3(report));
+  const downgraded = downgradeReportV3(report);
+  downgraded.findings = downgraded.findings.filter((_finding, index) =>
+    report.findings[index]?.disposition?.status !== 'suppressed');
+  const code = exitCodeV2(downgraded);
+  if (code === 1) return 1;
+  if (report.scope?.suppression?.status === 'unavailable') return 3;
+  return code;
 }
 
 export function reportDigestV3(report) {

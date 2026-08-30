@@ -34,6 +34,7 @@ try {
     'scripts/webapp-security.mjs', 'scripts/lib/source-audit.mjs',
     'scripts/vendor/js-ts-parser.bundle.mjs', 'scripts/vendor/js-ts-parser.manifest.json',
     'references/phase-2-api.md', 'rules/opengrep-source.yml', 'docs/report-v3.schema.json',
+    'docs/false-positive-policy.md',
     'docs/route-security-v1.schema.json', 'docs/route-security-v2.schema.json',
     'docs/route-security-v3.schema.json',
     'docs/reviews/v0.6.0-route-review.json',

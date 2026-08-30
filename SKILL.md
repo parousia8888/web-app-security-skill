@@ -156,6 +156,18 @@ selecting Gitleaks or OSV-Scanner. Use evidence-only `--fail-on never` until the
 has accepted `docs/alert-policy.md`; do not infer or assign its alert owner. Missing or failed tools
 are `unknown`, not clean. OSV-Scanner may access the public OSV database.
 
+For a persisted run, review `security-scope.yml` before execution. Its
+`auditBoundary.sourceRoots` and `excludedDirectories` are file-read boundaries shared by built-in,
+route, diff and external-adapter analysis, not filters applied after a broader scan. Do not claim
+excluded paths were checked. A restricted scope that an adapter cannot honor is `unknown`; in
+particular, restricted Gitleaks history is unavailable rather than scanned broadly and filtered.
+
+An optional project-root `webapp-security.suppressions.json` records exact
+adapter/rule/path/fingerprint policy dispositions. Suppressed findings remain in every report and
+keep their evidence state; they are not fixed or safe. Unknown and evidence-integrity findings are
+never suppressible. Owner and expiry are required whenever a suppression affects CI/release or an
+external adapter. See `docs/false-positive-policy.md`.
+
 ## Hard rules
 
 - **Authorization before action.** No active testing against a host without ownership proof or written authorization. If the user asks to test something they do not control, decline and explain Phase 0.

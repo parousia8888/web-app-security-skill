@@ -1,8 +1,48 @@
 name: ci
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 permissions:
   contents: "read"
 jobs:
+  dependency-review:
+    if: "github.event_name == 'pull_request'"
+    permissions:
+      contents: "read"
+      pull-requests: "read"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/dependency-review-action@3c4e3dcb1aa7874d2c16be7d79418e9b7efd6261" # v4.8.2
+        with:
+          fail-on-severity: "moderate"
+  shellcheck:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803" # v6
+      - name: "Install checksum-pinned ShellCheck"
+        run: "bash test/install-pinned-shellcheck.sh"
+      - name: "Run ShellCheck without a coverage percentage gate"
+        run: "shellcheck --severity=warning --external-sources scripts/*.sh test/*.sh"
+  repository-self-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with: { node-version: '22' }
+      - run: npm ci --ignore-scripts
+      - name: Run no-network production-scope self-audit
+        env:
+          NODE_OPTIONS: "--require=${{ github.workspace }}/test/helpers/deny-network.cjs"
+        run: node .github/scripts/run-self-audit.mjs --out self-audit-report
+      - name: Upload self-audit evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: repository-self-audit
+          path: self-audit-report/
+          if-no-files-found: "error"
   test:
     strategy:
       matrix:

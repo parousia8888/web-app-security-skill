@@ -1,4 +1,4 @@
-# v0.8.0 rule-contract conformance
+# v0.8.1 rule-contract conformance
 
 > Author-maintained synthetic rule-contract conformance suite; it verifies declared planted examples. It does not measure production-vulnerability precision, recall, reachability, exploitability or security coverage.
 

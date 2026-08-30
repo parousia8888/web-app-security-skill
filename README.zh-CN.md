@@ -12,6 +12,7 @@
 
 <p align="center">
   <a href="#查看结果">Demo</a> ·
+  <a href="#v081-新增内容">v0.8.1 candidate</a> ·
   <a href="#v080-新增内容">v0.8.0</a> ·
   <a href="#安装">安装</a> ·
   <a href="#执行第一个项目">首个项目</a> ·
@@ -104,6 +105,38 @@ npm run demo -- --out ./demo-output
 并在任一公开面不一致时失败。
 
 完整的安装到卸载流程见经过测试的[第一个项目教程](docs/tutorial.zh-CN.md)。
+
+## v0.8.1 新增内容
+
+v0.8.1 把已有边界变成实际执行合同，不增加检测规则家族。持久化的
+`auditBoundary.sourceRoots` 与 `excludedDirectories` 现在会编译成一份文件读取策略，供内置分析、
+路由/访问控制复核、`--since`/`--staged` 快照及每个已选外部 adapter 共用。声称遵守该范围的扫描器
+不会打开被排除的源码；缺失、不安全或无效的 root 会直接中止，不会生成“干净”报告。Checkov 和
+OSV 只接收精确 governing input，Opengrep 与工作树 Gitleaks 使用私有的限范围快照。受限范围下的
+Gitleaks 历史扫描明确返回 `unknown / history_scope_not_supported`，因为“先扫完整历史再过滤输出”
+违反文件读取边界。具体见 [adapter 范围矩阵](docs/adapter-protocol.md)、
+[范围实现](scripts/lib/audit-scope.mjs)与[合同测试](test/v081-scope-suppression-contract.test.mjs)。
+
+项目根目录可选的 `webapp-security.suppressions.json` 只处理一条精确匹配的
+adapter/rule/path/fingerprint。finding 仍会出现在 JSON、Markdown、HTML、SARIF 与 JUnit 中，原始
+证据状态和 baseline 状态都不改变；suppression 是可见的政策处置，不是“安全证明”或第五种证据
+状态。`unknown` 与 evidence-integrity finding 不可抑制。影响 CI/release gate 的条目及全部外部
+adapter 条目必须填写 owner 和到期时间；过期、漂移、格式错误或未匹配条目仍保持 active，并给出
+诊断。格式和例子见[教程](docs/tutorial.zh-CN.md)、[finding schema](docs/finding-v3.schema.json)与
+[误报政策](docs/false-positive-policy.md)。
+
+仓库自身的 required self-audit 现在使用明确的 production-only 范围及经过复核的精确 suppression，
+同时在 artifact 中保留 fixture 数量和全部处置。它会阻断 active HIGH 与不可用证据；绿色结果只代表
+这次有边界的静态检查通过，不代表仓库没有漏洞。Node package export pattern 会逐个替换右侧全部
+`*`；有歧义的 conditional export 仍保持 partial；`usage.tokens: 17` 这类有限白名单计数会保留为
+数字，credential 仍被脱敏。对应回归证据见
+[v0.8.1 工程计划](docs/V0.8.1_ENGINEERING_PLAN.md)。
+
+Release 发布已改为从可信 `main` 手动触发：只读 job 会在安装依赖前验证签名 annotated tag、签名人
+策略、精确候选提交和托管检查；只有独立的 `release` environment job 拥有发布权限。移动 `v1` 有
+明确的 pending/final 状态，可信度仍低于完整 commit pin。单维护者管理员 bypass 被明确记录，它不
+等于独立 review。WSL2 仍不支持。在候选版完成托管检查、签名发布、npm provenance、验证安装与
+Action consumer 前，下面的 v0.8.0 仍是最新公开 release。
 
 ## v0.8.0 新增内容
 
@@ -412,7 +445,7 @@ v0.8.0。以后接受更新前应检查 release note；工作流不能随版本�
 sha256sum -c SHA256SUMS
 gh attestation verify web-app-security-skill-*.tar.gz \
   --repo parousia8888/web-app-security-skill
-git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.8.0
+git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.8.1
 ```
 
 `.github/release-signers` 是仓库内 signer policy：本地验签通过只证明 tag 与当前检出的仓库政策

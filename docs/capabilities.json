@@ -128,8 +128,8 @@
       "name": "Automatic project discovery and scoped run",
       "category": "evidence_reporting",
       "maturity": "stable",
-      "scope": "Detects supported Node/Python and split-stack projects, package managers, lockfiles and config/deployment paths, then creates a versioned network-free security scope. Persisted scope paths are schema-bounded and runtime-validated: projectRoot is canonical absolute input while discovered files and framework/package-manager roots are normalized project-relative paths. It never establishes deployment ownership.",
-      "evidence": ["scripts/project-start.mjs", "scripts/lib/project-discovery.mjs", "test/project-discovery.test.mjs", "docs/security-scope.schema.json"]
+      "scope": "Detects supported Node/Python and split-stack projects, package managers, lockfiles and config/deployment paths, then creates a versioned network-free security scope. Persisted source roots and excluded directory basenames compile into one file-read boundary shared by built-in, route, diff and external-adapter analysis; governing inputs remain explicit and unsupported exact adapter scope becomes unknown. It never establishes deployment ownership.",
+      "evidence": ["scripts/project-start.mjs", "scripts/lib/project-discovery.mjs", "scripts/lib/audit-scope.mjs", "test/project-discovery.test.mjs", "test/audit-scope.test.mjs", "test/v081-scope-suppression-contract.test.mjs", "docs/security-scope.schema.json"]
     },
     {
       "id": "git-diff-source-selection",
@@ -144,7 +144,7 @@
       "name": "No-download deep audit profile",
       "category": "evidence_reporting",
       "maturity": "stable",
-      "scope": "Expands one audit command to the built-in detector plus Checkov, Gitleaks, Opengrep and OSV-Scanner in stable order. It never downloads a tool; every missing, incompatible or failed external adapter remains explicit unknown evidence with doctor guidance.",
+      "scope": "Expands one audit command to the built-in detector plus Checkov, Gitleaks, Opengrep and OSV-Scanner in stable order. It never downloads a tool; every missing, incompatible, failed or exact-scope-incompatible external adapter remains explicit unknown evidence with doctor guidance. Restricted Gitleaks history is unavailable rather than broadly scanned and post-filtered.",
       "evidence": ["scripts/project-audit.mjs", "scripts/lib/adapter-definitions.mjs", "scripts/lib/external-adapters.mjs", "test/external-adapters.test.mjs"]
     },
     {
@@ -168,8 +168,8 @@
       "name": "Stable multi-format finding reports",
       "category": "evidence_reporting",
       "maturity": "stable",
-      "scope": "Renders source v3 and crawl, demo, crawler-identity, edge and AWS v2 conclusions as JSON, Markdown, escaped HTML, SARIF 2.1.0 and JUnit while preserving domain, evidence state, baseline state and fingerprints. Technical evidence is recursively sanitized across report-bundle artifacts using normalized credential-key nouns and bounded high-confidence value formats; generic metadata remains visible. This is leak prevention for the evidence contract, not a complete secret scanner. Legacy v1 remains historical input only.",
-      "evidence": ["docs/finding-v3.schema.json", "docs/report-v3.schema.json", "docs/finding-v2.schema.json", "docs/report-v2.schema.json", "scripts/lib/evidence-v3.mjs", "scripts/lib/evidence-v2.mjs", "test/report-v3-contract.test.mjs", "test/evidence-loop.test.mjs", "test/evidence-writer.test.mjs", "scripts/check-json-schema-contracts.mjs"]
+      "scope": "Renders source v3 and crawl, demo, crawler-identity, edge and AWS v2 conclusions as JSON, Markdown, escaped HTML, SARIF 2.1.0 and JUnit while preserving domain, evidence state, baseline state and fingerprints. Exact suppression is a visible policy disposition in every v3 renderer, never a fifth evidence state or fixed result; unknown and evidence-integrity findings remain unsuppressible. Technical evidence is recursively sanitized while finite allowlisted usage counters remain numeric. This is leak prevention for the evidence contract, not a complete secret scanner. Legacy v1 remains historical input only.",
+      "evidence": ["docs/finding-v3.schema.json", "docs/report-v3.schema.json", "docs/finding-v2.schema.json", "docs/report-v2.schema.json", "scripts/lib/evidence-v3.mjs", "scripts/lib/evidence-v2.mjs", "scripts/lib/suppressions.mjs", "test/report-v3-contract.test.mjs", "test/evidence-loop.test.mjs", "test/evidence-writer.test.mjs", "test/v081-scope-suppression-contract.test.mjs", "scripts/check-json-schema-contracts.mjs"]
     },
     {
       "id": "patch-retest-loop",
@@ -200,8 +200,8 @@
       "name": "npm, plugin, installer and GitHub Action distribution",
       "category": "lifecycle_distribution",
       "maturity": "stable",
-      "scope": "Runs the same runtime through npm/npx and a Claude plugin marketplace, installs Claude Code, Codex and CLI surfaces with conflict preflight/backups, and runs a composite Action with backward-compatible crawl mode plus built-in or caller-provided source adapters.",
-      "evidence": ["scripts/webapp-security.mjs", "scripts/check-distribution-contract.mjs", "action.yml", "test/distribution.test.mjs", "test/product-surfaces.test.mjs"]
+      "scope": "Runs the same runtime through npm/npx and a Claude plugin marketplace, installs Claude Code, Codex and CLI surfaces with conflict preflight/backups, and runs a composite Action with backward-compatible crawl mode plus built-in or caller-provided source adapters. Release publication verifies the signed candidate and exact hosted checks from trusted main before dependency installation, separates read-only build from release-environment publication, and models moving-v1 promotion as explicit pending/final state; the solo-maintainer bypass is not independent review.",
+      "evidence": ["scripts/webapp-security.mjs", "scripts/check-distribution-contract.mjs", "action.yml", ".github/workflows/release.yml", ".github/workflows/action-v1-consumer.yml", "scripts/verify-release-candidate.mjs", "scripts/action-promotion-state.mjs", "test/distribution.test.mjs", "test/product-surfaces.test.mjs", "test/v081-release-workflow-contract.test.mjs"]
     },
     {
       "id": "frontend-review",

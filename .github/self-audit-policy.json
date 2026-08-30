@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "subjectId": "project-8aee2d6f75b749e2b4240bcbadc072b1",
+  "suppressionFile": ".github/self-audit-suppressions.json",
+  "auditBoundary": {
+    "version": 2,
+    "sourceRoots": [
+      "."
+    ],
+    "excludedDirectories": [
+      ".git",
+      ".hg",
+      ".svn",
+      ".next",
+      ".nuxt",
+      ".output",
+      ".webapp-security",
+      "build",
+      "coverage",
+      "dist",
+      "node_modules",
+      "target",
+      "__pycache__",
+      ".venv",
+      "venv",
+      "test",
+      "examples",
+      "adoption",
+      "releases"
+    ],
+    "checkModes": [
+      "source",
+      "local"
+    ],
+    "networkAccess": false,
+    "adapters": [
+      "builtin"
+    ],
+    "adapterTimeoutSeconds": 120,
+    "traversalLimits": {
+      "maxDepth": 12,
+      "maxFiles": 20000,
+      "maxEntries": 50000,
+      "maxFileBytes": 1048576
+    }
+  }
+}

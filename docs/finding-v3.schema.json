@@ -90,6 +90,24 @@
         "userDecisions": { "$ref": "#/$defs/textList" }
       }
     },
+    "disposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "enum": ["active", "suppressed"] },
+        "suppressionId": { "$ref": "#/$defs/id" },
+        "reason": { "$ref": "#/$defs/longText" },
+        "owner": { "type": ["string", "null"], "maxLength": 256 },
+        "expiresAt": { "type": ["string", "null"], "format": "date-time" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "suppressed" } }, "required": ["status"] },
+          "then": { "required": ["suppressionId", "reason", "owner", "expiresAt"] }
+        }
+      ]
+    },
     "baseline": {
       "type": "object",
       "additionalProperties": false,

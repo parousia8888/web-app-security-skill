@@ -20,6 +20,70 @@ means the bounded analysis finished, not that authorization is correct or a BOLA
 exists. A route-security v1/v2 artifact is `not_comparable / route_schema_changed` against v3; make
 a new v3 baseline before enabling the route-regression gate.
 
+### Make the recorded source scope real
+
+`webapp-security start` writes `auditBoundary.sourceRoots` and `excludedDirectories` into the
+run's `security-scope.yml`. In the v0.8.1 candidate these values are a file-read boundary, not a
+report filter. Edit the versioned scope before auditing when a monorepo needs a narrower review,
+then keep the subject and scope file with the run evidence:
+
+```yaml
+auditBoundary:
+  sourceRoots:
+    - apps/web
+    - packages/auth
+  excludedDirectories:
+    - generated
+    - fixtures
+```
+
+Roots are unique POSIX-relative directories inside the project. Exclusions are directory
+basenames, not globs or paths. `.git` and `.webapp-security` remain mandatory engine exclusions.
+Missing, unreadable or symlink roots fail closed before a report is written. Governing manifests
+and lockfiles can be read only when they govern an admitted nested root; source outside the roots is
+not opened. The same compiled policy applies to route analysis and Git diff selection.
+
+External adapters must honor the same read boundary. Checkov receives admitted Dockerfiles and
+workflow files; OSV receives admitted or governing lockfiles; Opengrep and working-tree Gitleaks run
+against private path-preserving snapshots. Gitleaks history cannot currently prove exact restricted
+scope, so a restricted historical run records `unknown / history_scope_not_supported` and exits
+non-zero rather than scanning broadly and hiding the extra reads. Read
+[`adapter-protocol.md`](adapter-protocol.md) before selecting a deep profile for a narrow scope.
+
+### Record an exact reviewed suppression
+
+Use suppression only after reviewing a finding. Create `webapp-security.suppressions.json` at the
+project root and copy the exact adapter ID, rule ID, repository-relative path and fingerprint from
+the report. Bind the file to the persisted project subject:
+
+```json
+{
+  "schemaVersion": 1,
+  "subjectId": "copy-from-security-scope-subject-id",
+  "entries": [
+    {
+      "id": "reviewed-generated-html-2026-08",
+      "adapterId": "builtin-source",
+      "ruleId": "js-dom-html-injection",
+      "path": "apps/web/src/generated-preview.ts",
+      "fingerprint": "copy-the-64-character-report-fingerprint",
+      "reason": "Reviewed generated numeric chart markup; no untrusted string reaches the sink.",
+      "owner": "@security-owner",
+      "createdAt": "2026-08-31T00:00:00Z",
+      "expiresAt": "2026-11-30T00:00:00Z"
+    }
+  ]
+}
+```
+
+The entry does not delete or downgrade the finding. Every renderer keeps it and labels the policy
+disposition. A different path, rule or fingerprint, an expired entry, malformed/symlink policy, or
+an unmatched target leaves the finding active and adds a diagnostic. Unknown and
+evidence-integrity results remain active. Local evidence-only built-in use may omit owner and
+expiry; CI/release gates and all external-adapter suppressions require both. Commit a gate-changing
+policy for review and remove it when the underlying condition is fixed. See the
+[false-positive policy](false-positive-policy.md) for the governance contract.
+
 ## Prerequisites
 
 - macOS or Linux;

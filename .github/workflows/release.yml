@@ -1,65 +1,234 @@
 name: "release"
 on:
-  push:
-    tags:
-      - "v[0-9]*.[0-9]*.[0-9]*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version without the v prefix"
+        required: true
+        type: "string"
+      tag:
+        description: "Existing signed annotated release tag"
+        required: true
+        type: "string"
 permissions:
-  contents: "write"
-  id-token: "write"
-  attestations: "write"
+  contents: "read"
+concurrency:
+  group: "release-publication"
+  cancel-in-progress: false
 jobs:
-  release:
+  verify-and-build:
+    if: "github.ref == 'refs/heads/main'"
+    permissions:
+      contents: "read"
+      checks: "read"
     runs-on: "ubuntu-latest"
+    outputs:
+      source-commit: "${{ steps.identity.outputs.source_commit }}"
     steps:
-      - uses: "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803" # v6
+      - name: "Checkout trusted main orchestration"
+        uses: "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803" # v6
         with:
           fetch-depth: 0
+          path: "trusted"
+          ref: "refs/heads/main"
+          persist-credentials: false
+      - name: "Fetch candidate evidence and prove public release absence"
+        shell: "bash"
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          RELEASE_VERSION: "${{ inputs.version }}"
+          RELEASE_TAG: "${{ inputs.tag }}"
+        run: |
+          set -euo pipefail
+          test "$RELEASE_TAG" = "v$RELEASE_VERSION"
+          test "$(git -C trusted rev-parse HEAD)" = "$GITHUB_SHA"
+          git -C trusted fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/check-runs?per_page=100" \
+            > "$RUNNER_TEMP/candidate-check-runs.json"
+          if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" \
+              > "$RUNNER_TEMP/existing-release.json" 2> "$RUNNER_TEMP/release-error.log"; then
+            echo "a GitHub Release already exists for $RELEASE_TAG" >&2
+            exit 1
+          fi
+          if ! grep -Fq '(HTTP 404)' "$RUNNER_TEMP/release-error.log"; then
+            cat "$RUNNER_TEMP/release-error.log" >&2
+            exit 1
+          fi
+      - name: "Verify candidate with trusted-main signer and verifier"
+        shell: "bash"
+        env:
+          RELEASE_VERSION: "${{ inputs.version }}"
+          RELEASE_TAG: "${{ inputs.tag }}"
+        run: |
+          set -euo pipefail
+          node trusted/scripts/verify-release-candidate.mjs \
+            --root trusted --version "$RELEASE_VERSION" --tag "$RELEASE_TAG" \
+            --source-commit "$GITHUB_SHA" --trusted-main "$GITHUB_SHA" \
+            --approved-main-ref refs/remotes/origin/main \
+            --check-runs "$RUNNER_TEMP/candidate-check-runs.json" \
+            --out "$RUNNER_TEMP/release-candidate.json"
+      - name: "Checkout verified candidate source"
+        uses: "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803" # v6
+        with:
+          fetch-depth: 0
+          path: "candidate"
+          ref: "refs/tags/${{ inputs.tag }}"
+          persist-credentials: false
+      - id: "identity"
+        name: "Bind candidate checkout to verification record"
+        shell: "bash"
+        run: |
+          set -euo pipefail
+          source_commit="$(node -p \
+            "require('$RUNNER_TEMP/release-candidate.json').sourceCommit")"
+          test "$(git -C candidate rev-parse HEAD)" = "$source_commit"
+          echo "source_commit=$source_commit" >> "$GITHUB_OUTPUT"
       - uses: "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38" # v6
         with:
           node-version: "22"
-      - run: "npm ci --ignore-scripts"
-      - name: "Verify tag and release evidence"
+      - name: "Install only after candidate trust verification"
+        working-directory: "candidate"
+        run: "npm ci --ignore-scripts"
+      - name: "Build reproducible source archive, SBOM and checksums"
+        working-directory: "candidate"
         shell: "bash"
+        env:
+          RELEASE_VERSION: "${{ inputs.version }}"
+          RELEASE_TAG: "${{ inputs.tag }}"
         run: |
-          version="$(tr -d '\n' < VERSION)"
-          test "$GITHUB_REF_NAME" = "v$version"
-          test -f "docs/releases/v$version.md"
-          npm run check
-      - name: "Build source archive, SBOM, and checksums"
-        shell: "bash"
-        run: |
-          version="$(tr -d '\n' < VERSION)"
-          node scripts/build-release-artifacts.mjs --ref "$GITHUB_REF_NAME" --out dist
+          set -euo pipefail
+          node scripts/build-release-artifacts.mjs --ref "$RELEASE_TAG" --out dist
           node scripts/verify-release-artifacts.mjs \
-            --manifest "dist/web-app-security-skill-$version.release.json"
+            --manifest "dist/web-app-security-skill-$RELEASE_VERSION.release.json"
           node scripts/test-release-artifact.mjs \
-            --archive "dist/web-app-security-skill-$version.tar.gz"
-          node scripts/build-release-artifacts.mjs --ref "$GITHUB_REF_NAME" --out dist-rebuild
+            --archive "dist/web-app-security-skill-$RELEASE_VERSION.tar.gz"
+          node scripts/build-release-artifacts.mjs --ref "$RELEASE_TAG" --out dist-rebuild
           diff -u dist/SHA256SUMS dist-rebuild/SHA256SUMS
           for artifact in dist/*; do
             cmp "$artifact" "dist-rebuild/$(basename "$artifact")"
           done
           node scripts/prepare-release-promotion.mjs \
-            --version "$version" --assets dist --out release-promotion.json
+            --version "$RELEASE_VERSION" --assets dist --out release-promotion.json
+      - name: "Assemble verified publication bundle"
+        shell: "bash"
+        env:
+          RELEASE_VERSION: "${{ inputs.version }}"
+        run: |
+          set -euo pipefail
+          mkdir release-bundle
+          cp -R candidate/dist release-bundle/dist
+          cp candidate/release-promotion.json release-bundle/release-promotion.json
+          cp "$RUNNER_TEMP/release-candidate.json" release-bundle/release-candidate.json
+          cp "candidate/docs/releases/v$RELEASE_VERSION.md" release-bundle/release-notes.md
+      - name: "Upload read-only verified release bundle"
+        uses: "actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f" # v6
+        with:
+          name: "verified-release-${{ inputs.version }}"
+          path: "release-bundle/"
+          if-no-files-found: "error"
+          retention-days: 30
+  publish:
+    needs: [verify-and-build]
+    if: "github.ref == 'refs/heads/main' && needs.verify-and-build.result == 'success'"
+    environment: "release"
+    permissions:
+      actions: "read"
+      contents: "write"
+      id-token: "write"
+      attestations: "write"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Checkout exact trusted orchestration"
+        uses: "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803" # v6
+        with:
+          ref: "${{ github.sha }}"
+          persist-credentials: false
+      - name: "Download verified publication bundle"
+        uses: "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131" # v7
+        with:
+          name: "verified-release-${{ inputs.version }}"
+          path: "release-bundle"
+      - name: "Revalidate downloaded identity and artifacts"
+        shell: "bash"
+        env:
+          RELEASE_VERSION: "${{ inputs.version }}"
+          RELEASE_TAG: "${{ inputs.tag }}"
+          VERIFIED_SOURCE: "${{ needs.verify-and-build.outputs.source-commit }}"
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const record = JSON.parse(fs.readFileSync('release-bundle/release-candidate.json'));
+          if (record.state !== 'verified'
+              || record.sourceCommit !== process.env.VERIFIED_SOURCE
+              || record.sourceCommit !== process.env.GITHUB_SHA
+              || record.version !== process.env.RELEASE_VERSION
+              || record.tag !== process.env.RELEASE_TAG) {
+            throw new Error('downloaded release-candidate identity disagrees');
+          }
+          NODE
+          node scripts/verify-release-artifacts.mjs \
+            --manifest "release-bundle/dist/web-app-security-skill-$RELEASE_VERSION.release.json"
       - name: "Attest release artifacts"
         uses: "actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a" # v3
         with:
-          subject-path: "dist/*"
-      - name: "Publish GitHub release"
+          subject-path: "release-bundle/dist/*"
+      - name: "Publish GitHub Release"
         env:
           GH_TOKEN: "${{ github.token }}"
+          RELEASE_TAG: "${{ inputs.tag }}"
         shell: "bash"
         run: |
-          version="$(tr -d '\n' < VERSION)"
-          gh release create "$GITHUB_REF_NAME" dist/* \
-            --verify-tag \
-            --title "$GITHUB_REF_NAME" \
-            --notes-file "docs/releases/v$version.md"
-      - name: "Upload release evidence"
+          set -euo pipefail
+          gh release create "$RELEASE_TAG" release-bundle/dist/* \
+            --verify-tag --title "$RELEASE_TAG" \
+            --notes-file release-bundle/release-notes.md
+  post-publish-verify:
+    needs: [verify-and-build, publish]
+    if: "github.ref == 'refs/heads/main' && needs.publish.result == 'success'"
+    permissions:
+      actions: "read"
+      contents: "read"
+      attestations: "read"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Checkout exact trusted verifier"
+        uses: "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803" # v6
+        with:
+          fetch-depth: 0
+          ref: "${{ github.sha }}"
+          persist-credentials: false
+      - uses: "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38" # v6
+        with:
+          node-version: "22"
+      - name: "Download verified workflow bundle"
+        uses: "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131" # v7
+        with:
+          name: "verified-release-${{ inputs.version }}"
+          path: "release-bundle"
+      - name: "Download and verify public immutable release"
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          RELEASE_VERSION: "${{ inputs.version }}"
+          RELEASE_TAG: "${{ inputs.tag }}"
+        shell: "bash"
+        run: |
+          set -euo pipefail
+          git fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          mkdir public-release
+          gh release download "$RELEASE_TAG" --dir public-release
+          node scripts/prepare-release-promotion.mjs \
+            --version "$RELEASE_VERSION" --assets public-release --live \
+            --out post-publish-verification.json
+          test "$(node -p \
+            "require('./post-publish-verification.json').sourceCommit")" \
+            = "${{ needs.verify-and-build.outputs.source-commit }}"
+      - name: "Upload post-publication evidence"
         uses: "actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f" # v6
         with:
-          name: "release-evidence-${{ github.ref_name }}"
+          name: "post-publish-verification-${{ inputs.version }}"
           path: |
-            dist/
-            release-promotion.json
+            post-publish-verification.json
+            public-release/
           if-no-files-found: "error"
+          retention-days: 90

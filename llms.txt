@@ -34,7 +34,7 @@ This file is an informational map for automated readers. It is not a ranking dir
 - references/phase-0-scope.md: authorization anchor and non-destructive proof patterns
 - references/phase-1-frontend.md: bundle exposure, source maps, moving prompts and pricing server-side
 - references/phase-2-api.md: ten-stage API methodology including BOLA, BFLA, rate limiting, race conditions, SSRF
-- references/access-control-chain.md: how to read application controls, route controls, identity evidence, one-hop data operations and Server Actions without claiming BOLA/IDOR proof
+- references/access-control-chain.md: how to read application controls, route controls, identity evidence, bounded four-edge data-operation paths and Server Actions without claiming BOLA/IDOR proof
 - references/phase-3-llm-identity.md: prompt injection, cost abuse, RAG boundaries, OAuth/OIDC verification and account linking
 - references/phase-4-code-audit.md: SAST, secret scanning, authorization coverage
 - references/phase-5-database.md: network isolation, least privilege, pool starvation, backups
@@ -62,7 +62,9 @@ This file is an informational map for automated readers. It is not a ranking dir
 - No secrets, tokens, cookies, auth headers, user emails, or real client IPs in any output.
 - Findings are marked confirmed or suspected, never blended, and every report states what it does not prove.
 - Application-wide controls are listed once. Missing route-scoped controls and missing visible query constraints are review states, not confirmed vulnerabilities.
-- Access-chain analysis stops after one exact project-local call, represents Next.js Server Actions separately from HTTP routes, and always leaves Supabase RLS as external policy evidence.
+- Persisted source roots and excluded directories are file-read boundaries across built-in, route, diff and external-adapter analysis; excluded paths are not claimed as checked.
+- Exact suppressions remain visible policy dispositions and never change evidence state, baseline identity or unknown coverage.
+- Access-chain analysis stops after four exact project-local call edges, represents Next.js Server Actions separately from HTTP routes, and always leaves Supabase RLS as external policy evidence.
 
 ## License
 

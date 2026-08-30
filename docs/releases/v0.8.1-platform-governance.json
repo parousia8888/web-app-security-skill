@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "repository": "parousia8888/web-app-security-skill",
+  "capturedAt": "2026-08-30T14:51:12Z",
+  "baselineCommit": "1cc9282546224a263ff5885db12b583b8ad10aae",
+  "source": "sanitized GitHub API readback and local candidate evidence",
+  "repositoryProtection": {
+    "main": {
+      "strictStatusChecks": true,
+      "requiredChecks": [
+        "analyze",
+        "test (ubuntu-latest, 22)",
+        "test (ubuntu-latest, 24)",
+        "test (macos-latest, 22)",
+        "test (macos-latest, 24)",
+        "repository-self-audit",
+        "shellcheck",
+        "dependency-review"
+      ],
+      "forcePushAllowed": false,
+      "deletionAllowed": false,
+      "administratorBypass": true
+    },
+    "tagRulesets": [
+      {
+        "id": 21862618,
+        "name": "Protect immutable v0 release tags",
+        "include": ["refs/tags/v0.*"],
+        "blockedOperations": ["deletion", "update"],
+        "administratorBypass": true
+      },
+      {
+        "id": 21862619,
+        "name": "Protect movable v1 promotion tag",
+        "include": ["refs/tags/v1"],
+        "blockedOperations": ["deletion", "update"],
+        "administratorBypass": true
+      }
+    ],
+    "releaseEnvironment": {
+      "present": true,
+      "protectedBranchesOnly": true,
+      "administratorBypass": true,
+      "requiredReviewers": 0
+    }
+  },
+  "securityAnalysis": {
+    "secretScanning": "enabled",
+    "secretScanningPushProtection": "enabled",
+    "dependabotVulnerabilityAlerts": "enabled",
+    "dependabotSecurityUpdates": "enabled"
+  },
+  "dependabotInventory": {
+    "openAlerts": 32,
+    "bySeverity": {
+      "critical": 2,
+      "high": 10,
+      "medium": 16,
+      "low": 4
+    },
+    "manifestPaths": ["examples/quickstart/before/package.json"],
+    "openSecurityUpdatePullRequests": [8],
+    "disposition": "pending_candidate_fix",
+    "candidateResolution": {
+      "beforeNextVersion": "16.3.3",
+      "afterNextVersion": "16.3.3",
+      "afterLockfilePresent": true,
+      "localNpmAuditOmitDevOpenVulnerabilities": 0
+    }
+  },
+  "codeScanningInventory": {
+    "openAlerts": 10,
+    "productionAlertsAwaitingCandidateAnalysis": [9, 10],
+    "testOrFixtureAlertsAwaitingPublicLedger": [1, 2, 3, 4, 5, 6, 7, 11],
+    "publicLedgerPath": "docs/code-scanning-dispositions.md"
+  },
+  "issueInventory": {
+    "wsl2Verification": 3,
+    "shellcheckAndCoverage": 6,
+    "alertOwnership": 7
+  },
+  "limitations": [
+    "This readback predates the v0.8.1 candidate push; new required checks have not yet run on the candidate commit.",
+    "Dependency alert closure and the security-update PR disposition require the candidate manifest to reach the default branch.",
+    "Code scanning test-fixture dismissals wait until the public ledger reaches the default branch; production alerts 9 and 10 are never manually dismissed as test findings.",
+    "The local npm audit result is a point-in-time registry result, not a permanent no-vulnerability claim.",
+    "Administrator bypass preserves solo-maintainer release access and is not independent review or protection from account compromise."
+  ]
+}

@@ -12,6 +12,7 @@
 
 <p align="center">
   <a href="#see-the-result">Demo</a> ·
+  <a href="#whats-new-in-v081">v0.8.1 candidate</a> ·
   <a href="#whats-new-in-v080">v0.8.0</a> ·
   <a href="#install">Install</a> ·
   <a href="#run-the-first-project">First project</a> ·
@@ -111,6 +112,44 @@ check reruns the fixture and fails if any surface disagrees.
 
 For the complete install-to-uninstall path, follow the tested
 [first project tutorial](docs/tutorial.md).
+
+## What's new in v0.8.1
+
+v0.8.1 makes existing boundaries enforceable; it does not add a detector family. A persisted
+`auditBoundary.sourceRoots` plus `excludedDirectories` now compiles into one file-read policy used
+by the built-in analyzer, route/access review, `--since`/`--staged` snapshots and every selected
+external adapter. Excluded source is not opened by a scanner that claims this scope. Missing,
+unsafe or invalid roots stop the run instead of producing a clean report. Checkov and OSV receive
+only exact governing inputs; Opengrep and working-tree Gitleaks receive private scoped snapshots.
+Restricted Gitleaks history is explicitly `unknown / history_scope_not_supported`, because a broad
+history scan followed by output filtering would violate the read boundary. See the
+[adapter scope matrix](docs/adapter-protocol.md), [scope implementation](scripts/lib/audit-scope.mjs)
+and [scope contract test](test/v081-scope-suppression-contract.test.mjs).
+
+An optional root-level `webapp-security.suppressions.json` can disposition one exact
+adapter/rule/path/fingerprint match. The finding stays in JSON, Markdown, HTML, SARIF and JUnit with
+its original evidence and baseline states; suppression is visible policy, not proof of safety or a
+fifth evidence state. Unknown and evidence-integrity findings cannot be suppressed. CI/release
+gates and all external-adapter suppressions require an owner and expiry; expired, drifted,
+malformed or unmatched entries stay active and produce diagnostics. The format and example are in
+the [tutorial](docs/tutorial.md), [finding schema](docs/finding-v3.schema.json) and
+[false-positive policy](docs/false-positive-policy.md).
+
+The repository's required self-audit now uses an explicit production-only scope and reviewed exact
+suppressions, while retaining fixture counts and every disposition in its artifact. It blocks
+active HIGH and unavailable evidence; a green result is bounded static evidence, not proof that the
+repository is vulnerability-free. Node package export patterns now replace every right-hand-side
+`*` literally, ambiguous conditional exports remain partial, and finite allowlisted usage counters
+such as `usage.tokens: 17` stay numeric while credentials remain redacted. Focused regressions are
+linked from the [v0.8.1 engineering plan](docs/V0.8.1_ENGINEERING_PLAN.md).
+
+Release publication is now a trusted-`main` manual workflow: a read-only job verifies the signed
+annotated tag, signer policy, exact candidate and hosted checks before dependency installation; a
+separate `release`-environment job owns publication permissions. Moving `v1` has explicit pending
+and final states and remains less immutable than a full commit pin. The solo-maintainer
+administrator bypass is documented and is not independent review. WSL2 remains unsupported. Until
+the candidate completes hosted checks, signed publication, npm provenance, verified installation
+and Action consumers, v0.8.0 below remains the latest public release.
 
 ## What's new in v0.8.0
 
@@ -451,7 +490,7 @@ Verify downloaded release assets:
 sha256sum -c SHA256SUMS
 gh attestation verify web-app-security-skill-*.tar.gz \
   --repo parousia8888/web-app-security-skill
-git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.8.0
+git -c gpg.ssh.allowedSignersFile=.github/release-signers verify-tag v0.8.1
 ```
 
 `.github/release-signers` is a repository-local signer policy: a successful local check proves that

@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { validateActionPromotionState } from './lib/action-promotion-state.mjs';
 
 const args = process.argv.slice(2);
 const rootIndex = args.indexOf('--root');
@@ -62,6 +63,7 @@ const stable = state.stableAction || {};
 if (stable.tag !== 'v1' || !/^[a-f0-9]{40}$/.test(stable.sourceCommit || '')) {
   fail('stable Action state is invalid');
 }
+for (const error of validateActionPromotionState(state)) fail(error);
 
 const npmPackage = state.npmPackage || {};
 if (npmPackage.name !== 'web-app-security-skill') fail('npm package identity drifted');
@@ -122,5 +124,5 @@ if (existsSync(`${ROOT}/.git`)) {
 
 if (!failed) {
   const relation = currentVersion === published.version ? 'published' : 'candidate';
-  console.log(`release state ok: current ${currentVersion} (${relation}), published ${published.version}, npm ${npmPackage.version}, installer ${installer.defaultVersion}, Action ${stable.tag}`);
+  console.log(`release state ok: current ${currentVersion} (${relation}), published ${published.version}, npm ${npmPackage.version}, installer ${installer.defaultVersion}, Action ${stable.tag} (${stable.promotion.state})`);
 } else process.exit(1);

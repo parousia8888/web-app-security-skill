@@ -15,6 +15,66 @@ predicate 与受支持的加载后比较。框架清单覆盖率和 `accessPathC
 只表示限定分析走完，不表示授权正确或存在 BOLA/IDOR。route-security v1/v2 与 v3 对比时只会得到
 `not_comparable / route_schema_changed`；启用路由 regression gate 前要先建立新的 v3 baseline。
 
+### 让记录的源码范围真正生效
+
+`webapp-security start` 会把 `auditBoundary.sourceRoots` 与 `excludedDirectories` 写入本次 run 的
+`security-scope.yml`。在 v0.8.1 候选版中，这些字段是文件读取边界，不是输出过滤器。monorepo 需要
+缩小范围时，在 audit 前修改版本化 scope，并把 subject 与 scope 文件留在证据中：
+
+```yaml
+auditBoundary:
+  sourceRoots:
+    - apps/web
+    - packages/auth
+  excludedDirectories:
+    - generated
+    - fixtures
+```
+
+root 必须是项目内部、唯一的 POSIX 相对目录；exclusion 是目录 basename，不是 glob 或路径。
+`.git` 与 `.webapp-security` 始终是引擎强制排除目录。root 缺失、不可读或为 symlink 时会 fail closed，
+不会写出干净报告。manifest/lockfile 只有在管理已纳入的嵌套 root 时才可作为 governing input 读取；
+范围外源码不会被打开。路由分析和 Git diff 选择使用同一份编译后策略。
+
+外部 adapter 也必须遵守读取边界。Checkov 只接收纳入范围的 Dockerfile/workflow；OSV 只接收纳入
+范围或具 governing 关系的 lockfile；Opengrep 与工作树 Gitleaks 在保留相对路径的私有快照中运行。
+Gitleaks 历史扫描目前无法证明受限历史范围，因此会记录
+`unknown / history_scope_not_supported` 并非零退出，而不会先扫描完整历史再隐藏额外读取。窄范围
+使用 deep profile 前先读 [`adapter-protocol.md`](adapter-protocol.md)。
+
+### 记录精确且已复核的 suppression
+
+只在人工复核 finding 后使用 suppression。在项目根目录创建
+`webapp-security.suppressions.json`，从报告复制精确的 adapter ID、rule ID、项目相对路径和
+fingerprint，并绑定持久化项目 subject：
+
+```json
+{
+  "schemaVersion": 1,
+  "subjectId": "从-security-scope-复制-subject-id",
+  "entries": [
+    {
+      "id": "reviewed-generated-html-2026-08",
+      "adapterId": "builtin-source",
+      "ruleId": "js-dom-html-injection",
+      "path": "apps/web/src/generated-preview.ts",
+      "fingerprint": "复制报告中的-64-字符-fingerprint",
+      "reason": "已复核仅由数字生成的图表 markup；无不可信字符串进入 sink。",
+      "owner": "@security-owner",
+      "createdAt": "2026-08-31T00:00:00Z",
+      "expiresAt": "2026-11-30T00:00:00Z"
+    }
+  ]
+}
+```
+
+该条目不会删除 finding 或降低其证据状态。所有 renderer 都保留 finding，并标记 policy disposition。
+路径、rule 或 fingerprint 不同，条目过期，policy 格式错误/symlink，或目标未匹配时，finding 仍为
+active 并增加诊断。`unknown` 与 evidence-integrity 结果始终 active。本地、仅证据的内置扫描可省略
+owner 和 expiry；影响 CI/release gate 的 suppression 与全部外部 adapter suppression 必须同时有
+owner 和 expiry。会改变 gate 的 policy 应提交 review；条件修复后应删除。完整治理合同见
+[误报政策](false-positive-policy.md)。
+
 ## 环境要求
 
 - macOS 或 Linux；

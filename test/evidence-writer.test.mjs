@@ -34,7 +34,14 @@ try {
     redactionKeyMatrix: {
       tokens: [secret], secrets: secret, passwords: secret, api_keys: secret,
       credential: secret, credentials: { value: secret }, accessToken: secret,
-      access_tokens: [secret],
+      access_tokens: [secret], numericAccessToken: { accessToken: 9135702468 },
+      numericTokenIds: { tokens: [101, 202, 303] },
+    },
+    usage: {
+      tokens: 17, tokenCount: 18, inputTokens: 7, output_tokens: 11,
+      promptTokens: 5, completion_tokens: 6, totalTokens: 23,
+      TOKEN_COUNT: 24, stringifiedTokens: '17', token: '17', tokenIds: [101, 202],
+      nonFiniteTokens: { tokens: Number.POSITIVE_INFINITY },
     },
     genericKeysRemainUseful: { key: 'rule-key', keys: ['primary-key-name'] },
     highConfidenceValues: {
@@ -70,6 +77,15 @@ try {
   assert.equal(sanitized.highConfidenceValues.github, '[REDACTED_GITHUB_TOKEN]');
   assert.equal(sanitized.highConfidenceValues.aws, '[REDACTED_AWS_ACCESS_KEY]');
   assert.equal(sanitized.highConfidenceValues.jwt, '[REDACTED_JWT]');
+  assert.deepEqual(sanitized.usage, {
+    tokens: 17, tokenCount: 18, inputTokens: 7, output_tokens: 11,
+    promptTokens: 5, completion_tokens: 6, totalTokens: 23,
+    TOKEN_COUNT: 24, stringifiedTokens: '17', token: '[REDACTED]', tokenIds: [101, 202],
+    nonFiniteTokens: { tokens: '[REDACTED]' },
+  }, 'finite numeric usage counters remain useful, while string values are cleaned normally');
+  assert.equal(sanitized.redactionKeyMatrix.numericAccessToken.accessToken, '[REDACTED]');
+  assert.equal(sanitized.redactionKeyMatrix.numericTokenIds.tokens, '[REDACTED]',
+    'numeric token ID arrays are credentials, not usage counters');
   assert.equal(sanitized.list.length, 200);
   assert.ok(sanitized.message.length < 4200);
   assert.doesNotMatch(sanitized.message, /\u0000/);

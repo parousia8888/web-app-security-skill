@@ -9,6 +9,10 @@ const MAX_ARRAY = 200;
 const MAX_KEYS = 200;
 const SENSITIVE_ID_KEY = /^(account|accountId|user|userName|bucket|bucketName|securityGroup|groupId|arn)$/i;
 const PRIVATE_PATH = /(?:\/(?:Users|home|private)\/[^\s"'<>),;\]}]+|[A-Za-z]:\\Users\\[^\s"'<>),;\]}]+)/g;
+const USAGE_COUNTER_KEYS = new Set([
+  'tokens', 'tokencount', 'inputtokens', 'outputtokens', 'prompttokens', 'completiontokens',
+  'totaltokens',
+]);
 
 const digest = (value) => createHash('sha256').update(String(value)).digest('hex').slice(0, 16);
 
@@ -45,6 +49,11 @@ function isSecretKey(key) {
     'id token', 'client secret', 'client credential'].includes(phrase);
 }
 
+function isFiniteUsageCounter(key, value) {
+  const normalized = String(key).replace(/[^A-Za-z0-9]/g, '').toLowerCase();
+  return typeof value === 'number' && Number.isFinite(value) && USAGE_COUNTER_KEYS.has(normalized);
+}
+
 function cleanString(input) {
   let value = String(input)
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
@@ -74,6 +83,7 @@ function isAuthorizationEvidenceModel(key, entries) {
 }
 
 export function sanitizeEvidence(value, key = '') {
+  if (isFiniteUsageCounter(key, value)) return value;
   if (typeof value === 'string') {
     if (isSecretKey(key)) return '[REDACTED]';
     if (SENSITIVE_ID_KEY.test(key) && !/(Digest|Ref)$/i.test(key)) {
@@ -81,7 +91,10 @@ export function sanitizeEvidence(value, key = '') {
     }
     return cleanString(value);
   }
-  if (Array.isArray(value)) return value.slice(0, MAX_ARRAY).map((item) => sanitizeEvidence(item, key));
+  if (Array.isArray(value)) {
+    if (isSecretKey(key)) return '[REDACTED]';
+    return value.slice(0, MAX_ARRAY).map((item) => sanitizeEvidence(item, key));
+  }
   if (value && typeof value === 'object') {
     const entries = Object.entries(value).slice(0, MAX_KEYS);
     const inheritSensitiveKey = isSecretKey(key) && !isAuthorizationEvidenceModel(key, entries);

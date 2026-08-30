@@ -252,7 +252,7 @@ if fetch "iam list-policies" iam list-policies --scope Local --only-attached --q
   elif [ -z "$policies" ]; then
     record aws-iam-customer-policy-wildcard not_applicable iam-policies "no attached customer-managed policies were returned"
   else
-    while IFS="$(printf '\t')" read -r policy_name policy_arn; do
+    while IFS="$(printf '\t')" read -r _ policy_arn; do
       [ -z "$policy_arn" ] && continue
       policy_ref="$(resource_ref iam-policy "$policy_arn")"
       if ! fetch "iam get-policy" iam get-policy --policy-arn "$policy_arn" --query 'Policy.DefaultVersionId'; then
@@ -292,7 +292,7 @@ if fetch "ec2 describe-security-groups" ec2 describe-security-groups --query 'Se
   elif [ -z "$groups" ]; then
     record aws-security-group-sensitive-exposure not_applicable security-groups "no security groups were returned"
   else
-    while IFS="$(printf '\t')" read -r group_id group_name; do
+    while IFS="$(printf '\t')" read -r group_id _; do
       [ -z "$group_id" ] && continue
       group_ref="$(resource_ref security-group "$group_id")"
       if ! fetch "ec2 describe-security-groups ingress" ec2 describe-security-groups --group-ids "$group_id" --query 'SecurityGroups[].IpPermissions[?contains(IpRanges[].CidrIp, `0.0.0.0/0`) || contains(Ipv6Ranges[].CidrIpv6, `::/0`)].[IpProtocol,FromPort,ToPort]'; then
@@ -341,7 +341,7 @@ if fetch "ec2 describe-instances" ec2 describe-instances --query 'Reservations[]
   elif [ -z "$instances" ]; then
     record aws-ec2-imdsv2 not_applicable ec2-instances "no running EC2 instances were returned"
   else
-    while IFS="$(printf '\t')" read -r instance_id tokens public_ip; do
+    while IFS="$(printf '\t')" read -r instance_id tokens _; do
       instance_ref="$(resource_ref ec2-instance "$instance_id")"
       if [ "$tokens" = "required" ]; then record aws-ec2-imdsv2 passed "$instance_ref" "EC2 instance requires IMDSv2"; elif [ -n "$tokens" ] && [ "$tokens" != "None" ]; then record aws-ec2-imdsv2 failed "$instance_ref" "EC2 instance permits IMDSv1"; else record aws-ec2-imdsv2 unknown "$instance_ref" "EC2 metadata-token response is malformed"; fi
     done <<EOF
@@ -448,7 +448,7 @@ if fetch "cloudfront list-distributions" cloudfront list-distributions --query '
   if [ "$distributions" = "__MALFORMED__" ]; then record aws-cloudfront-waf unknown cloudfront "CloudFront response is malformed"
   elif [ -z "$distributions" ]; then record aws-cloudfront-waf not_applicable cloudfront "no CloudFront distributions were returned"
   else
-    while IFS="$(printf '\t')" read -r distribution_id domain_name web_acl; do
+    while IFS="$(printf '\t')" read -r distribution_id _ web_acl; do
       distribution_ref="$(resource_ref cloudfront-distribution "$distribution_id")"
       if [ -z "$web_acl" ] || [ "$web_acl" = "None" ]; then record aws-cloudfront-waf failed "$distribution_ref" "CloudFront distribution has no WAF web ACL attached"; else record aws-cloudfront-waf passed "$distribution_ref" "CloudFront distribution has a WAF web ACL attached"; fi
     done <<EOF
@@ -462,7 +462,7 @@ if fetch "elbv2 describe-load-balancers" elbv2 describe-load-balancers --query '
   if [ "$balancers" = "__MALFORMED__" ]; then record aws-alb-access-logs unknown load-balancers "load-balancer response is malformed"
   elif [ -z "$balancers" ]; then record aws-alb-access-logs not_applicable load-balancers "no application load balancers were returned"
   else
-    while IFS="$(printf '\t')" read -r balancer_arn balancer_name; do
+    while IFS="$(printf '\t')" read -r balancer_arn _; do
       balancer_ref="$(resource_ref load-balancer "$balancer_arn")"
       if fetch "elbv2 describe-load-balancer-attributes" elbv2 describe-load-balancer-attributes --load-balancer-arn "$balancer_arn" --query 'Attributes[?Key==`access_logs.s3.enabled`].Value | [0]'; then
         value="$(query scalar)" || value=""

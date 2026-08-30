@@ -10,6 +10,7 @@ export const V3_PROPOSAL_STATES = [
 ];
 
 const CONTROL = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
+const DISPOSITION_ID = /^[a-z0-9][a-z0-9._-]{1,127}$/;
 const STANDARD = /^(?:CWE-[1-9][0-9]*|OWASP-TOP10-2025-A(?:0[1-9]|10)|OWASP-API-2023-API(?:[1-9]|10)|OWASP-ASVS-5\.0\.0-[1-9][0-9]*(?:\.[0-9]+){1,2}|NIST-SSDF-1\.1-[A-Z]{2}\.[0-9]+\.[0-9]+)$/;
 
 function object(value) {
@@ -33,7 +34,7 @@ function textList(value, label, errors, { min = 0 } = {}) {
 }
 
 export function downgradeFindingV3(finding) {
-  const { explanation: _explanation, ...rest } = structuredClone(finding);
+  const { explanation: _explanation, disposition: _disposition, ...rest } = structuredClone(finding);
   return { ...rest, schemaVersion: 2 };
 }
 
@@ -41,6 +42,11 @@ export function downgradeReportV3(report) {
   const copy = structuredClone(report);
   copy.schemaVersion = 2;
   copy.findings = (copy.findings || []).map(downgradeFindingV3);
+  if (copy.summary) {
+    delete copy.summary.activeTotal;
+    delete copy.summary.suppressedTotal;
+    delete copy.summary.byDisposition;
+  }
   if (copy.baseline?.sourceSchemaVersion === 3) copy.baseline.sourceSchemaVersion = 2;
   return copy;
 }
@@ -97,7 +103,7 @@ export function validateFindingV3(finding) {
   const allowed = new Set([
     'schemaVersion', 'id', 'fingerprint', 'fingerprintVersion', 'rule', 'adapter', 'domain',
     'title', 'severity', 'state', 'summary', 'location', 'evidence', 'remediation', 'retest',
-    'explanation', 'baseline',
+    'explanation', 'baseline', 'disposition',
   ]);
   for (const key of Object.keys(finding)) {
     if (!allowed.has(key)) errors.push(`finding.${key} is not allowed`);
@@ -105,6 +111,16 @@ export function validateFindingV3(finding) {
   if (finding?.schemaVersion !== 3) errors.push('finding.schemaVersion must be 3');
   errors.push(...validateFindingV2(downgradeFindingV3(finding)));
   errors.push(...validateExplanationV3(finding?.explanation));
+  if (finding.disposition !== undefined && (!object(finding.disposition)
+      || !['active', 'suppressed'].includes(finding.disposition.status)
+      || Object.keys(finding.disposition).some((key) => ![
+        'status', 'suppressionId', 'reason', 'owner', 'expiresAt',
+      ].includes(key)))) errors.push('finding.disposition is invalid');
+  if (finding.disposition?.status === 'suppressed'
+      && (!DISPOSITION_ID.test(finding.disposition.suppressionId || '')
+        || typeof finding.disposition.reason !== 'string')) {
+    errors.push('finding suppressed disposition is incomplete');
+  }
   return [...new Set(errors)];
 }
 

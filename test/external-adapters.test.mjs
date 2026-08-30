@@ -30,6 +30,9 @@ mkdirSync(join(project, '.github', 'workflows'), { recursive: true });
 writeFileSync(join(project, '.github', 'workflows', 'ci.yml'), 'name: fixture\non: push\npermissions: write-all\n');
 mkdirSync(join(project, 'nested'));
 writeFileSync(join(project, 'nested', 'Dockerfile'), 'FROM alpine\nUSER root\n');
+mkdirSync(join(project, 'private'));
+writeFileSync(join(project, 'private', 'package-lock.json'),
+  '{"name":"excluded","lockfileVersion":3,"packages":{}}\n');
 
 const fakeCheckov = join(temp, 'fake-checkov.mjs');
 writeFileSync(fakeCheckov, `#!/usr/bin/env node
@@ -50,7 +53,8 @@ const frameworkFlag = args.indexOf('--framework');
 const scannedFiles = fileFlag >= 0 && frameworkFlag > fileFlag
   ? args.slice(fileFlag + 1, frameworkFlag)
   : [];
-if (args.includes('-d') || scannedFiles.join(',') !== 'Dockerfile,.github/workflows/ci.yml') {
+const expectedFiles = mode === 'scoped' ? 'nested/Dockerfile' : 'Dockerfile,.github/workflows/ci.yml';
+if (args.includes('-d') || scannedFiles.join(',') !== expectedFiles) {
   process.exit(2);
 }
 const check = (check_id, file_path, file_line_range) => ({
@@ -66,8 +70,9 @@ const workflow = {
   summary: { checkov_version: '3.3.9', parsing_errors: 0 },
   results: { passed_checks: [], failed_checks: [], skipped_checks: [] },
 };
-const root = check('CKV_DOCKER_8', '/Dockerfile', [2, 2]);
-const health = check('CKV_DOCKER_2', '/Dockerfile', [1, 3]);
+const dockerPath = mode === 'scoped' ? '/nested/Dockerfile' : '/Dockerfile';
+const root = check('CKV_DOCKER_8', dockerPath, [2, 2]);
+const health = check('CKV_DOCKER_2', dockerPath, [1, 3]);
 const permissions = check('CKV2_GHA_1', '/.github/workflows/ci.yml', [3, 3]);
 if (mode === 'finding' || mode === 'duplicate') {
   docker.results.failed_checks = mode === 'duplicate' ? [root, root, health] : [root, health];
@@ -96,7 +101,7 @@ else if (mode === 'malformed') { console.log('{bad'); process.exit(1); }
 else if (mode === 'inconsistent') { console.log(JSON.stringify([docker, workflow])); process.exit(1); }
 else {
   console.error('${secret} raw stderr');
-  console.log(JSON.stringify([docker, workflow]));
+  console.log(JSON.stringify(mode === 'scoped' ? [docker] : [docker, workflow]));
   process.exit(['finding', 'duplicate', 'escape', 'unknown-rule'].includes(mode) ? 1 : 0);
 }
 `);
@@ -104,10 +109,17 @@ chmodSync(fakeCheckov, 0o755);
 
 const fakeGitleaks = join(temp, 'fake-gitleaks.mjs');
 writeFileSync(fakeGitleaks, `#!/usr/bin/env node
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 const [command] = process.argv.slice(2);
 const mode = process.env.FAKE_GITLEAKS_MODE || 'clean';
 if (command === 'version') {
   console.log(mode === 'version-drift' ? '8.29.0' : '8.30.1');
+  process.exit(0);
+}
+if (mode === 'scoped') {
+  if (existsSync(join(process.cwd(), 'config.txt'))) process.exit(2);
+  console.log('[]');
   process.exit(0);
 }
 if (mode === 'timeout') { setTimeout(() => {}, 5000); }
@@ -164,7 +176,7 @@ chmodSync(fakeOsv, 0o755);
 const fakeOpengrep = join(temp, 'fake-opengrep.mjs');
 writeFileSync(fakeOpengrep, `#!/usr/bin/env node
 import { dirname, join } from 'node:path';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 const args = process.argv.slice(2);
 const mode = process.env.FAKE_OPENGREP_MODE || 'clean';
 const logFile = process.env.SEMGREP_LOG_FILE || join(process.env.HOME, '.opengrep', 'semgrep.log');
@@ -174,8 +186,11 @@ if (args[0] === '--version') {
   console.log(mode === 'version-drift' ? '1.26.0' : '1.27.0');
   process.exit(0);
 }
+if (mode === 'scoped' && existsSync(join(process.cwd(), 'config.txt'))) process.exit(2);
 const root = process.cwd();
-const clean = { version: '1.27.0', results: [], errors: [], paths: { scanned: ['config.txt'] } };
+const clean = { version: '1.27.0', results: [], errors: [], paths: {
+  scanned: mode === 'scoped' ? [] : ['config.txt'],
+} };
 if (mode === 'timeout') { setTimeout(() => {}, 5000); }
 else if (mode === 'output-limit') { process.stdout.write('x'.repeat(17 * 1024 * 1024)); }
 else if (mode === 'internal') { console.error('${secret} raw stderr'); process.exit(2); }
@@ -480,6 +495,46 @@ try {
     rulesPath: join(ROOT, 'rules', 'opengrep-source.yml'), rulesetSha256: '0'.repeat(64),
   });
   assert.ok(result.findings.every((finding) => finding.evidence.reasonCode === 'adapter_ruleset_digest_mismatch'));
+
+  const restrictedBoundary = {
+    sourceRoots: ['nested'],
+    excludedDirectories: ['private'],
+  };
+  result = withEnv({ FAKE_CHECKOV_MODE: 'scoped' }, () => runCheckov(project, {
+    binary: fakeCheckov, timeoutSeconds: 1, scopeBoundary: restrictedBoundary,
+  }));
+  assert.ok(result.coverage.every((entry) => ['completed', 'not_applicable'].includes(entry.status)),
+    `Checkov restricted scope: ${JSON.stringify(result)}`);
+  assert.equal(result.scopeMode, 'governing_inputs');
+
+  result = withEnv({ FAKE_GITLEAKS_MODE: 'scoped' }, () => runGitleaks(project, {
+    binary: fakeGitleaks, timeoutSeconds: 1, scopeBoundary: restrictedBoundary,
+  }));
+  assert.equal(result.scopeMode, 'scoped_snapshot');
+  assert.equal(result.coverage.find((entry) => entry.ruleId === 'gitleaks-working-tree-secret').status,
+    'completed');
+  assert.equal(result.coverage.find((entry) => entry.ruleId === 'gitleaks-committed-secret').status,
+    'unavailable');
+  assert.equal(result.findings.find((finding) => finding.ruleId === 'gitleaks-committed-secret')
+    .evidence.reasonCode, 'history_scope_not_supported');
+
+  result = withEnv({ FAKE_OPENGREP_MODE: 'scoped' }, () => runOpengrep(project, {
+    binary: fakeOpengrep, timeoutSeconds: 1, scopeBoundary: restrictedBoundary,
+  }));
+  assert.equal(result.scopeMode, 'scoped_snapshot');
+  assert.ok(result.coverage.every((entry) => entry.status === 'not_applicable'));
+
+  result = runOsv(project, ['package-lock.json'], {
+    binary: fakeOsv, timeoutSeconds: 1, scopeBoundary: restrictedBoundary,
+  });
+  assert.equal(result.scopeMode, 'governing_inputs');
+  assert.equal(result.coverage[0].status, 'completed');
+  assert.equal(result.findings.length, 0);
+  result = runOsv(project, ['private/package-lock.json'], {
+    binary: fakeOsv, timeoutSeconds: 1, scopeBoundary: restrictedBoundary,
+  });
+  assert.equal(result.scopeMode, 'governing_inputs');
+  assert.equal(result.coverage[0].status, 'not_applicable');
 
   const gateDir = join(temp, 'gate');
   result = cli(['audit', project, '--out', gateDir, '--adapter', 'all'], {

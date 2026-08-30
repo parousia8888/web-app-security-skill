@@ -19,8 +19,18 @@
     "docs/case-studies/mealie.md"
   ],
   "currentSourceRelease": {
-    "version": "0.8.0",
+    "version": "0.8.1",
     "status": "candidate",
+    "detectorInventoryChanged": false,
+    "correctnessBoundaries": [
+      "Persisted source roots and exclusions are a shared file-read boundary.",
+      "Exact suppressions remain visible policy dispositions and never replace evidence state.",
+      "Restricted Gitleaks history is unknown rather than broadly read and post-filtered.",
+      "Repository self-audit is production-scoped and does not prove repository safety.",
+      "Release publication verifies a signed exact candidate from trusted main before write-capable jobs.",
+      "Moving v1 has pending and final states; full commit pins remain immutable.",
+      "WSL2 remains unsupported."
+    ],
     "stableRuleCorpus": "docs/stable-rule-corpus.json",
     "ordinaryProjectReview": "docs/case-studies/journeys/v0.5.0-evidence.json",
     "routeSchema": "docs/route-security-v3.schema.json",

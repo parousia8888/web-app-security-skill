@@ -20,6 +20,12 @@ Maintainers reproduce the report, classify whether the error is a rule problem, 
 transport failure, or documentation ambiguity, then add a failing regression before changing the
 rule. A suppression is accepted only when its scope is narrower than the finding it suppresses.
 
+`webapp-security.suppressions.json` records a policy disposition; it does not change a finding from
+`suspected` to `confirmed`, hide it from reports or prove that it is safe. v0.8.1 accepts only an
+exact adapter/rule/path/fingerprint match bound to the project subject. Fingerprint, path or rule
+drift leaves the finding active. Unknown and evidence-integrity findings cannot be suppressed.
+Owner and expiry are mandatory whenever the entry affects a CI/release gate or an external adapter.
+
 For stable source rules, promotion requires a vulnerable fixture, a meaningful safe near-neighbour,
 an explicit evidence boundary and a planted missing-observation failure. A normal source pattern
 that requires context can remain a useful `suspected` lead without being labelled a confirmed

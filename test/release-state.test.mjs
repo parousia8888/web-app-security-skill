@@ -24,6 +24,7 @@ try {
   assert.equal(state.publishedRelease.version, '0.8.0');
   assert.equal(state.stableAction.tag, 'v1');
   assert.equal(state.stableAction.sourceCommit, '119cbcc7f8d327482df8abfa50a4af0b69fcceee');
+  assert.deepEqual(state.stableAction.promotion, { state: 'final' });
   assert.equal(state.npmPackage.name, 'web-app-security-skill');
   assert.equal(state.npmPackage.version, '0.8.0');
   assert.equal(state.npmPackage.shasum, '1b45330758998f04eeacf71166ab20310fd1c1e7');
@@ -45,6 +46,30 @@ try {
   ], { cwd: clone });
   assert.equal(JSON.parse(readFileSync(publicRecord, 'utf8')).stableAction.sourceCommit,
     state.stableAction.sourceCommit);
+
+  const pendingState = structuredClone(state);
+  pendingState.stableAction.promotion = {
+    state: 'pending',
+    version: state.publishedRelease.version,
+    expectedSourceCommit: state.publishedRelease.sourceCommit,
+    priorTagObject: run('git', ['rev-parse', 'v1^{tag}'], { cwd: clone }).trim(),
+  };
+  writeFileSync(join(clone, 'docs', 'release-state.json'), `${JSON.stringify(pendingState, null, 2)}\n`);
+  const pendingPublic = spawnSync(process.execPath, [
+    join(ROOT, 'scripts', 'check-public-release-state.mjs'), '--root', clone,
+  ], { cwd: clone, encoding: 'utf8' });
+  assert.notEqual(pendingPublic.status, 0);
+  assert.match(pendingPublic.stderr, /promotion is pending/);
+  const pendingRecord = join(temp, 'pending-public-state.json');
+  run(process.execPath, [
+    join(ROOT, 'scripts', 'check-public-release-state.mjs'), '--root', clone,
+    '--phase', 'pending', '--out', pendingRecord,
+  ], { cwd: clone });
+  const pendingEvidence = JSON.parse(readFileSync(pendingRecord, 'utf8'));
+  assert.equal(pendingEvidence.state, 'promotion_pending_verified');
+  assert.equal(pendingEvidence.stableAction.sourceCommit,
+    pendingState.stableAction.promotion.expectedSourceCommit);
+  writeFileSync(join(clone, 'docs', 'release-state.json'), `${JSON.stringify(state, null, 2)}\n`);
 
   run('git', ['tag', '-f', 'v1', candidateCommit], { cwd: clone });
   let stale = spawnSync(process.execPath, [join(ROOT, 'scripts', 'check-public-release-state.mjs'), '--root', clone], {

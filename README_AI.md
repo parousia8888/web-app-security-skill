@@ -69,9 +69,16 @@ List application controls once; do not attribute a global guard to every route. 
 (who the caller is), route-level authorization (whether that caller may invoke the operation) and
 object-level authorization (whether that caller may access this specific record) separate. Review
 `no_route_scoped_control_observed` and partial access chains without calling either a vulnerability.
-The analyzer follows at most one exact local call, keeps Server Actions separate from HTTP routes
+The analyzer follows at most four exact project-local call edges, keeps Server Actions separate from HTTP routes
 and never treats Supabase source evidence as proof of RLS. Read
 `references/access-control-chain.md` before proposing an access-control change.
+
+For persisted runs, treat `auditBoundary.sourceRoots` and `excludedDirectories` as a file-read
+boundary shared by built-in, route, diff and external-adapter analysis. Never describe an excluded
+path as scanned. Restricted Gitleaks history is unavailable when its exact history scope cannot be
+proved. A root `webapp-security.suppressions.json` policy keeps an exact finding visible and does
+not change its evidence or baseline state; unknown and evidence-integrity findings cannot be
+suppressed.
 
 Every actionable source finding must retain both audiences. Keep the professional term and
 standards reference, then explain the issue without assuming security vocabulary. Phrase the
@@ -83,7 +90,7 @@ production policy on the user's behalf.
 
 1. Run `webapp-security version` and record it with the result.
 2. Run `webapp-security start <project> --run-id <id>` and review the generated
-   `security-scope.yml` before audit work.
+   `security-scope.yml` before audit work, including its file-read roots and exclusions.
 3. Run `webapp-security audit <run-directory> --name report --fail-on never` so findings do not
    prevent evidence creation.
 4. Read both `report.md` and `route-security.md` when the route artifact exists. Start with any

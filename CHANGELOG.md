@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.8.1] — 2026-08-31
+
+### Added
+- Persisted source roots and excluded directory basenames now compile into one validated file-read
+  boundary shared by built-in source analysis, route/access review, Git diff selection and every
+  selected external adapter. Scope metadata records exact snapshot/governing-input modes; restricted
+  Gitleaks history fails closed as `unknown / history_scope_not_supported`.
+- Root-level `webapp-security.suppressions.json` supports exact subject/adapter/rule/path/fingerprint
+  dispositions. Suppressed findings remain visible in JSON, Markdown, HTML, SARIF and JUnit with
+  unchanged evidence/baseline state. Unknown and evidence-integrity findings are not suppressible;
+  gate-changing and external-adapter entries require owner and expiry.
+- Required CI now includes a production-only repository self-audit, checksum-pinned ShellCheck and
+  moderate-or-higher pull-request dependency review. The public CodeQL disposition ledger separates
+  product findings from intentional tests and fixtures.
+
+### Fixed
+- Node package-export patterns replace every right-hand-side wildcard literally, including captured
+  dollar and slash characters. Conditional export objects keep a target only when supported branches
+  agree; TypeScript aliases retain their separate one-wildcard contract.
+- Evidence cleaning preserves finite scalar usage counters under a narrow key allowlist while
+  continuing to redact credential strings, numeric credentials, arrays and non-finite values.
+- Release publication no longer starts from an untrusted tag checkout with write permissions. A
+  trusted-`main` read-only job verifies signer policy, exact tag/source and hosted checks before a
+  separate release-environment publication job can run. Moving `v1` promotion has explicit pending
+  and final verification states.
+
+### Security boundary
+- The detector inventory remains 25 built-in risk rules, 3 evidence-integrity rules and 16 opt-in
+  external-adapter risk rules. This patch does not claim production precision/recall, exploitability,
+  repository safety, independent review or WSL2 support.
+- Invalid scope can abort before report creation; exact suppression is reviewed policy rather than
+  proof of safety; restricted history and ambiguous conditional exports remain unavailable/partial.
+- Main/tag/environment protections retain a documented administrator bypass for the single
+  maintainer. A full commit pin remains stronger than moving `v1`.
+
+Publication status: v0.8.1 candidate only until exact-commit CI and CodeQL, the signed tag, GitHub
+Release assets and provenance, npm trusted publishing, verified installer, immutable Action,
+signed `v1` promotion and durable live verification pass.
+
 ## [0.8.0] — 2026-08-30
 
 ### Added

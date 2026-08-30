@@ -27,6 +27,7 @@ import {
 } from './lib/route-security-baseline.mjs';
 import { createRouteSecurityDocument } from './lib/route-security-model.mjs';
 import { renderRouteSecurityMarkdown } from './lib/route-security-renderer.mjs';
+import { applySuppressions, readSuppressionPolicy } from './lib/suppressions.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const args = process.argv.slice(2);
@@ -55,6 +56,11 @@ Options:
   --adapter-timeout <sec> External adapter timeout, 1..600 (default: 120)
   --acknowledge-alert-policy
                            Allow selected external adapter findings to use the configured gate
+
+Scope and suppression:
+  A persisted run enforces security-scope.yml auditBoundary roots and directory exclusions before
+  built-in or external adapter reads. An optional project-root webapp-security.suppressions.json
+  keeps exact matched findings visible while applying the documented policy disposition.
 `);
   process.exit(code);
 }
@@ -221,14 +227,23 @@ try {
 
   const ruleset = sourceRuleset(selectedAdapters);
   const audit = selectedAdapters.includes('builtin')
-    ? auditSource(diffScope?.auditRoot || projectRoot, limits, { gitRoot: projectRoot })
+    ? auditSource(diffScope?.auditRoot || projectRoot, limits, {
+      gitRoot: projectRoot,
+      scopeBoundary: localScope.auditBoundary,
+      manifests: localScope.target.manifests || [],
+      lockfiles: localScope.target.lockfiles || [],
+    })
     : { findings: [], coverage: {}, traversal: null };
   const rawFindings = diffScope ? selectDiffFindings(audit, diffScope) : audit.findings;
   const external = diffScope ? [] : runExternalAdapters(
     projectRoot, localScope.target.lockfiles || [], selectedAdapters, {
       timeoutSeconds: adapterTimeoutSeconds, gitleaksHistoryRef,
+      scopeBoundary: localScope.auditBoundary,
     },
   );
+  const suppressionPolicy = readSuppressionPolicy(projectRoot, subject.id, now, {
+    gateEnabled: externalGateEnabled,
+  });
   const coverage = [
     ...(selectedAdapters.includes('builtin') ? sourceCoverage(audit) : []),
     ...external.flatMap((result) => result.coverage),
@@ -263,6 +278,8 @@ try {
   } else {
     findings = initializeFindingsV3(current, coverage);
   }
+  const appliedSuppressions = applySuppressions(findings, suppressionPolicy);
+  findings = appliedSuppressions.findings;
 
   const report = createReportV3({
     version: readFileSync(join(ROOT, 'VERSION'), 'utf8').trim(),
@@ -283,7 +300,17 @@ try {
         expectedVersion: result.adapter.version,
         observedVersion: result.identity.observedVersion || null,
         status: result.identity.status,
+        scopeMode: result.scopeMode,
       })),
+      suppression: {
+        status: suppressionPolicy.status,
+        path: suppressionPolicy.path,
+        digest: suppressionPolicy.digest,
+        configuredEntries: suppressionPolicy.entries.length,
+        suppressedFindings: findings.filter((finding) =>
+          finding.disposition.status === 'suppressed').length,
+        diagnostics: appliedSuppressions.diagnostics,
+      },
     },
     coverage,
     findings,
@@ -305,6 +332,11 @@ try {
           : 'The audit used an isolated Git index snapshot; unstaged working-tree content was excluded.',
         'Diff-scoped audit does not support baseline/retest lifecycle claims or external adapters.',
       ] : []),
+      ...(suppressionPolicy.status === 'unavailable' ? [
+        'Suppression evidence was unavailable; no finding was suppressed and the run is incomplete.',
+      ] : []),
+      ...appliedSuppressions.diagnostics.map((diagnostic) =>
+        `Suppression ${diagnostic.id || 'file'} was not applied (${diagnostic.code}).`),
     ],
   });
 

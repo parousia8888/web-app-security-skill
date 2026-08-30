@@ -1,8 +1,22 @@
 # External adapter alert policy
 
-Status: **owner acceptance pending**. This document defines the conditions a repository must accept
-before Checkov, Gitleaks, Opengrep or OSV-Scanner findings become a merge or release gate. It does not assign a person,
-enable a GitHub setting or close Issue #7.
+Status: **owner policy accepted for this repository on 2026-08-30**. The policy below also defines
+the conditions another repository must accept before Checkov, Gitleaks, Opengrep or OSV-Scanner
+findings become a merge or release gate. Acceptance does not by itself enable a GitHub setting or
+prove that an alert was triaged.
+
+## This repository
+
+| Responsibility | Accepted value |
+|---|---|
+| Signal owner | `@parousia8888` |
+| Triage target | HIGH secret: one business day; dependency finding: three business days |
+| Update owner | `@parousia8888` |
+| Private escalation | The private reporting process in `SECURITY.md` |
+| Gate authority | `@parousia8888` |
+
+The single-maintainer assignment is an ownership record, not independent review. GitHub setting
+availability and each live alert disposition are verified separately.
 
 ## Required assignment
 
@@ -31,10 +45,19 @@ accepted, run external adapters with `--fail-on never` and treat their reports a
 5. Close as fixed only after the same adapter no longer reports the identity under completed
    coverage.
 
-A suppression must be stored in the consuming repository and include the finding/advisory identity,
-rationale, evidence link, approving owner and an expiry date. Expired suppressions fail review and
-must be removed, renewed with new evidence or replaced by a fix. Broad repository-wide allowlists
-without identity, owner and expiry are not accepted.
+A suppression that affects CI/release or an external adapter must be stored in the consuming
+repository and include the exact adapter, rule, path and fingerprint, rationale, approving owner
+and an expiry date. Expired or drifted suppressions become active findings and must be removed,
+renewed with new evidence or replaced by a fix. Broad repository-wide allowlists without exact
+identity, owner and expiry are not accepted. Local built-in evidence-only runs may omit owner and
+expiry, but the finding remains visible and the same entry cannot affect a gate.
+
+Repository CodeQL dispositions are recorded in
+[`code-scanning-dispositions.md`](code-scanning-dispositions.md) before a test/fixture alert is
+dismissed. Production alerts are fixed on the candidate and verified by hosted analysis; they are
+not relabelled as fixtures to obtain a green dashboard. The required repository self-audit uses a
+separate production-only scope and exact suppressions and fails on active HIGH or unavailable
+evidence. Its green result is one bounded signal, not a repository-safety claim.
 
 ## Updates and unavailable capability
 

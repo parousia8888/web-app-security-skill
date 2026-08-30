@@ -126,6 +126,17 @@
       "required": ["total", "byDomain", "bySeverity", "byState", "byBaseline"],
       "properties": {
         "total": { "type": "integer", "minimum": 0 },
+        "activeTotal": { "type": "integer", "minimum": 0 },
+        "suppressedTotal": { "type": "integer", "minimum": 0 },
+        "byDisposition": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["active", "suppressed"],
+          "properties": {
+            "active": { "type": "integer", "minimum": 0 },
+            "suppressed": { "type": "integer", "minimum": 0 }
+          }
+        },
         "byDomain": {
           "type": "object", "additionalProperties": false,
           "required": ["security_exposure", "supply_chain", "search_discoverability", "reliability", "evidence_integrity"],

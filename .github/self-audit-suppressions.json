@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "subjectId": "project-8aee2d6f75b749e2b4240bcbadc072b1",
+  "entries": [
+    {
+      "id": "repository-rule-registry-cors-contract",
+      "adapterId": "builtin-source",
+      "ruleId": "cors-wildcard-with-credentials",
+      "path": "scripts/lib/source-rule-registry.mjs",
+      "fingerprint": "f4c46a60fba653f35b2ff330cdc0367f605cff69a2178d9992fbbeaf90377e86",
+      "reason": "The matched object is detector metadata describing the exact positive pattern; it is not imported as application CORS configuration.",
+      "owner": "@parousia8888",
+      "createdAt": "2026-08-30T00:00:00.000Z",
+      "expiresAt": "2027-02-28T00:00:00.000Z"
+    }
+  ]
+}

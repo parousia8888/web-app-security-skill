@@ -236,7 +236,7 @@ try {
   assert.equal(excludedCoverage.find((entry) =>
     entry.ruleId === 'js-route-security-evidence-incomplete').status, 'not_applicable');
   assert.ok(excludedCoverage.some((entry) => entry.reasons.some((reason) =>
-    reason.code === 'policy_excluded_directory')));
+    reason.code === 'scope_excluded_directory')));
   assert.ok(excludedCoverage.some((entry) => entry.reasons.some((reason) =>
     reason.code === 'symlink_not_followed')));
   assertReconciled(excludedCoverage);
