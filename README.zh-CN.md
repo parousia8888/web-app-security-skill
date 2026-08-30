@@ -435,9 +435,11 @@ v0.8.1；跟踪状态使用独立的 pending 与 final 提交。接受更新前�
 - tag 必须同时匹配 `VERSION`、changelog 和该版本的证据文件；tag 带签名，release 记录来源 commit。
 - release 产物包含可复现源码包、SPDX 2.3 SBOM、`SHA256SUMS` 与 GitHub build provenance attestation。
   CI 会构建两次并逐字节比较全部产物，再在禁止网络的隔离 HOME 中从解包产物执行完整生命周期。
-- [v0.8.0 公开验证](https://github.com/parousia8888/web-app-security-skill/actions/runs/33265256940)
-  同时消费不可变 release commit 与签名 `v1`，强制验证 installer attestation，并把同一份
-  live-verification 记录作为 workflow artifact 与 Release asset 发布；两份字节一致。
+- [v0.8.1 公开验证](https://github.com/parousia8888/web-app-security-skill/actions/runs/33322069144)
+  把已通过的不可变 consumer 与签名 `v1` consumer 绑定到最终跟踪状态，强制验证 installer
+  attestation，并把同一份 live-verification 记录作为 workflow artifact 与 Release asset 发布；
+  两份字节一致，SHA-256 为
+  `0fae8eaa68bafe35b52e8ed2c3b22b92e49c7b91fc58f9d83e6ed99210f2c6fa`。
 - [`SECURITY.md`](SECURITY.md)、[威胁模型](docs/threat-model.md)、
   [误报政策](docs/false-positive-policy.md)和[兼容矩阵](docs/compatibility.md)可供独立复核。
 

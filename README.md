@@ -478,9 +478,10 @@ release notes before accepting an update; use the full commit above when the wor
 - Release assets contain a reproducible source archive, SPDX 2.3 SBOM, `SHA256SUMS` and GitHub
   build-provenance attestation. CI builds the archive twice, compares every byte, then runs the
   lifecycle from the extracted archive in an isolated home with network access denied.
-- [Public v0.8.0 verification](https://github.com/parousia8888/web-app-security-skill/actions/runs/33265256940)
-  consumed both the immutable release commit and signed `v1`, required installer attestation, and
-  published one byte-matched live-verification record as a workflow artifact and Release asset.
+- [Public v0.8.1 verification](https://github.com/parousia8888/web-app-security-skill/actions/runs/33322069144)
+  bound the successful immutable and signed-`v1` consumers to final tracked state, required
+  installer attestation, and published one byte-matched live-verification record as a workflow
+  artifact and Release asset (SHA-256 `0fae8eaa68bafe35b52e8ed2c3b22b92e49c7b91fc58f9d83e6ed99210f2c6fa`).
 - [`SECURITY.md`](SECURITY.md), [threat model](docs/threat-model.md),
   [false-positive policy](docs/false-positive-policy.md) and
   [compatibility matrix](docs/compatibility.md) make the trust boundary reviewable.
