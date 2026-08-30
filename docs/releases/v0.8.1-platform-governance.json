@@ -74,6 +74,48 @@
     "testOrFixtureAlertsAwaitingPublicLedger": [1, 2, 3, 4, 5, 6, 7, 11],
     "publicLedgerPath": "docs/code-scanning-dispositions.md"
   },
+  "postCandidateReadback": {
+    "capturedAt": "2026-08-30T15:28:22Z",
+    "candidateCommit": "66a549c1248cbf68d7f470443c3f072f5b75374c",
+    "hostedRuns": {
+      "ci": {
+        "id": 33319363473,
+        "conclusion": "success"
+      },
+      "codeql": {
+        "id": 33319363476,
+        "conclusion": "success"
+      }
+    },
+    "repositorySelfAudit": {
+      "activeFindings": 0,
+      "suppressedFindings": 1,
+      "unknownFindings": 0,
+      "reportJsonSha256": "b3028306b46edb2ba2e26d584f68d9b5bd925e55d75752bd9d3d83e774e74f46"
+    },
+    "dependabot": {
+      "openAlerts": 0,
+      "securityUpdatePullRequest": 8,
+      "securityUpdatePullRequestState": "closed_without_merge"
+    },
+    "codeScanning": {
+      "openAlerts": 0,
+      "fixedByCandidateAnalysis": [9, 10],
+      "dismissedAsUsedInTests": [1, 2, 3, 4, 5, 6, 7, 11]
+    },
+    "dependencyReviewProbe": {
+      "pullRequest": 9,
+      "sourceDiff": "none",
+      "runId": 33319628174,
+      "jobId": 99279204655,
+      "conclusion": "success",
+      "disposition": "closed_without_merge_and_branch_deleted"
+    },
+    "issueState": {
+      "closed": [7],
+      "keptOpen": [3, 6]
+    }
+  },
   "issueInventory": {
     "wsl2Verification": 3,
     "shellcheckAndCoverage": 6,
